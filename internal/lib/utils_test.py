@@ -16,9 +16,12 @@
 
 """Tests for acloud.internal.lib.utils."""
 
+import errno
 import getpass
 import os
+import shutil
 import subprocess
+import tempfile
 import time
 
 import mock
@@ -29,6 +32,87 @@ from acloud.internal.lib import utils
 
 
 class UtilsTest(driver_test_lib.BaseDriverTest):
+
+  def testTempDir_Success(self):
+    """Test create a temp dir."""
+    self.Patch(os, "chmod")
+    self.Patch(tempfile, "mkdtemp", return_value="/tmp/tempdir")
+    self.Patch(shutil, "rmtree")
+    with utils.TempDir():
+      pass
+    # Verify.
+    tempfile.mkdtemp.assert_called_once()
+    shutil.rmtree.assert_called_with("/tmp/tempdir")
+
+  def testTempDir_ExceptionRaised(self):
+    """Test create a temp dir and exception is raised within with-clause."""
+    self.Patch(os, "chmod")
+    self.Patch(tempfile, "mkdtemp", return_value="/tmp/tempdir")
+    self.Patch(shutil, "rmtree")
+
+    class ExpectedException(Exception):
+      pass
+
+    def _Call():
+      with utils.TempDir():
+        raise ExpectedException("Expected exception.")
+    # Verify. ExpectedException should be raised.
+    self.assertRaises(ExpectedException, _Call)
+    tempfile.mkdtemp.assert_called_once()
+    shutil.rmtree.assert_called_with("/tmp/tempdir")
+
+  def testTempDir_WhenDeleteTempDirNoLongerExist(self):
+    """Test create a temp dir and dir no longer exists during deletion."""
+    self.Patch(os, "chmod")
+    self.Patch(tempfile, "mkdtemp", return_value="/tmp/tempdir")
+    expected_error = EnvironmentError()
+    expected_error.errno = errno.ENOENT
+    self.Patch(shutil, "rmtree", side_effect=expected_error)
+    def _Call():
+      with utils.TempDir():
+        pass
+    # Verify no exception should be raised when rmtree raises
+    # EnvironmentError with errno.ENOENT, i.e.
+    # directory no longer exists.
+    _Call()
+    tempfile.mkdtemp.assert_called_once()
+    shutil.rmtree.assert_called_with("/tmp/tempdir")
+
+  def testTempDir_WhenDeleteEncounterError(self):
+    """Test create a temp dir and encoutered error during deletion."""
+    self.Patch(os, "chmod")
+    self.Patch(tempfile, "mkdtemp", return_value="/tmp/tempdir")
+    expected_error = OSError("Expected OS Error")
+    self.Patch(shutil, "rmtree", side_effect=expected_error)
+    def _Call():
+      with utils.TempDir():
+        pass
+
+    # Verify OSError should be raised.
+    self.assertRaises(OSError, _Call)
+    tempfile.mkdtemp.assert_called_once()
+    shutil.rmtree.assert_called_with("/tmp/tempdir")
+
+  def testTempDir_OrininalErrorRaised(self):
+    """Test original error is raised even if tmp dir deletion failed."""
+    self.Patch(os, "chmod")
+    self.Patch(tempfile, "mkdtemp", return_value="/tmp/tempdir")
+    expected_error = OSError("Expected OS Error")
+    self.Patch(shutil, "rmtree", side_effect=expected_error)
+
+    class ExpectedException(Exception):
+      pass
+
+    def _Call():
+      with utils.TempDir():
+        raise ExpectedException("Expected Exception")
+
+    # Verify.
+    # ExpectedException should be raised, and OSError
+    # should not be raised.
+    self.assertRaises(ExpectedException, _Call)
+    tempfile.mkdtemp.assert_called_once()
+    shutil.rmtree.assert_called_with("/tmp/tempdir")
 
   def testCreateSshKeyPair_KeyAlreadyExists(self):
     """Test when the key pair already exists."""
