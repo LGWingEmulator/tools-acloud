@@ -8,7 +8,7 @@ Devices on Google Compute Engine) instantiated by using the Android source code
 
 #2. Installation:
 
-    `$ pip install acloud.zip`
+    `$ pip install -r tools/acloud/pip_requirements.txt out/host/linux-x86/tools/acloud.zip`
 
 #3. Execution:
 
