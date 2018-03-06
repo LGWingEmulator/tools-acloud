@@ -14,12 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Common Utilities.
-
-The following code is copied from chromite with modifications.
-  - class TempDir: chromite/lib/osutils.py
-
-"""
+"""Common Utilities."""
 
 import base64
 import binascii
@@ -46,70 +41,53 @@ SSH_KEYGEN_CMD = ["ssh-keygen", "-t", "rsa", "-b", "4096"]
 
 
 class TempDir(object):
-    """Object that creates a temporary directory.
+    """A context manager that ceates a temporary directory.
 
-    This object can either be used as a context manager or just as a simple
-    object. The temporary directory is stored as self.tempdir in the object, and
-    is returned as a string by a 'with' statement.
+    Attributes:
+      path: The path of the temporary directory.
     """
 
-    def __init__(self, prefix='tmp', base_dir=None, delete=True):
-        """Constructor. Creates the temporary directory.
-
-        Args:
-            prefix: See tempfile.mkdtemp documentation.
-            base_dir: The directory to place the temporary directory.
-                      If None, will choose from system default tmp dir.
-            delete: Whether the temporary dir should be deleted as part of cleanup.
-        """
-        self.delete = delete
-        self.tempdir = tempfile.mkdtemp(prefix=prefix, dir=base_dir)
-        os.chmod(self.tempdir, 0o700)
-
-    def Cleanup(self):
-        """Clean up the temporary directory."""
-        # Note that _TempDirSetup may have failed, resulting in these attributes
-        # not being set; this is why we use getattr here (and must).
-        tempdir = getattr(self, 'tempdir', None)
-        if tempdir is not None and self.delete:
-            try:
-                shutil.rmtree(tempdir)
-            except EnvironmentError as e:
-                # Ignore error if directory or file does not exist.
-                if e.errno != errno.ENOENT:
-                    raise
-            finally:
-                self.tempdir = None
+    def __init__(self):
+        self.path = tempfile.mkdtemp()
+        os.chmod(self.path, 0o700)
+        logger.debug("Created temporary dir %s", self.path)
 
     def __enter__(self):
-        """Return the temporary directory."""
-        return self.tempdir
+        """Enter."""
+        return self.path
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        """Exit the context manager."""
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit.
+
+        Args:
+            exc_type: Exception type raised within the context manager.
+                      None if no execption is raised.
+            exc_value: Exception instance raised within the context manager.
+                       None if no execption is raised.
+            traceback: Traceback for exeception that is raised within
+                       the context manager.
+                       None if no execption is raised.
+        Raises:
+            EnvironmentError or OSError when failed to delete temp directory.
+        """
         try:
-            self.Cleanup()
-        except Exception:  # pylint: disable=W0703
+            if self.path:
+                shutil.rmtree(self.path)
+                logger.debug("Deleted temporary dir %s", self.path)
+        except EnvironmentError as e:
+            # Ignore error if there is no exception raised
+            # within the with-clause and the EnvironementError is
+            # about problem that directory or file does not exist.
+            if not exc_type and e.errno != errno.ENOENT:
+                raise
+        except Exception as e:  # pylint: disable=W0703
             if exc_type:
-                # If an exception from inside the context was already in progress,
-                # log our cleanup exception, then allow the original to resume.
-                logger.error('While exiting %s:', self, exc_info=True)
-
-                if self.tempdir:
-                    # Log all files in tempdir at the time of the failure.
-                    try:
-                        logger.error('Directory contents were:')
-                        for name in os.listdir(self.tempdir):
-                            logger.error('  %s', name)
-                    except OSError:
-                        logger.error('  Directory did not exist.')
+                logger.error(
+                        "Encountered error while deleting %s: %s",
+                        self.path, str(e), exc_info=True)
             else:
-                # If there was not an exception from the context, raise ours.
                 raise
 
-    def __del__(self):
-        """Delete the object."""
-        self.Cleanup()
 
 def RetryOnException(retry_checker, max_retries, sleep_multiplier=0,
                      retry_backoff_factor=1):
