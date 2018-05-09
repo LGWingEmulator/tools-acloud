@@ -16,8 +16,6 @@
 
 """Tests for android_compute_client."""
 
-import uuid
-
 import mock
 
 import unittest
@@ -43,16 +41,18 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
     ZONE = "fake-zone"
     ORIENTATION = "portrait"
     DEVICE_RESOLUTION = "1200x1200x1200x1200"
-    METADATA = ("metadata_key", "metadata_value")
-    TARGET = "gce_x86-userdebug"
+    TARGET = "aosp_cf_x86_phone-userdebug"
     BUILD_ID = "2263051"
+    INSTANCE = "fake-instance"
+    BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
+    BOOT_STARTED_MSG = "VIRTUAL_DEVICE_BOOT_STARTED"
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
 
-    Returns:
-      A fake configuration mock object.
-    """
+        Returns:
+          A fake configuration mock object.
+        """
         fake_cfg = mock.MagicMock()
         fake_cfg.project = self.PROJECT
         fake_cfg.service_account_name = self.SERVICE_ACCOUNT_NAME
@@ -82,7 +82,6 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
             gcompute_client.ComputeClient,
             "CheckImageExists",
             return_value=False)
-        unique_id = uuid.uuid4()
         image_name = "image-gce-x86-userdebug-2345-abcd"
         self.android_compute_client.CreateImage(image_name,
                                                 self.GS_IMAGE_SOURCE_URI)
@@ -149,6 +148,18 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
             self.android_compute_client._CheckMachineSize)
         self.android_compute_client.CompareMachineSize.assert_called_with(
             self.MACHINE_TYPE, self.MIN_MACHINE_SIZE, self.ZONE)
+
+    def testCheckBoot(self):
+         """Test CheckBoot."""
+         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
+                    return_value="")
+         self.assertFalse(self.android_compute_client.CheckBoot(self.INSTANCE))
+         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
+                    return_value=self.BOOT_COMPLETED_MSG)
+         self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
+         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
+                    return_value=self.BOOT_STARTED_MSG)
+         self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
 
 
 if __name__ == "__main__":

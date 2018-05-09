@@ -102,7 +102,9 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         self.compute_client.CreateImage.assert_called_with(
         image_name=fake_image, source_uri=fake_gs_url)
         self.compute_client.CreateInstance.assert_called_with(
-        fake_instance, fake_image, disk_name)
+            instance=fake_instance,
+            image_name=fake_image,
+            extra_disk_name=disk_name)
         self.compute_client.DeleteImage.assert_called_with(fake_image)
         self.storage_client.Delete(cfg.storage_bucket_name, fake_gs_object)
 
