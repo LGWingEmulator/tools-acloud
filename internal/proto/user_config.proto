@@ -59,4 +59,18 @@ message UserConfig {
   //     client_id and client_secret.
   optional string client_id = 14;
   optional string client_secret = 15;
+
+  // [CVD only] The name of the stable host image released by Cloud Android team
+  optional string stable_host_image_name = 16;
+  // [CVD only] The project that the stable host image is released to
+  optional string stable_host_image_project = 17;
+
+  // [GOLDFISH only] The name of the stable host image released by Android
+  // Emulator (emu-dev) team
+  optional string stable_goldfish_host_image_name = 18;
+  // [GOLDFISH only] The project that the stable goldfish host image is
+  // released to (emu-dev-cts)
+
+
+  optional string stable_goldfish_host_image_project = 19;
 }

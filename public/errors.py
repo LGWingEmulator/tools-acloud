@@ -16,8 +16,6 @@
 
 """Define errors that are raised by the driver."""
 
-import json
-
 HTTP_NOT_FOUND_CODE = 404
 
 
@@ -72,13 +70,17 @@ class InvalidVirtualDeviceIpError(DriverError):
     """
 
 
-class DeviceBootTimeoutError(DriverError):
-    """Raised when an AVD defice failed to boot within timeout."""
-
-
 class HasRetriableRequestsError(DriverError):
     """Raised when some retriable requests fail in a batch execution."""
 
 
 class AuthentcationError(DriverError):
     """Raised when authentication fails."""
+
+
+class DeviceBootError(DriverError):
+  """To catch device boot errors."""
+
+
+class DeviceBootTimeoutError(DeviceBootError):
+  """Raised when an AVD defice failed to boot within timeout."""

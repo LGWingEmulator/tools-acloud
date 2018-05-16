@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='user_config.proto',
   package='acloud.internal.proto',
   syntax='proto2',
-  serialized_pb=_b('\n\x11user_config.proto\x12\x15\x61\x63loud.internal.proto\"\xf3\x03\n\nUserConfig\x12\x1c\n\x14service_account_name\x18\x01 \x01(\t\x12(\n service_account_private_key_path\x18\x02 \x01(\t\x12\x0f\n\x07project\x18\x03 \x01(\t\x12\x0c\n\x04zone\x18\x04 \x01(\t\x12\x14\n\x0cmachine_type\x18\x05 \x01(\t\x12\x0f\n\x07network\x18\x06 \x01(\t\x12\x1c\n\x14ssh_private_key_path\x18\x07 \x01(\t\x12\x1b\n\x13ssh_public_key_path\x18\x08 \x01(\t\x12\x1b\n\x13storage_bucket_name\x18\t \x01(\t\x12\x13\n\x0borientation\x18\n \x01(\t\x12\x12\n\nresolution\x18\x0b \x01(\t\x12\x1f\n\x17\x65xtra_data_disk_size_gb\x18\x0c \x01(\x05\x12R\n\x11metadata_variable\x18\r \x03(\x0b\x32\x37.acloud.internal.proto.UserConfig.MetadataVariableEntry\x12\x11\n\tclient_id\x18\x0e \x01(\t\x12\x15\n\rclient_secret\x18\x0f \x01(\t\x1a\x37\n\x15MetadataVariableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01')
+  serialized_pb=_b('\n\x11user_config.proto\x12\x15\x61\x63loud.internal.proto\"\x8b\x05\n\nUserConfig\x12\x1c\n\x14service_account_name\x18\x01 \x01(\t\x12(\n service_account_private_key_path\x18\x02 \x01(\t\x12\x0f\n\x07project\x18\x03 \x01(\t\x12\x0c\n\x04zone\x18\x04 \x01(\t\x12\x14\n\x0cmachine_type\x18\x05 \x01(\t\x12\x0f\n\x07network\x18\x06 \x01(\t\x12\x1c\n\x14ssh_private_key_path\x18\x07 \x01(\t\x12\x1b\n\x13ssh_public_key_path\x18\x08 \x01(\t\x12\x1b\n\x13storage_bucket_name\x18\t \x01(\t\x12\x13\n\x0borientation\x18\n \x01(\t\x12\x12\n\nresolution\x18\x0b \x01(\t\x12\x1f\n\x17\x65xtra_data_disk_size_gb\x18\x0c \x01(\x05\x12R\n\x11metadata_variable\x18\r \x03(\x0b\x32\x37.acloud.internal.proto.UserConfig.MetadataVariableEntry\x12\x11\n\tclient_id\x18\x0e \x01(\t\x12\x15\n\rclient_secret\x18\x0f \x01(\t\x12\x1e\n\x16stable_host_image_name\x18\x10 \x01(\t\x12!\n\x19stable_host_image_project\x18\x11 \x01(\t\x12\'\n\x1fstable_goldfish_host_image_name\x18\x12 \x01(\t\x12*\n\"stable_goldfish_host_image_project\x18\x13 \x01(\t\x1a\x37\n\x15MetadataVariableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01')
 )
 
 
@@ -58,8 +58,8 @@ _USERCONFIG_METADATAVARIABLEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=489,
-  serialized_end=544,
+  serialized_start=641,
+  serialized_end=696,
 )
 
 _USERCONFIG = _descriptor.Descriptor(
@@ -174,6 +174,34 @@ _USERCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_host_image_name', full_name='acloud.internal.proto.UserConfig.stable_host_image_name', index=15,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_host_image_project', full_name='acloud.internal.proto.UserConfig.stable_host_image_project', index=16,
+      number=17, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_goldfish_host_image_name', full_name='acloud.internal.proto.UserConfig.stable_goldfish_host_image_name', index=17,
+      number=18, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_goldfish_host_image_project', full_name='acloud.internal.proto.UserConfig.stable_goldfish_host_image_project', index=18,
+      number=19, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -187,7 +215,7 @@ _USERCONFIG = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=45,
-  serialized_end=544,
+  serialized_end=696,
 )
 
 _USERCONFIG_METADATAVARIABLEENTRY.containing_type = _USERCONFIG
