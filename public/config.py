@@ -34,7 +34,7 @@ At runtime, AcloudConfigManager performs the following steps.
 - Load user config file into a UserConfig message instance.
 - Create AcloudConfig using InternalConfig and UserConfig.
 
-TODO(fdeng):
+TODO:
   1. Add support for override configs with command line args.
   2. Scan all configs to find the right config for given branch and build_id.
      Raise an error if the given build_id is smaller than min_build_id
@@ -143,6 +143,22 @@ class AcloudConfig(object):
         # Fields that can be overriden by args
         self.orientation = usr_cfg.orientation
         self.resolution = usr_cfg.resolution
+
+        self.stable_host_image_name = (
+            usr_cfg.stable_host_image_name or
+            internal_cfg.default_usr_cfg.stable_host_image_name)
+        self.stable_host_image_project = (
+            usr_cfg.stable_host_image_project or
+            internal_cfg.default_usr_cfg.stable_host_image_project)
+        self.kernel_build_target = internal_cfg.kernel_build_target
+
+        self.emulator_build_target = internal_cfg.emulator_build_target
+        self.stable_goldfish_host_image_name = (
+            usr_cfg.stable_goldfish_host_image_name or
+            internal_cfg.default_usr_cfg.stable_goldfish_host_image_name)
+        self.stable_goldfish_host_image_project = (
+            usr_cfg.stable_goldfish_host_image_project or
+            internal_cfg.default_usr_cfg.stable_goldfish_host_image_project)
 
         # Verify validity of configurations.
         self.Verify()

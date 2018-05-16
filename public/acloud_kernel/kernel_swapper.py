@@ -92,7 +92,7 @@ class KernelSwapper(object):
             r.AddError(str(e))
             r.SetStatus(report.Status.FAIL)
             return r
-        except errors.DeviceBootTimeoutError as e:
+        except errors.DeviceBootError as e:
             r.AddError(str(e))
             r.SetStatus(report.Status.BOOT_FAIL)
             return r
@@ -119,7 +119,7 @@ class KernelSwapper(object):
 
         Raises:
             subprocess.CalledProcessError: see _ShellCmd.
-            errors.DeviceBootTimeoutError: if booting times out.
+            errors.DeviceBootError: if target fails to boot.
         """
         self._ShellCmdOnTarget(REBOOT_CMD)
         self._compute_client.WaitForBoot(self._instance_name)

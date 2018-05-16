@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+#
+# Copyright 2018 - The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests for create_cuttlefish_action.
+
+Tests for acloud.public.actions.create_cuttlefish_action.
+"""
+
+import uuid
+
+import mock
+
+import unittest
+from acloud.internal.lib import android_build_client
+from acloud.internal.lib import android_compute_client
+from acloud.internal.lib import auth
+from acloud.internal.lib import cvd_compute_client
+from acloud.internal.lib import driver_test_lib
+from acloud.public.actions import create_cuttlefish_action
+
+
+class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
+  """Test create_cuttlefish_action."""
+
+  IP = "127.0.0.1"
+  INSTANCE = "fake-instance"
+  IMAGE = "fake-image"
+  BUILD_TARGET = "fake-build-target"
+  BUILD_ID = "12345"
+  KERNEL_BUILD_ID = "54321"
+  BRANCH = "fake-branch"
+  STABLE_HOST_IMAGE_NAME = "fake-stable-host-image-name"
+  STABLE_HOST_IMAGE_PROJECT = "fake-stable-host-image-project"
+  EXTRA_DATA_DISK_GB = 4
+
+  def setUp(self):
+    """Set up the test."""
+    super(CreateCuttlefishActionTest, self).setUp()
+    self.build_client = mock.MagicMock()
+    self.Patch(android_build_client, "AndroidBuildClient",
+               return_value=self.build_client)
+    self.compute_client = mock.MagicMock()
+    self.Patch(cvd_compute_client, "CvdComputeClient",
+               return_value=self.compute_client)
+    self.Patch(android_compute_client, "AndroidComputeClient",
+               return_value=self.compute_client)
+    self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
+
+  def _CreateCfg(self):
+    """A helper method that creates a mock configuration object."""
+    cfg = mock.MagicMock()
+    cfg.service_account_name = "fake@service.com"
+    cfg.service_account_private_key_path = "/fake/path/to/key"
+    cfg.zone = "fake_zone"
+    cfg.disk_image_name = "fake_image.tar.gz"
+    cfg.disk_image_mime_type = "fake/type"
+    cfg.ssh_private_key_path = ""
+    cfg.ssh_public_key_path = ""
+    cfg.stable_host_image_name = self.STABLE_HOST_IMAGE_NAME
+    cfg.stable_host_image_project = self.STABLE_HOST_IMAGE_PROJECT
+    cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_GB
+    return cfg
+
+  def testCreateDevices(self):
+    """Test CreateDevices."""
+    cfg = self._CreateCfg()
+
+    # Mock uuid
+    fake_uuid = mock.MagicMock(hex="1234")
+    self.Patch(uuid, "uuid4", return_value=fake_uuid)
+
+    # Mock compute client methods
+    self.compute_client.GetInstanceIP.return_value = self.IP
+    self.compute_client.GenerateImageName.return_value = self.IMAGE
+    self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
+
+    # Mock build client method
+    self.build_client.GetBranch.return_value = self.BRANCH
+
+    # Call CreateDevices
+    r = create_cuttlefish_action.CreateDevices(
+        cfg, self.BUILD_TARGET, self.BUILD_ID, self.KERNEL_BUILD_ID)
+
+    # Verify
+    self.compute_client.CreateInstance.assert_called_with(
+        instance=self.INSTANCE,
+        image_name=self.STABLE_HOST_IMAGE_NAME,
+        image_project=self.STABLE_HOST_IMAGE_PROJECT,
+        build_target=self.BUILD_TARGET,
+        branch=self.BRANCH,
+        build_id=self.BUILD_ID,
+        kernel_branch=self.BRANCH,
+        kernel_build_id=self.KERNEL_BUILD_ID,
+        blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB)
+
+    self.assertEquals(
+        r.data,
+        {
+            "devices": [
+                {
+                    "instance_name": self.INSTANCE,
+                    "ip": self.IP,
+                },
+            ],
+        }
+    )
+    self.assertEquals(r.command, "create_cf")
+    self.assertEquals(r.status, "SUCCESS")
+
+
+if __name__ == "__main__":
+  unittest.main()

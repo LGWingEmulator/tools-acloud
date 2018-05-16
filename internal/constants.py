@@ -17,11 +17,10 @@
 """This module holds constants used by the driver."""
 BRANCH_PREFIX = "git_"
 BUILD_TARGET_MAPPING = {
-    "phone": "gce_x86_phone-userdebug",
-    "tablet": "gce_x86_tablet-userdebug",
-    "tablet_mobile": "gce_x86_tablet_mobile-userdebug",
-    "aosp_phone": "aosp_gce_x86_phone-userdebug",
-    "aosp_tablet": "aosp_gce_x86_tablet-userdebug",
+    # TODO: Add aosp goldfish targets and internal cf targets to vendor code
+    # base.
+    "aosp_phone": "aosp_cf_x86_phone-userdebug",
+    "aosp_tablet": "aosp_cf_x86_tablet-userdebug",
 }
 SPEC_NAMES = {"nexus5", "nexus6", "nexus7_2012", "nexus7_2013", "nexus9",
               "nexus10"}

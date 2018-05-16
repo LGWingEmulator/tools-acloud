@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='internal_config.proto',
   package='acloud.internal.proto',
   syntax='proto2',
-  serialized_pb=_b('\n\x15internal_config.proto\x12\x15\x61\x63loud.internal.proto\"\xef\x01\n\x11\x44\x65\x66\x61ultUserConfig\x12\x14\n\x0cmachine_type\x18\x01 \x01(\t\x12\x0f\n\x07network\x18\x02 \x01(\t\x12\x1f\n\x17\x65xtra_data_disk_size_gb\x18\x03 \x01(\x05\x12Y\n\x11metadata_variable\x18\x04 \x03(\x0b\x32>.acloud.internal.proto.DefaultUserConfig.MetadataVariableEntry\x1a\x37\n\x15MetadataVariableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x91\t\n\x0eInternalConfig\x12\x41\n\x0f\x64\x65\x66\x61ult_usr_cfg\x18\x01 \x01(\x0b\x32(.acloud.internal.proto.DefaultUserConfig\x12]\n\x15\x64\x65vice_resolution_map\x18\x02 \x03(\x0b\x32>.acloud.internal.proto.InternalConfig.DeviceResolutionMapEntry\x12n\n\x1e\x64\x65vice_default_orientation_map\x18\x03 \x03(\x0b\x32\x46.acloud.internal.proto.InternalConfig.DeviceDefaultOrientationMapEntry\x12\x18\n\x10min_machine_size\x18\x04 \x01(\t\x12\x17\n\x0f\x64isk_image_name\x18\x05 \x01(\t\x12\x1c\n\x14\x64isk_image_mime_type\x18\x06 \x01(\t\x12\x1c\n\x14\x64isk_image_extension\x18\x07 \x01(\t\x12\x1b\n\x13\x64isk_raw_image_name\x18\x08 \x01(\t\x12 \n\x18\x64isk_raw_image_extension\x18\t \x01(\t\x12&\n\x1e\x64\x65\x66\x61ult_extra_data_disk_device\x18\n \x01(\t\x12]\n\x15precreated_data_image\x18\x0b \x03(\x0b\x32>.acloud.internal.proto.InternalConfig.PrecreatedDataImageEntry\x12j\n\x1dvalid_branch_and_min_build_id\x18\x0c \x03(\x0b\x32\x43.acloud.internal.proto.InternalConfig.ValidBranchAndMinBuildIdEntry\x12\x18\n\x10\x63reds_cache_file\x18\r \x01(\t\x12\x12\n\nuser_agent\x18\x0e \x01(\t\x12\x63\n\x19no_project_access_msg_map\x18\x0f \x03(\x0b\x32@.acloud.internal.proto.InternalConfig.NoProjectAccessMsgMapEntry\x1a:\n\x18\x44\x65viceResolutionMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x42\n DeviceDefaultOrientationMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a:\n\x18PrecreatedDataImageEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a?\n\x1dValidBranchAndMinBuildIdEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a<\n\x1aNoProjectAccessMsgMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01')
+  serialized_pb=_b('\n\x15internal_config.proto\x12\x15\x61\x63loud.internal.proto\"\x87\x03\n\x11\x44\x65\x66\x61ultUserConfig\x12\x14\n\x0cmachine_type\x18\x01 \x01(\t\x12\x0f\n\x07network\x18\x02 \x01(\t\x12\x1f\n\x17\x65xtra_data_disk_size_gb\x18\x03 \x01(\x05\x12Y\n\x11metadata_variable\x18\x04 \x03(\x0b\x32>.acloud.internal.proto.DefaultUserConfig.MetadataVariableEntry\x12\x1e\n\x16stable_host_image_name\x18\x05 \x01(\t\x12!\n\x19stable_host_image_project\x18\x06 \x01(\t\x12\'\n\x1fstable_goldfish_host_image_name\x18\x07 \x01(\t\x12*\n\"stable_goldfish_host_image_project\x18\x08 \x01(\t\x1a\x37\n\x15MetadataVariableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xcd\t\n\x0eInternalConfig\x12\x41\n\x0f\x64\x65\x66\x61ult_usr_cfg\x18\x01 \x01(\x0b\x32(.acloud.internal.proto.DefaultUserConfig\x12]\n\x15\x64\x65vice_resolution_map\x18\x02 \x03(\x0b\x32>.acloud.internal.proto.InternalConfig.DeviceResolutionMapEntry\x12n\n\x1e\x64\x65vice_default_orientation_map\x18\x03 \x03(\x0b\x32\x46.acloud.internal.proto.InternalConfig.DeviceDefaultOrientationMapEntry\x12\x18\n\x10min_machine_size\x18\x04 \x01(\t\x12\x17\n\x0f\x64isk_image_name\x18\x05 \x01(\t\x12\x1c\n\x14\x64isk_image_mime_type\x18\x06 \x01(\t\x12\x1c\n\x14\x64isk_image_extension\x18\x07 \x01(\t\x12\x1b\n\x13\x64isk_raw_image_name\x18\x08 \x01(\t\x12 \n\x18\x64isk_raw_image_extension\x18\t \x01(\t\x12&\n\x1e\x64\x65\x66\x61ult_extra_data_disk_device\x18\n \x01(\t\x12]\n\x15precreated_data_image\x18\x0b \x03(\x0b\x32>.acloud.internal.proto.InternalConfig.PrecreatedDataImageEntry\x12j\n\x1dvalid_branch_and_min_build_id\x18\x0c \x03(\x0b\x32\x43.acloud.internal.proto.InternalConfig.ValidBranchAndMinBuildIdEntry\x12\x18\n\x10\x63reds_cache_file\x18\r \x01(\t\x12\x12\n\nuser_agent\x18\x0e \x01(\t\x12\x63\n\x19no_project_access_msg_map\x18\x0f \x03(\x0b\x32@.acloud.internal.proto.InternalConfig.NoProjectAccessMsgMapEntry\x12\x1b\n\x13kernel_build_target\x18\x10 \x01(\t\x12\x1d\n\x15\x65mulator_build_target\x18\x11 \x01(\t\x1a:\n\x18\x44\x65viceResolutionMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x42\n DeviceDefaultOrientationMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a:\n\x18PrecreatedDataImageEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a?\n\x1dValidBranchAndMinBuildIdEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a<\n\x1aNoProjectAccessMsgMapEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01')
 )
 
 
@@ -58,8 +58,8 @@ _DEFAULTUSERCONFIG_METADATAVARIABLEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=233,
-  serialized_end=288,
+  serialized_start=385,
+  serialized_end=440,
 )
 
 _DEFAULTUSERCONFIG = _descriptor.Descriptor(
@@ -97,6 +97,34 @@ _DEFAULTUSERCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_host_image_name', full_name='acloud.internal.proto.DefaultUserConfig.stable_host_image_name', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_host_image_project', full_name='acloud.internal.proto.DefaultUserConfig.stable_host_image_project', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_goldfish_host_image_name', full_name='acloud.internal.proto.DefaultUserConfig.stable_goldfish_host_image_name', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stable_goldfish_host_image_project', full_name='acloud.internal.proto.DefaultUserConfig.stable_goldfish_host_image_project', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -110,7 +138,7 @@ _DEFAULTUSERCONFIG = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=49,
-  serialized_end=288,
+  serialized_end=440,
 )
 
 
@@ -147,8 +175,8 @@ _INTERNALCONFIG_DEVICERESOLUTIONMAPENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1147,
-  serialized_end=1205,
+  serialized_start=1359,
+  serialized_end=1417,
 )
 
 _INTERNALCONFIG_DEVICEDEFAULTORIENTATIONMAPENTRY = _descriptor.Descriptor(
@@ -184,8 +212,8 @@ _INTERNALCONFIG_DEVICEDEFAULTORIENTATIONMAPENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1207,
-  serialized_end=1273,
+  serialized_start=1419,
+  serialized_end=1485,
 )
 
 _INTERNALCONFIG_PRECREATEDDATAIMAGEENTRY = _descriptor.Descriptor(
@@ -221,8 +249,8 @@ _INTERNALCONFIG_PRECREATEDDATAIMAGEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1275,
-  serialized_end=1333,
+  serialized_start=1487,
+  serialized_end=1545,
 )
 
 _INTERNALCONFIG_VALIDBRANCHANDMINBUILDIDENTRY = _descriptor.Descriptor(
@@ -258,8 +286,8 @@ _INTERNALCONFIG_VALIDBRANCHANDMINBUILDIDENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1335,
-  serialized_end=1398,
+  serialized_start=1547,
+  serialized_end=1610,
 )
 
 _INTERNALCONFIG_NOPROJECTACCESSMSGMAPENTRY = _descriptor.Descriptor(
@@ -295,8 +323,8 @@ _INTERNALCONFIG_NOPROJECTACCESSMSGMAPENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1400,
-  serialized_end=1460,
+  serialized_start=1612,
+  serialized_end=1672,
 )
 
 _INTERNALCONFIG = _descriptor.Descriptor(
@@ -411,6 +439,20 @@ _INTERNALCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='kernel_build_target', full_name='acloud.internal.proto.InternalConfig.kernel_build_target', index=15,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='emulator_build_target', full_name='acloud.internal.proto.InternalConfig.emulator_build_target', index=16,
+      number=17, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -423,8 +465,8 @@ _INTERNALCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=291,
-  serialized_end=1460,
+  serialized_start=443,
+  serialized_end=1672,
 )
 
 _DEFAULTUSERCONFIG_METADATAVARIABLEENTRY.containing_type = _DEFAULTUSERCONFIG

@@ -31,10 +31,6 @@ It knows how to create android GCE images and instances.
                 ^
                 |
     gcompute_client.AndroidComputeClient
-
-TODO(fdeng):
-  Merge caci/framework/gce_manager.py
-  with this module, update callers of gce_manager.py to use this module.
 """
 
 import getpass
@@ -56,8 +52,12 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
     IMAGE_NAME_FMT = "img-{uuid}-{build_id}-{build_target}"
     DATA_DISK_NAME_FMT = "data-{instance}"
     BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
+    BOOT_STARTED_MSG = "VIRTUAL_DEVICE_BOOT_STARTED"
     BOOT_TIMEOUT_SECS = 5 * 60  # 5 mins, usually it should take ~2 mins
     BOOT_CHECK_INTERVAL_SECS = 10
+
+    OPERATION_TIMEOUT_SECS = 20 * 60  # Override parent value, 20 mins
+
     NAME_LENGTH_LIMIT = 63
     # If the generated name ends with '-', replace it with REPLACER.
     REPLACER = "e"
@@ -123,7 +123,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         """Generate an image name given build_target, build_id.
 
         Args:
-            build_target: Target name, e.g. "gce_x86-userdebug"
+            build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
 
         Returns:
@@ -156,7 +156,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         Target is not used as instance name has a length limit.
 
         Args:
-            build_target: Target name, e.g. "gce_x86-userdebug"
+            build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
 
         Returns:
@@ -167,7 +167,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         name = cls.INSTANCE_NAME_FMT.format(
             build_target=build_target,
             build_id=build_id,
-            uuid=uuid.uuid4().hex[:8]).replace("_", "-").lower()
+            uuid=uuid.uuid4().hex[:8]).replace("_", "-")
         return cls._FormalizeName(name)
 
     def CreateDisk(self, disk_name, source_image, size_gb):
@@ -252,8 +252,9 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         """Create a gce instance given an gce image.
 
         Args:
-            instance: instance name.
+            instance: A string, the name of the instance.
             image_name: A string, the name of the GCE image.
+            extra_disk_name: A string, the name of the extra disk to attach.
         """
         self._CheckMachineSize()
         disk_args = self._GetDiskArgs(instance, image_name)
@@ -279,6 +280,21 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             instance, image_name, self._machine_type, metadata, self._network,
             self._zone, disk_args)
 
+    def CheckBootFailure(self, serial_out, instance):
+        """Determine if serial output has indicated any boot failure.
+
+        Subclass has to define this function to detect failures
+        in the boot process
+
+        Args:
+            serial_out: string
+            instance: string, instance name.
+
+        Raises:
+            Raises errors.DeviceBootError exception if a failure is detected.
+        """
+        pass
+
     def CheckBoot(self, instance):
         """Check once to see if boot completes.
 
@@ -286,12 +302,14 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             instance: string, instance name.
 
         Returns:
-            True if the BOOT_COMPLETED_MSG appears in serial port output.
-            otherwise False.
+            True if the BOOT_COMPLETED_MSG or BOOT_STARTED_MSG appears in serial
+            port output, otherwise False.
         """
         try:
-            return self.BOOT_COMPLETED_MSG in self.GetSerialPortOutput(
-                instance=instance, port=1)
+            serial_out = self.GetSerialPortOutput(instance=instance, port=1)
+            self.CheckBootFailure(serial_out, instance)
+            return ((self.BOOT_COMPLETED_MSG in serial_out)
+                    or (self.BOOT_STARTED_MSG in serial_out))
         except errors.HttpError as e:
             if e.code == 400:
                 logger.debug("CheckBoot: Instance is not ready yet %s",

@@ -37,12 +37,43 @@ from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 
+_MAX_RETRIES_ON_FINGERPRINT_CONFLICT = 10
+
 
 class OperationScope(object):
     """Represents operation scope enum."""
     ZONE = "zone"
     REGION = "region"
     GLOBAL = "global"
+
+
+class PersistentDiskType(object):
+    """Represents different persistent disk types.
+
+    pd-standard for regular hard disk.
+    pd-ssd for solid state disk.
+    """
+    STANDARD = "pd-standard"
+    SSD = "pd-ssd"
+
+
+class ImageStatus(object):
+    """Represents the status of an image."""
+    PENDING = "PENDING"
+    READY = "READY"
+    FAILED = "FAILED"
+
+
+def _IsFingerPrintError(exc):
+    """Determine if the exception is a HTTP error with code 412.
+
+    Args:
+        exc: Exception instance.
+
+    Returns:
+        Boolean. True if the exception is a "Precondition Failed" error.
+    """
+    return isinstance(exc, errors.HttpError) and exc.code == 412
 
 
 class ComputeClient(base_cloud_client.BaseCloudApiClient):
@@ -58,8 +89,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         "https://www.googleapis.com/auth/devstorage.read_only",
         "https://www.googleapis.com/auth/logging.write"
     ]
-    OPERATION_TIMEOUT_SECS = 15 * 60  # 15 mins
-    OPERATION_POLL_INTERVAL_SECS = 5
+    OPERATION_TIMEOUT_SECS = 30 * 60  # 30 mins
+    OPERATION_POLL_INTERVAL_SECS = 20
     MACHINE_SIZE_METRICS = ["guestCpus", "memoryMb"]
     ACCESS_DENIED_CODE = 403
 
@@ -178,23 +209,30 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                      exists)
         return exists
 
-    def CreateDisk(self, disk_name, source_image, size_gb, zone):
+    def CreateDisk(self, disk_name, source_image, size_gb, zone,
+                   source_project=None, disk_type=PersistentDiskType.STANDARD):
         """Create a gce disk.
 
         Args:
             disk_name: A string
-            source_image: A stirng, name of the image.
+            source_image: A string, name of the image.
             size_gb: Integer, size in gb.
             zone: Name of the zone, e.g. us-central1-b.
+            source_project: String, required if the image is located in a different
+                            project.
+            disk_type: String, a value from PersistentDiskType, STANDARD
+                       for regular hard disk or SSD for solid state disk.
         """
-        logger.info("Creating disk %s, size_gb: %d", disk_name, size_gb)
+        source_project = source_project or self._project
         source_image = "projects/%s/global/images/%s" % (
-            self._project, source_image) if source_image else None
+            source_project, source_image) if source_image else None
+        logger.info("Creating disk %s, size_gb: %d, source_image: %s",
+                    disk_name, size_gb, str(source_image))
         body = {
             "name": disk_name,
             "sizeGb": size_gb,
-            "type": "projects/%s/zones/%s/diskTypes/pd-standard" % (
-                self._project, zone),
+            "type": "projects/%s/zones/%s/diskTypes/%s" % (
+                self._project, zone, disk_type),
         }
         api = self.service.disks().insert(project=self._project,
                                           sourceImage=source_image,
@@ -225,7 +263,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                           disk=disk_name)
         operation = self.Execute(api)
         self.WaitOnOperation(operation=operation,
-                             operation_scope=OperationScope.GLOBAL)
+                             operation_scope=OperationScope.ZONE,
+                             scope_name=zone)
         logger.info("Deleted disk %s", disk_name)
 
     def DeleteDisks(self, disk_names, zone):
@@ -253,7 +292,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                                   zone=zone)
             delete_requests[disk_name] = request
         return self._BatchExecuteAndWait(delete_requests,
-                                         OperationScope.GLOBAL)
+                                         OperationScope.ZONE,
+                                         scope_name=zone)
 
     def ListDisks(self, zone, disk_filter=None):
         """List disks.
@@ -273,17 +313,50 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                        zone=zone,
                                        filter=disk_filter)
 
-    def CreateImage(self, image_name, source_uri):
+    def CreateImage(self, image_name, source_uri=None, source_disk=None,
+                    labels=None):
         """Create a Gce image.
 
         Args:
             image_name: A string
             source_uri: Full Google Cloud Storage URL where the disk image is
-                        stored. e.g. "https://storage.googleapis.com/my-bucket/
+                        stored.  e.g. "https://storage.googleapis.com/my-bucket/
                         avd-system-2243663.tar.gz"
+            source_disk: String, this should be the disk's selfLink value
+                         (including zone and project), rather than the disk_name
+                         e.g. https://www.googleapis.com/compute/v1/projects/
+                              google.com:android-builds-project/zones/
+                              us-east1-d/disks/<disk_name>
+            labels: Dict, will be added to the image's labels.
+
+        Returns:
+            A GlobalOperation resouce.
+            https://cloud.google.com/compute/docs/reference/latest/globalOperations
+
+        Raises:
+            errors.DriverError: For malformed request or response.
+            errors.GceOperationTimeoutError: Operation takes too long to finish.
         """
-        logger.info("Creating image %s, source_uri %s", image_name, source_uri)
-        body = {"name": image_name, "rawDisk": {"source": source_uri, }, }
+        if (source_uri and source_disk) or (not source_uri and not source_disk):
+            raise errors.DriverError(
+                "Creating image %s requires either source_uri %s or "
+                "source_disk %s but not both" % (image_name, source_uri, source_disk))
+        elif source_uri:
+            logger.info("Creating image %s, source_uri %s", image_name, source_uri)
+            body = {
+                "name": image_name,
+                "rawDisk": {
+                    "source": source_uri,
+                },
+            }
+        else:
+            logger.info("Creating image %s, source_disk %s", image_name, source_disk)
+            body = {
+                "name": image_name,
+                "sourceDisk": source_disk,
+            }
+        if labels is not None:
+            body["labels"] = labels
         api = self.service.images().insert(project=self._project, body=body)
         operation = self.Execute(api)
         try:
@@ -295,6 +368,37 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                 self.DeleteImage(image_name)
             raise
         logger.info("Image %s has been created.", image_name)
+
+    @utils.RetryOnException(_IsFingerPrintError,
+                            _MAX_RETRIES_ON_FINGERPRINT_CONFLICT)
+    def SetImageLabels(self, image_name, new_labels):
+        """Update image's labels. Retry for finger print conflict.
+
+        Note: Decorator RetryOnException will retry the call for FingerPrint
+          conflict (HTTP error code 412). The fingerprint is used to detect
+          conflicts of GCE resource updates. The fingerprint is initially generated
+          by Compute Engine and changes after every request to modify or update
+          resources (e.g. GCE "image" resource has "fingerPrint" for "labels"
+          updates).
+
+        Args:
+            image_name: A string, the image name.
+            new_labels: Dict, will be added to the image's labels.
+
+        Returns:
+            A GlobalOperation resouce.
+            https://cloud.google.com/compute/docs/reference/latest/globalOperations
+        """
+        image = self.GetImage(image_name)
+        labels = image.get("labels", {})
+        labels.update(new_labels)
+        body = {
+            "labels": labels,
+            "labelFingerprint": image["labelFingerprint"]
+        }
+        api = self.service.images().setLabels(project=self._project,
+                                              resource=image_name, body=body)
+        return self.Execute(api)
 
     def CheckImageExists(self, image_name):
         """Check if image exists.
@@ -314,17 +418,18 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                      image_name, exists)
         return exists
 
-    def GetImage(self, image_name):
+    def GetImage(self, image_name, image_project=None):
         """Get image information.
 
         Args:
             image_name: A string
+            image_project: A string
 
         Returns:
             An image resource in json.
             https://cloud.google.com/compute/docs/reference/latest/images#resource
         """
-        api = self.service.images().get(project=self._project,
+        api = self.service.images().get(project=image_project or self._project,
                                         image=image_name)
         return self.Execute(api)
 
@@ -366,7 +471,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         return self._BatchExecuteAndWait(delete_requests,
                                          OperationScope.GLOBAL)
 
-    def ListImages(self, image_filter=None):
+    def ListImages(self, image_filter=None, image_project=None):
         """List images.
 
         Args:
@@ -374,12 +479,20 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                           FIELD_NAME COMPARISON_STRING LITERAL_STRING
                           e.g. "name ne example-image"
                           e.g. "name eq "example-image-[0-9]+""
+            image_project: String. If not provided, will list images from the default
+                           project. Otherwise, will list images from the given
+                           project, which can be any arbitrary project where the
+                           account has read access
+                           (i.e. has the role "roles/compute.imageUser")
+
+        Read more about image sharing across project:
+        https://cloud.google.com/compute/docs/images/sharing-images-across-projects
 
         Returns:
             A list of images.
         """
         return self.ListWithMultiPages(api_resource=self.service.images().list,
-                                       project=self._project,
+                                       project=image_project or self._project,
                                        filter=image_filter)
 
     def GetInstance(self, instance, zone):
@@ -397,6 +510,131 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                            zone=zone,
                                            instance=instance)
         return self.Execute(api)
+
+    def AttachAccelerator(self, instance, zone, accelerator_count,
+                          accelerator_type):
+        """Attach a GPU accelerator to the instance.
+
+        Note: In order for this to succeed the following must hold:
+        - The machine schedule must be set to "terminate" i.e:
+          SetScheduling(self, instance, zone, on_host_maintenance="terminate")
+          must have been called.
+        - The machine is not starting or running. i.e.
+          StopInstance(self, instance) must have been called.
+
+        Args:
+            instance: A string, representing instance name.
+            zone: String, name of zone.
+            accelerator_count: The number accelerators to be attached to the instance.
+             a value of 0 will detach all accelerators.
+            accelerator_type: The type of accelerator to attach. e.g.
+              "nvidia-tesla-k80"
+        """
+        body = {
+            "guestAccelerators": [{
+                "acceleratorType": self.GetAcceleratorUrl(accelerator_type, zone),
+                "acceleratorCount": accelerator_count
+            }]
+        }
+        api = self.service.instances().setMachineResources(
+            project=self._project, zone=zone, instance=instance, body=body)
+        operation = self.Execute(api)
+        try:
+            self.WaitOnOperation(
+                operation=operation,
+                operation_scope=OperationScope.ZONE,
+                scope_name=zone)
+        except errors.GceOperationTimeoutError:
+            logger.error("Attach instance failed: %s", instance)
+            raise
+        logger.info("%d x %s have been attached to instance %s.", accelerator_count,
+                    accelerator_type, instance)
+
+    def AttachDisk(self, instance, zone, **kwargs):
+        """Attach the external disk to the instance.
+
+        Args:
+            instance: A string, representing instance name.
+            zone: String, name of zone.
+            **kwargs: The attachDisk request body. See "https://cloud.google.com/
+              compute/docs/reference/latest/instances/attachDisk" for detail.
+              {
+                "kind": "compute#attachedDisk",
+                "type": string,
+                "mode": string,
+                "source": string,
+                "deviceName": string,
+                "index": integer,
+                "boot": boolean,
+                "initializeParams": {
+                  "diskName": string,
+                  "sourceImage": string,
+                  "diskSizeGb": long,
+                  "diskType": string,
+                  "sourceImageEncryptionKey": {
+                    "rawKey": string,
+                    "sha256": string
+                  }
+                },
+                "autoDelete": boolean,
+                "licenses": [
+                  string
+                ],
+                "interface": string,
+                "diskEncryptionKey": {
+                  "rawKey": string,
+                  "sha256": string
+                }
+              }
+
+        Returns:
+            An disk resource in json.
+            https://cloud.google.com/compute/docs/reference/latest/disks#resource
+
+
+        Raises:
+            errors.GceOperationTimeoutError: Operation takes too long to finish.
+        """
+        api = self.service.instances().attachDisk(
+            project=self._project, zone=zone, instance=instance,
+            body=kwargs)
+        operation = self.Execute(api)
+        try:
+            self.WaitOnOperation(
+                operation=operation, operation_scope=OperationScope.ZONE,
+                scope_name=zone)
+        except errors.GceOperationTimeoutError:
+            logger.error("Attach instance failed: %s", instance)
+            raise
+        logger.info("Disk has been attached to instance %s.", instance)
+
+    def DetachDisk(self, instance, zone, disk_name):
+        """Attach the external disk to the instance.
+
+        Args:
+            instance: A string, representing instance name.
+            zone: String, name of zone.
+            disk_name: A string, the name of the detach disk.
+
+        Returns:
+            A ZoneOperation resource.
+            See https://cloud.google.com/compute/docs/reference/latest/zoneOperations
+
+        Raises:
+            errors.GceOperationTimeoutError: Operation takes too long to finish.
+        """
+        api = self.service.instances().detachDisk(
+            project=self._project, zone=zone, instance=instance,
+            deviceName=disk_name)
+        operation = self.Execute(api)
+        try:
+            self.WaitOnOperation(
+                operation=operation, operation_scope=OperationScope.ZONE,
+                scope_name=zone)
+        except errors.GceOperationTimeoutError:
+            logger.error("Detach instance failed: %s", instance)
+            raise
+        logger.info("Disk has been detached to instance %s.", instance)
 
     def StartInstance(self, instance, zone):
         """Start |instance| in |zone|.
@@ -468,8 +706,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Stop |instances| in |zone|.
 
         Args:
-          instances: A list of strings, representing instance names's list.
-          zone: A string, representing zone name. e.g. "us-central1-f"
+            instances: A list of strings, representing instance names's list.
+            zone: A string, representing zone name. e.g. "us-central1-f"
 
         Returns:
             A tuple, (done, failed, error_msgs)
@@ -491,25 +729,23 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                       on_host_maintenance="MIGRATE"):
         """Update scheduling config |automatic_restart| and |on_host_maintenance|.
 
-        See //cloud/cluster/api/mixer_instances.proto Scheduling for config option.
-
         Args:
             instance: A string, representing instance name.
             zone: A string, representing zone name. e.g. "us-central1-f".
             automatic_restart: Boolean, determine whether the instance will
                                automatically restart if it crashes or not,
                                default to True.
-            on_host_maintenance: enum["MIGRATE", "TERMINATED]
+            on_host_maintenance: enum["MIGRATE", "TERMINATE"]
                                  The instance's maintenance behavior, which
                                  determines whether the instance is live
-                                 "MIGRATE" or "TERMINATED" when there is
+                                 "MIGRATE" or "TERMINATE" when there is
                                  a maintenance event.
 
         Raises:
             errors.GceOperationTimeoutError: Operation takes too long to finish.
         """
         body = {"automaticRestart": automatic_restart,
-                "OnHostMaintenance": on_host_maintenance}
+                "onHostMaintenance": on_host_maintenance}
         api = self.service.instances().setScheduling(project=self._project,
                                                      zone=zone,
                                                      instance=instance,
@@ -561,10 +797,10 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             automatic_restart: Boolean, determine whether the instance will
                                automatically restart if it crashes or not,
                                default to True.
-            on_host_maintenance: enum["MIGRATE", "TERMINATED]
+            on_host_maintenance: enum["MIGRATE", "TERMINATE"]
                                  The instance's maintenance behavior, which
                                  determines whether the instance is live
-                                 "MIGRATE" or "TERMINATED" when there is
+                                 migrated or terminated when there is
                                  a maintenance event.
 
         Returns:
@@ -617,20 +853,19 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Batch processing requests and wait on the operation.
 
         Args:
-          requests: A dictionary. The key is a string representing the resource
-                    name. For example, an instance name, or an image name.
-          operation_scope: A value from OperationScope, "zone", "region",
-                           or "global".
-          scope_name: If operation_scope is "zone" or "region", this should be
-                      the name of the zone or region, e.g. "us-central1-f".
-
+            requests: A dictionary. The key is a string representing the resource
+                      name. For example, an instance name, or an image name.
+            operation_scope: A value from OperationScope, "zone", "region",
+                             or "global".
+            scope_name: If operation_scope is "zone" or "region", this should be
+                        the name of the zone or region, e.g. "us-central1-f".
         Returns:
-          A tuple, (done, failed, error_msgs)
-          done: A list of string, representing the resource names that have
-                been executed.
-          failed: A list of string, representing resource names that
-                  we failed to execute.
-          error_msgs: A list of string, representing the failure messages.
+            A tuple, (done, failed, error_msgs)
+            done: A list of string, representing the resource names that have
+                  been executed.
+            failed: A list of string, representing resource names that
+                    we failed to execute.
+            error_msgs: A list of string, representing the failure messages.
         """
         results = self.BatchExecute(requests)
         # Initialize return values
@@ -695,6 +930,41 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         api = self.service.zones().list(project=self._project)
         return self.Execute(api)
 
+    def ListRegions(self):
+        """List all the regions for a project.
+
+        Returns:
+            A dictionary containing all the zones and additional data. See this link
+            for the detailed response:
+            https://cloud.google.com/compute/docs/reference/latest/regions/list.
+            Example:
+            {
+              'items': [{
+                  'name':
+                      'us-central1',
+                  'quotas': [{
+                      'usage': 2.0,
+                      'limit': 24.0,
+                      'metric': 'CPUS'
+                  }, {
+                      'usage': 1.0,
+                      'limit': 23.0,
+                      'metric': 'IN_USE_ADDRESSES'
+                  }, {
+                      'usage': 209.0,
+                      'limit': 10240.0,
+                      'metric': 'DISKS_TOTAL_GB'
+                  }, {
+                      'usage': 1000.0,
+                      'limit': 20000.0,
+                      'metric': 'INSTANCES'
+                  }]
+              },..]
+            }
+        """
+        api = self.service.regions().list(project=self._project)
+        return self.Execute(api)
+
     def _GetNetworkArgs(self, network):
         """Helper to generate network args that is used to create an instance.
 
@@ -710,12 +980,13 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                "type": "ONE_TO_ONE_NAT"}]
         }
 
-    def _GetDiskArgs(self, disk_name, image_name):
+    def _GetDiskArgs(self, disk_name, image_name, image_project=None):
         """Helper to generate disk args that is used to create an instance.
 
         Args:
             disk_name: A string
             image_name: A string
+            image_project: A string
 
         Returns:
             A dictionary representing disk args.
@@ -727,7 +998,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             "autoDelete": True,
             "initializeParams": {
                 "diskName": disk_name,
-                "sourceImage": self.GetImage(image_name)["selfLink"],
+                "sourceImage": self.GetImage(image_name, image_project)["selfLink"],
             },
         }]
 
@@ -738,20 +1009,28 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                        metadata,
                        network,
                        zone,
-                       disk_args=None):
+                       disk_args=None,
+                       image_project=None,
+                       gpu=None):
         """Create a gce instance with a gce image.
 
         Args:
-          instance: instance name.
-          image_name: A source image used to create this disk.
-          machine_type: A string, representing machine_type, e.g. "n1-standard-1"
-          metadata: A dictionary that maps a metadata name to its value.
-          network: A string, representing network name, e.g. "default"
-          zone: A string, representing zone name, e.g. "us-central1-f"
-          disk_args: A list of extra disk args, see _GetDiskArgs for example,
-                     if None, will create a disk using the given image.
+            instance: instance name.
+            image_name: A source image used to create this disk.
+            machine_type: A string, representing machine_type, e.g. "n1-standard-1"
+            metadata: A dictionary that maps a metadata name to its value.
+            network: A string, representing network name, e.g. "default"
+            zone: A string, representing zone name, e.g. "us-central1-f"
+            disk_args: A list of extra disk args, see _GetDiskArgs for example,
+                       if None, will create a disk using the given image.
+            image_project: A string, name of the project where the image belongs.
+                           Assume the default project if None.
+            gpu: The type of gpu to attach. e.g. "nvidia-tesla-k80", if None no
+                 gpus will be attached. For more details see:
+                 https://cloud.google.com/compute/docs/gpus/add-gpus
         """
-        disk_args = (disk_args or self._GetDiskArgs(instance, image_name))
+        disk_args = (disk_args or self._GetDiskArgs(instance, image_name,
+                                                    image_project))
         body = {
             "machineType": self.GetMachineType(machine_type, zone)["selfLink"],
             "name": instance,
@@ -759,17 +1038,24 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             "disks": disk_args,
             "serviceAccounts": [
                 {"email": "default",
-                 "scopes": self.DEFAULT_INSTANCE_SCOPE}
-            ],
+                 "scopes": self.DEFAULT_INSTANCE_SCOPE}],
         }
 
+        if gpu:
+            body["guestAccelerators"] = [{
+                "acceleratorType": self.GetAcceleratorUrl(gpu, zone),
+                "acceleratorCount": 1
+            }]
+            # Instances with GPUs cannot live migrate because they are assigned
+            # to specific hardware devices.
+            body["scheduling"] = {"onHostMaintenance": "terminate"}
         if metadata:
             metadata_list = [{"key": key,
                               "value": val}
                              for key, val in metadata.iteritems()]
             body["metadata"] = {"items": metadata_list}
         logger.info("Creating instance: project %s, zone %s, body:%s",
-                    self._project, zone, body)
+            	    self._project, zone, body)
         api = self.service.instances().insert(project=self._project,
                                               zone=zone,
                                               body=body)
@@ -783,8 +1069,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Delete a gce instance.
 
         Args:
-          instance: A string, instance name.
-          zone: A string, e.g. "us-central1-f"
+            instance: A string, instance name.
+            zone: A string, e.g. "us-central1-f"
         """
         logger.info("Deleting instance: %s", instance)
         api = self.service.instances().delete(project=self._project,
@@ -847,6 +1133,25 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                               zone=zone,
                                               machineType=machine_type)
         return self.Execute(api)
+
+    def GetAcceleratorUrl(self, accelerator_type, zone):
+        """Get URL for a given type of accelator.
+
+        Args:
+            accelerator_type: A string, representing the accelerator, e.g
+              "nvidia-tesla-k80"
+            zone: A string representing a zone, e.g. "us-west1-b"
+
+        Returns:
+            A URL that points to the accelerator resource, e.g.
+            https://www.googleapis.com/compute/v1/projects/<project id>/zones/
+            us-west1-b/acceleratorTypes/nvidia-tesla-k80
+        """
+        api = self.service.acceleratorTypes().get(project=self._project,
+                                                  zone=zone,
+                                                  acceleratorType=accelerator_type)
+        result = self.Execute(api)
+        return result["selfLink"]
 
     def GetNetworkUrl(self, network):
         """Get URL for a given network.
@@ -948,11 +1253,11 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Get Instance IP given instance name.
 
         Args:
-          instance: String, representing instance name.
-          zone: String, name of the zone.
+            instance: String, representing instance name.
+            zone: String, name of the zone.
 
         Returns:
-          string, IP of the instance.
+            string, IP of the instance.
         """
         # TODO(fdeng): This is for accessing external IP.
         # We should handle internal IP as well when the script is running
@@ -964,18 +1269,18 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Set project-wide metadata.
 
         Args:
-          body: Metadata body.
-                metdata is in the following format.
-                {
-                  "kind": "compute#metadata",
-                  "fingerprint": "a-23icsyx4E=",
-                  "items": [
-                    {
-                      "key": "google-compute-default-region",
-                      "value": "us-central1"
-                    }, ...
-                  ]
-                }
+            body: Metadata body.
+                  metdata is in the following format.
+                  {
+                    "kind": "compute#metadata",
+                    "fingerprint": "a-23icsyx4E=",
+                    "items": [
+                      {
+                        "key": "google-compute-default-region",
+                        "value": "us-central1"
+                      }, ...
+                    ]
+                  }
         """
         api = self.service.projects().setCommonInstanceMetadata(
             project=self._project, body=body)
