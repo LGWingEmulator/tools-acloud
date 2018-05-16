@@ -19,7 +19,7 @@
 This module provides public device driver APIs that can be called
 as a Python library.
 
-TODO(fdeng): The following APIs have not been implemented
+TODO: The following APIs have not been implemented
   - RebootAVD(ip):
   - RegisterSshPubKey(username, key):
   - UnregisterSshPubKey(username, key):
@@ -30,6 +30,8 @@ TODO(fdeng): The following APIs have not been implemented
 import datetime
 import logging
 import os
+import socket
+import subprocess
 
 import dateutil.parser
 import dateutil.tz
@@ -37,6 +39,7 @@ import dateutil.tz
 from acloud.public import avd
 from acloud.public import errors
 from acloud.public import report
+from acloud.public.actions import common_operations
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_build_client
@@ -51,6 +54,12 @@ ALL_SCOPES = " ".join([android_build_client.AndroidBuildClient.SCOPE,
                        android_compute_client.AndroidComputeClient.SCOPE])
 
 MAX_BATCH_CLEANUP_COUNT = 100
+
+SSH_TUNNEL_CMD = ("/usr/bin/ssh -i %(rsa_key_file)s -o "
+                  "UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -L "
+                  "%(vnc_port)d:127.0.0.1:6444 -L %(adb_port)d:127.0.0.1:5555 "
+                  "-N -f -l root %(ip_addr)s")
+ADB_CONNECT_CMD = "adb connect 127.0.0.1:%(adb_port)d"
 
 
 class AndroidVirtualDevicePool(object):
@@ -73,7 +82,7 @@ class AndroidVirtualDevicePool(object):
         using launch control api. And then create a Gce image.
 
         Args:
-            build_target: Target name, e.g. "gce_x86-userdebug"
+            build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
 
         Returns:
@@ -175,7 +184,7 @@ class AndroidVirtualDevicePool(object):
 
         Args:
             num: Number of devices to create.
-            build_target: Target name, e.g. "gce_x86-userdebug"
+            build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
             gce_image: string, if given, will use this image
                        instead of creating a new one.
@@ -217,8 +226,10 @@ class AndroidVirtualDevicePool(object):
                     self._compute_client.CreateDisk(extra_disk_name,
                                                     precreated_data_image,
                                                     extra_data_disk_size_gb)
-                self._compute_client.CreateInstance(instance, image_name,
-                                                    extra_disk_name)
+                self._compute_client.CreateInstance(
+                    instance=instance,
+                    image_name=image_name,
+                    extra_disk_name=extra_disk_name)
                 ip = self._compute_client.GetInstanceIP(instance)
                 self.devices.append(avd.AndroidVirtualDevice(
                     ip=ip, instance_name=instance))
@@ -245,13 +256,13 @@ class AndroidVirtualDevicePool(object):
         Returns:
             A dictionary that contains all the failures.
             The key is the name of the instance that fails to boot,
-            the value is an errors.DeviceBootTimeoutError object.
+            the value is an errors.DeviceBoottError object.
         """
         failures = {}
         for device in self._devices:
             try:
                 self._compute_client.WaitForBoot(device.instance_name)
-            except errors.DeviceBootTimeoutError as e:
+            except errors.DeviceBootError as e:
                 failures[device.instance_name] = e
         return failures
 
@@ -322,34 +333,46 @@ def _FetchSerialLogsFromDevices(compute_client, instance_names, output_file,
         utils.MakeTarFile(src_dict, output_file)
 
 
-def _CreateSshKeyPairIfNecessary(cfg):
-    """Create ssh key pair if necessary.
+def _PickFreePort():
+    """Helper to pick a free port.
+
+    Returns:
+        A free port number.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
+def _AutoConnect(device_dict, rsa_key_file):
+    """Autoconnect to an AVD instance.
 
     Args:
-        cfg: An Acloudconfig instance.
-
-    Raises:
-        error.DriverError: If it falls into an unexpected condition.
+        device_dict: device_dict representing the device we are autoconnecting
+                     to. This dict will be updated with the adb & vnc tunnel
+                     ports.
+        rsa_key_file: Private key file to use when creating the ssh tunnels.
     """
-    if not cfg.ssh_public_key_path:
-        logger.warning("ssh_public_key_path is not specified in acloud config. "
-                       "Project-wide public key will "
-                       "be used when creating AVD instances. "
-                       "Please ensure you have the correct private half of "
-                       "a project-wide public key if you want to ssh into the "
-                       "instances after creation.")
-    elif cfg.ssh_public_key_path and not cfg.ssh_private_key_path:
-        logger.warning("Only ssh_public_key_path is specified in acloud config,"
-                       " but ssh_private_key_path is missing. "
-                       "Please ensure you have the correct private half "
-                       "if you want to ssh into the instances after creation.")
-    elif cfg.ssh_public_key_path and cfg.ssh_private_key_path:
-        utils.CreateSshKeyPairIfNotExist(
-                cfg.ssh_private_key_path, cfg.ssh_public_key_path)
-    else:
-        # Should never reach here.
-        raise errors.DriverError(
-                "Unexpected error in _CreateSshKeyPairIfNecessary")
+    try:
+        adb_port = _PickFreePort()
+        vnc_port = _PickFreePort()
+        tunnel_cmd = SSH_TUNNEL_CMD % {"rsa_key_file": rsa_key_file,
+                                       "vnc_port": vnc_port,
+                                       "adb_port": adb_port,
+                                       "ip_addr": device_dict["ip"]}
+        logging.debug("Running '%s'", tunnel_cmd)
+        subprocess.check_call([tunnel_cmd], shell=True)
+        adb_connect_cmd = ADB_CONNECT_CMD % {"adb_port": adb_port}
+        logging.debug("Running '%s'", adb_connect_cmd)
+        device_dict["adb_tunnel_port"] = adb_port
+        device_dict["vnc_tunnel_port"] = vnc_port
+        subprocess.check_call([adb_connect_cmd], shell=True)
+    except subprocess.CalledProcessError:
+        logging.error("Failed to autoconnect %s through local adb tunnel port"
+                      " %d and vnc tunnel port %d", device_dict["ip"], adb_port,
+                      vnc_port)
 
 
 def CreateAndroidVirtualDevices(cfg,
@@ -360,12 +383,13 @@ def CreateAndroidVirtualDevices(cfg,
                                 local_disk_image=None,
                                 cleanup=True,
                                 serial_log_file=None,
-                                logcat_file=None):
+                                logcat_file=None,
+                                autoconnect=False):
     """Creates one or multiple android devices.
 
     Args:
         cfg: An AcloudConfig instance.
-        build_target: Target name, e.g. "gce_x86-userdebug"
+        build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
         build_id: Build id, a string, e.g. "2263051", "P2804227"
         num: Number of devices to create.
         gce_image: string, if given, will use this gce image
@@ -378,6 +402,7 @@ def CreateAndroidVirtualDevices(cfg,
         serial_log_file: A path to a file where serial output should
                          be saved to.
         logcat_file: A path to a file where logcat logs should be saved.
+        autoconnect: Create ssh tunnel(s) and adb connect after device creation.
 
     Returns:
         A Report instance.
@@ -387,7 +412,7 @@ def CreateAndroidVirtualDevices(cfg,
     compute_client = android_compute_client.AndroidComputeClient(cfg,
                                                                  credentials)
     try:
-        _CreateSshKeyPairIfNecessary(cfg)
+        common_operations.CreateSshKeyPairIfNecessary(cfg)
         device_pool = AndroidVirtualDevicePool(cfg)
         device_pool.CreateDevices(
             num,
@@ -404,6 +429,8 @@ def CreateAndroidVirtualDevices(cfg,
         for device in device_pool.devices:
             device_dict = {"ip": device.ip,
                            "instance_name": device.instance_name}
+            if autoconnect:
+                _AutoConnect(device_dict, cfg.ssh_private_key_path)
             if device.instance_name in failures:
                 r.AddData(key="devices_failing_boot", value=device_dict)
                 r.AddError(str(failures[device.instance_name]))

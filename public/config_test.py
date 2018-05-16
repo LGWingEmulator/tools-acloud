@@ -56,10 +56,16 @@ disk_raw_image_name: "disk.raw"
 disk_raw_image_extension: ".img"
 creds_cache_file: ".fake_oauth2.dat"
 user_agent: "fake_user_agent"
+kernel_build_target: "kernel"
+emulator_build_target: "sdk_tools_linux"
 
 default_usr_cfg {
     machine_type: "n1-standard-1"
     network: "default"
+    stable_host_image_name: "fake_stable_host_image_name"
+    stable_host_image_project: "fake_stable_host_image_project"
+    stable_goldfish_host_image_name: "fake_stable_goldfish_host_image_name"
+    stable_goldfish_host_image_project: "fake_stable_goldfish_host_image_project"
     metadata_variable {
         key: "metadata_1"
         value: "metadata_value_1"
@@ -82,7 +88,7 @@ device_default_orientation_map {
 }
 
 valid_branch_and_min_build_id {
-    key: "git_jb-gce-dev"
+    key: "aosp-master"
     value: 0
 }
 """
@@ -95,45 +101,45 @@ valid_branch_and_min_build_id {
         self.config_file.read.return_value = self.USER_CONFIG
         cfg = config.AcloudConfigManager.LoadConfigFromProtocolBuffer(
             self.config_file, user_config_pb2.UserConfig)
-        self.assertEquals(cfg.service_account_name,
-                          "fake@developer.gserviceaccount.com")
-        self.assertEquals(cfg.service_account_private_key_path,
-                          "/path/to/service/account/key")
-        self.assertEquals(cfg.project, "fake-project")
-        self.assertEquals(cfg.zone, "us-central1-f")
-        self.assertEquals(cfg.machine_type, "n1-standard-1")
-        self.assertEquals(cfg.network, "default")
-        self.assertEquals(cfg.ssh_private_key_path, "/path/to/ssh/key")
-        self.assertEquals(cfg.storage_bucket_name, "fake_bucket")
-        self.assertEquals(cfg.orientation, "portrait")
-        self.assertEquals(cfg.resolution, "1200x1200x1200x1200")
-        self.assertEquals(cfg.client_id, "fake_client_id")
-        self.assertEquals(cfg.client_secret, "fake_client_secret")
-        self.assertEquals({key: val
-                           for key, val in cfg.metadata_variable.iteritems()},
-                          {"metadata_1": "metadata_value_1"})
+        self.assertEqual(cfg.service_account_name,
+                         "fake@developer.gserviceaccount.com")
+        self.assertEqual(cfg.service_account_private_key_path,
+                         "/path/to/service/account/key")
+        self.assertEqual(cfg.project, "fake-project")
+        self.assertEqual(cfg.zone, "us-central1-f")
+        self.assertEqual(cfg.machine_type, "n1-standard-1")
+        self.assertEqual(cfg.network, "default")
+        self.assertEqual(cfg.ssh_private_key_path, "/path/to/ssh/key")
+        self.assertEqual(cfg.storage_bucket_name, "fake_bucket")
+        self.assertEqual(cfg.orientation, "portrait")
+        self.assertEqual(cfg.resolution, "1200x1200x1200x1200")
+        self.assertEqual(cfg.client_id, "fake_client_id")
+        self.assertEqual(cfg.client_secret, "fake_client_secret")
+        self.assertEqual({key: val
+                          for key, val in cfg.metadata_variable.iteritems()},
+                         {"metadata_1": "metadata_value_1"})
 
     def testLoadInternalConfig(self):
         """Test loading internal config."""
         self.config_file.read.return_value = self.INTERNAL_CONFIG
         cfg = config.AcloudConfigManager.LoadConfigFromProtocolBuffer(
             self.config_file, internal_config_pb2.InternalConfig)
-        self.assertEquals(cfg.min_machine_size, "n1-standard-1")
-        self.assertEquals(cfg.disk_image_name, "avd-system.tar.gz")
-        self.assertEquals(cfg.disk_image_mime_type, "application/x-tar")
-        self.assertEquals(cfg.disk_image_extension, ".tar.gz")
-        self.assertEquals(cfg.disk_raw_image_name, "disk.raw")
-        self.assertEquals(cfg.disk_raw_image_extension, ".img")
-        self.assertEquals(cfg.creds_cache_file, ".fake_oauth2.dat")
-        self.assertEquals(cfg.user_agent, "fake_user_agent")
-        self.assertEquals(cfg.default_usr_cfg.machine_type, "n1-standard-1")
-        self.assertEquals(cfg.default_usr_cfg.network, "default")
-        self.assertEquals({
+        self.assertEqual(cfg.min_machine_size, "n1-standard-1")
+        self.assertEqual(cfg.disk_image_name, "avd-system.tar.gz")
+        self.assertEqual(cfg.disk_image_mime_type, "application/x-tar")
+        self.assertEqual(cfg.disk_image_extension, ".tar.gz")
+        self.assertEqual(cfg.disk_raw_image_name, "disk.raw")
+        self.assertEqual(cfg.disk_raw_image_extension, ".img")
+        self.assertEqual(cfg.creds_cache_file, ".fake_oauth2.dat")
+        self.assertEqual(cfg.user_agent, "fake_user_agent")
+        self.assertEqual(cfg.default_usr_cfg.machine_type, "n1-standard-1")
+        self.assertEqual(cfg.default_usr_cfg.network, "default")
+        self.assertEqual({
             key: val
             for key, val in cfg.default_usr_cfg.metadata_variable.iteritems()
         }, {"metadata_1": "metadata_value_1",
             "metadata_2": "metadata_value_2"})
-        self.assertEquals(
+        self.assertEqual(
             {key: val
              for key, val in cfg.device_resolution_map.iteritems()},
             {"nexus5": "1080x1920x32x480"})
@@ -141,12 +147,28 @@ valid_branch_and_min_build_id {
             key: val
             for key, val in cfg.device_default_orientation_map.iteritems()
         }
-        self.assertEquals(device_resolution, {"nexus5": "portrait"})
+        self.assertEqual(device_resolution, {"nexus5": "portrait"})
         valid_branch_and_min_build_id = {
             key: val
             for key, val in cfg.valid_branch_and_min_build_id.iteritems()
         }
-        self.assertEquals(valid_branch_and_min_build_id, {"git_jb-gce-dev": 0})
+        self.assertEqual(valid_branch_and_min_build_id, {"aosp-master": 0})
+        self.assertEqual(
+            cfg.default_usr_cfg.stable_host_image_name,
+            "fake_stable_host_image_name")
+        self.assertEqual(
+            cfg.default_usr_cfg.stable_host_image_project,
+            "fake_stable_host_image_project")
+        self.assertEqual(cfg.kernel_build_target, "kernel")
+
+        # Emulator related
+        self.assertEqual(
+            cfg.default_usr_cfg.stable_goldfish_host_image_name,
+            "fake_stable_goldfish_host_image_name")
+        self.assertEqual(
+            cfg.default_usr_cfg.stable_goldfish_host_image_project,
+            "fake_stable_goldfish_host_image_project")
+        self.assertEqual(cfg.emulator_build_target, "sdk_tools_linux")
 
     def testLoadConfigFails(self):
         """Test loading a bad file."""

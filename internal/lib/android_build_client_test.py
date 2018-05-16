@@ -127,6 +127,20 @@ class AndroidBuildClientTest(driver_test_lib.BaseDriverTest):
             destination_path=self.RESOURCE_ID)
         self.assertEqual(mock_api_request.execute.call_count, 6)
 
+    def testGetBranch(self):
+        """Test GetBuild."""
+        build_info = {"branch": "aosp-master"}
+        mock_api = mock.MagicMock()
+        mock_build = mock.MagicMock()
+        mock_build.get.return_value = mock_api
+        self.client._service.build = mock.MagicMock(return_value=mock_build)
+        mock_api.execute = mock.MagicMock(return_value=build_info)
+        branch = self.client.GetBranch(self.BUILD_TARGET, self.BUILD_ID)
+        mock_build.get.assert_called_once_with(
+            target=self.BUILD_TARGET,
+            buildId=self.BUILD_ID)
+        self.assertEqual(branch, build_info["branch"])
+
 
 if __name__ == "__main__":
     unittest.main()
