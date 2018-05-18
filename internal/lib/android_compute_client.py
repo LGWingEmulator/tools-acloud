@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """A client that manages Android compute engine instances.
 
 ** AndroidComputeClient **
@@ -47,7 +46,6 @@ logger = logging.getLogger(__name__)
 
 class AndroidComputeClient(gcompute_client.ComputeClient):
     """Client that manages Anadroid Virtual Device."""
-
     INSTANCE_NAME_FMT = "ins-{uuid}-{build_id}-{build_target}"
     IMAGE_NAME_FMT = "img-{uuid}-{build_id}-{build_target}"
     DATA_DISK_NAME_FMT = "data-{instance}"
@@ -99,7 +97,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         name = name.replace("_", "-").lower()
         name = name[:cls.NAME_LENGTH_LIMIT]
         if name[-1] == "-":
-          name = name[:-1] + cls.REPLACER
+            name = name[:-1] + cls.REPLACER
         return name
 
     def _CheckMachineSize(self):
@@ -131,9 +129,10 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         """
         if not build_target and not build_id:
             return "image-" + uuid.uuid4().hex
-        name = cls.IMAGE_NAME_FMT.format(build_target=build_target,
-                                         build_id=build_id,
-                                         uuid=uuid.uuid4().hex[:8])
+        name = cls.IMAGE_NAME_FMT.format(
+            build_target=build_target,
+            build_id=build_id,
+            uuid=uuid.uuid4().hex[:8])
         return cls._FormalizeName(name)
 
     @classmethod
@@ -170,13 +169,24 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             uuid=uuid.uuid4().hex[:8]).replace("_", "-")
         return cls._FormalizeName(name)
 
-    def CreateDisk(self, disk_name, source_image, size_gb):
+    def CreateDisk(self,
+                   disk_name,
+                   source_image,
+                   size_gb,
+                   zone=None,
+                   source_project=None,
+                   disk_type=gcompute_client.PersistentDiskType.STANDARD):
         """Create a gce disk.
 
         Args:
-            disk_name: A string.
-            source_image: A string, name to the image name.
+            disk_name: String, name of disk.
+            source_image: String, name to the image name.
             size_gb: Integer, size in gigabytes.
+            zone: String, name of the zone, e.g. us-central1-b.
+            source_project: String, required if the image is located in a different
+                            project.
+            disk_type: String, a value from PersistentDiskType, STANDARD
+                       for regular hard disk or SSD for solid state disk.
         """
         if self.CheckDiskExists(disk_name, self._zone):
             raise errors.DriverError(
@@ -185,43 +195,11 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             raise errors.DriverError(
                 "Failed to create disk %s, source image %s does not exist." %
                 (disk_name, source_image))
-        super(AndroidComputeClient, self).CreateDisk(disk_name,
-                                                     source_image=source_image,
-                                                     size_gb=size_gb,
-                                                     zone=self._zone)
-
-    def CreateImage(self, image_name, source_uri):
-        """Create a gce image.
-
-        Args:
-            image_name: String, name of the image.
-            source_uri: A full Google Storage URL to the disk image.
-                        e.g. "https://storage.googleapis.com/my-bucket/
-                              avd-system-2243663.tar.gz"
-        """
-        if not self.CheckImageExists(image_name):
-            super(AndroidComputeClient, self).CreateImage(image_name,
-                                                          source_uri)
-
-    def _GetExtraDiskArgs(self, extra_disk_name):
-        """Get extra disk arg for given disk.
-
-        Args:
-            extra_disk_name: Name of the disk.
-
-        Returns:
-            A dictionary of disk args.
-        """
-        return [{
-            "type": "PERSISTENT",
-            "mode": "READ_WRITE",
-            "source": "projects/%s/zones/%s/disks/%s" % (
-                self._project, self._zone, extra_disk_name),
-            "autoDelete": True,
-            "boot": False,
-            "interface": "SCSI",
-            "deviceName": extra_disk_name,
-        }]
+        super(AndroidComputeClient, self).CreateDisk(
+            disk_name,
+            source_image=source_image,
+            size_gb=size_gb,
+            zone=zone or self._zone)
 
     @staticmethod
     def _LoadSshPublicKey(ssh_public_key_path):
@@ -248,18 +226,39 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             utils.VerifyRsaPubKey(rsa)
         return rsa
 
-    def CreateInstance(self, instance, image_name, extra_disk_name=None):
-        """Create a gce instance given an gce image.
-
+    # pylint: disable=too-many-locals
+    def CreateInstance(self,
+                       instance,
+                       image_name,
+                       machine_type=None,
+                       metadata=None,
+                       network=None,
+                       zone=None,
+                       disk_args=None,
+                       image_project=None,
+                       gpu=None,
+                       extra_disk_name=None):
+        """Create a gce instance with a gce image.
         Args:
-            instance: A string, the name of the instance.
-            image_name: A string, the name of the GCE image.
-            extra_disk_name: A string, the name of the extra disk to attach.
+            instance: String, instance name.
+            image_name: String, source image used to create this disk.
+            machine_type: String, representing machine_type,
+                          e.g. "n1-standard-1"
+            metadata: Dict, maps a metadata name to its value.
+            network: String, representing network name, e.g. "default"
+            zone: String, representing zone name, e.g. "us-central1-f"
+            disk_args: A list of extra disk args (strings), see _GetDiskArgs
+                       for example, if None, will create a disk using the given
+                       image.
+            image_project: String, name of the project where the image
+                           belongs. Assume the default project if None.
+            gpu: String, type of gpu to attach. e.g. "nvidia-tesla-k80", if
+                 None no gpus will be attached. For more details see:
+                 https://cloud.google.com/compute/docs/gpus/add-gpus
+            extra_disk_name: String,the name of the extra disk to attach.
         """
         self._CheckMachineSize()
         disk_args = self._GetDiskArgs(instance, image_name)
-        if extra_disk_name:
-            disk_args.extend(self._GetExtraDiskArgs(extra_disk_name))
         metadata = self._metadata.copy()
         metadata["cfg_sta_display_resolution"] = self._resolution
         metadata["t_force_orientation"] = self._orientation
@@ -267,18 +266,17 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         # Add per-instance ssh key
         if self._ssh_public_key_path:
             rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
-            logger.info("ssh_public_key_path is specified in config: %s, "
-                        "will add the key to the instance.",
-                        self._ssh_public_key_path)
+            logger.info(
+                "ssh_public_key_path is specified in config: %s, "
+                "will add the key to the instance.", self._ssh_public_key_path)
             metadata["sshKeys"] = "%s:%s" % (getpass.getuser(), rsa)
         else:
-            logger.warning(
-                "ssh_public_key_path is not specified in config, "
-                "only project-wide key will be effective.")
+            logger.warning("ssh_public_key_path is not specified in config, "
+                           "only project-wide key will be effective.")
 
         super(AndroidComputeClient, self).CreateInstance(
             instance, image_name, self._machine_type, metadata, self._network,
-            self._zone, disk_args)
+            self._zone, disk_args, image_project, gpu, extra_disk_name)
 
     def CheckBootFailure(self, serial_out, instance):
         """Determine if serial output has indicated any boot failure.
@@ -312,8 +310,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                     or (self.BOOT_STARTED_MSG in serial_out))
         except errors.HttpError as e:
             if e.code == 400:
-                logger.debug("CheckBoot: Instance is not ready yet %s",
-                              str(e))
+                logger.debug("CheckBoot: Instance is not ready yet %s", str(e))
                 return False
             raise
 
@@ -327,31 +324,34 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         timeout_exception = errors.DeviceBootTimeoutError(
             "Device %s did not finish on boot within timeout (%s secs)" %
             (instance, self.BOOT_TIMEOUT_SECS)),
-        utils.PollAndWait(func=self.CheckBoot,
-                          expected_return=True,
-                          timeout_exception=timeout_exception,
-                          timeout_secs=self.BOOT_TIMEOUT_SECS,
-                          sleep_interval_secs=self.BOOT_CHECK_INTERVAL_SECS,
-                          instance=instance)
+        utils.PollAndWait(
+            func=self.CheckBoot,
+            expected_return=True,
+            timeout_exception=timeout_exception,
+            timeout_secs=self.BOOT_TIMEOUT_SECS,
+            sleep_interval_secs=self.BOOT_CHECK_INTERVAL_SECS,
+            instance=instance)
         logger.info("Instance boot completed: %s", instance)
 
-    def GetInstanceIP(self, instance):
+    def GetInstanceIP(self, instance, zone=None):
         """Get Instance IP given instance name.
 
         Args:
             instance: String, representing instance name.
+            zone: String, representing zone name, e.g. "us-central1-f"
 
         Returns:
             string, IP of the instance.
         """
-        return super(AndroidComputeClient, self).GetInstanceIP(instance,
-                                                               self._zone)
+        return super(AndroidComputeClient, self).GetInstanceIP(
+            instance, zone or self._zone)
 
-    def GetSerialPortOutput(self, instance, port=1):
+    def GetSerialPortOutput(self, instance, zone=None, port=1):
         """Get serial port output.
 
         Args:
             instance: string, instance name.
+            zone: String, representing zone name, e.g. "us-central1-f"
             port: int, which COM port to read from, 1-4, default to 1.
 
         Returns:
@@ -361,9 +361,9 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             errors.DriverError: For malformed response.
         """
         return super(AndroidComputeClient, self).GetSerialPortOutput(
-            instance, self._zone, port)
+            instance, zone or self._zone, port)
 
-    def GetInstanceNamesByIPs(self, ips):
+    def GetInstanceNamesByIPs(self, ips, zone=None):
         """Get Instance names by IPs.
 
         This function will go through all instances, which
@@ -372,10 +372,11 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
 
         Args:
             ips: A set of IPs.
+            zone: String, representing zone name, e.g. "us-central1-f"
 
         Returns:
             A dictionary where key is ip and value is instance name or None
             if instance is not found for the given IP.
         """
         return super(AndroidComputeClient, self).GetInstanceNamesByIPs(
-            ips, self._zone)
+            ips, zone or self._zone)
