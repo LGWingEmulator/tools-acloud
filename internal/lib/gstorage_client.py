@@ -18,7 +18,6 @@
 
 import io
 import logging
-import os
 
 import apiclient
 
@@ -52,8 +51,8 @@ class StorageClient(base_cloud_client.BaseCloudApiClient):
         Returns:
             A dictronary representing an object resource.
         """
-        request = self.service.objects().get(bucket=bucket_name,
-                                             object=object_name)
+        request = self.service.objects().get(
+            bucket=bucket_name, object=object_name)
         return self.Execute(request)
 
     def List(self, bucket_name, prefix=None):
@@ -91,11 +90,10 @@ class StorageClient(base_cloud_client.BaseCloudApiClient):
         logger.info("Uploading file: src: %s, bucket: %s, object: %s",
                     local_src, bucket_name, object_name)
         try:
-            with io.FileIO(local_src, mode="rb") as fh:
-                media = apiclient.http.MediaIoBaseUpload(fh, mime_type)
-                request = self.service.objects().insert(bucket=bucket_name,
-                                                        name=object_name,
-                                                        media_body=media)
+            with io.FileIO(local_src, mode="rb") as upload_file:
+                media = apiclient.http.MediaIoBaseUpload(upload_file, mime_type)
+                request = self.service.objects().insert(
+                    bucket=bucket_name, name=object_name, media_body=media)
                 response = self.Execute(request)
             logger.info("Uploaded artifact: %s", response["selfLink"])
             return response
@@ -112,8 +110,8 @@ class StorageClient(base_cloud_client.BaseCloudApiClient):
         """
         logger.info("Deleting file: bucket: %s, object: %s", bucket_name,
                     object_name)
-        request = self.service.objects().delete(bucket=bucket_name,
-                                                object=object_name)
+        request = self.service.objects().delete(
+            bucket=bucket_name, object=object_name)
         self.Execute(request)
         logger.info("Deleted file: bucket: %s, object: %s", bucket_name,
                     object_name)
@@ -158,8 +156,10 @@ class StorageClient(base_cloud_client.BaseCloudApiClient):
             errors.ResourceNotFoundError: when file is not found.
         """
         item = utils.RetryExceptionType(
-                errors.ResourceNotFoundError,
-                max_retries=self.GET_OBJ_MAX_RETRY, functor=self.Get,
-                sleep_multiplier=self.GET_OBJ_RETRY_SLEEP,
-                bucket_name=bucket_name, object_name=object_name)
+            errors.ResourceNotFoundError,
+            max_retries=self.GET_OBJ_MAX_RETRY,
+            functor=self.Get,
+            sleep_multiplier=self.GET_OBJ_RETRY_SLEEP,
+            bucket_name=bucket_name,
+            object_name=object_name)
         return item["selfLink"]
