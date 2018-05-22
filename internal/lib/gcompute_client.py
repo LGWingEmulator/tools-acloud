@@ -26,6 +26,7 @@ Design philosophy: We tried to make ComputeClient as stateless as possible,
 and it only keeps states about authentication. ComputeClient should be very
 generic, and only knows how to talk to Compute Engine APIs.
 """
+# pylint: disable=too-many-lines
 import copy
 import functools
 import logging
@@ -38,6 +39,14 @@ from acloud.public import errors
 logger = logging.getLogger(__name__)
 
 _MAX_RETRIES_ON_FINGERPRINT_CONFLICT = 10
+
+BASE_DISK_ARGS = {
+    "type": "PERSISTENT",
+    "boot": True,
+    "mode": "READ_WRITE",
+    "autoDelete": True,
+    "initializeParams": {},
+}
 
 
 class OperationScope(object):
@@ -76,6 +85,7 @@ def _IsFingerPrintError(exc):
     return isinstance(exc, errors.HttpError) and exc.code == 412
 
 
+# pylint: disable=too-many-public-methods
 class ComputeClient(base_cloud_client.BaseCloudApiClient):
     """Client that manages GCE."""
 
@@ -980,53 +990,51 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                                "type": "ONE_TO_ONE_NAT"}]
         }
 
-    def _GetDiskArgs(self, disk_name, image_name, image_project=None):
+    def _GetDiskArgs(self, disk_name, image_name, image_project=None,
+                     disk_size_gb=None):
         """Helper to generate disk args that is used to create an instance.
 
         Args:
             disk_name: A string
             image_name: A string
             image_project: A string
+            disk_size_gb: An integer
 
         Returns:
-            A dictionary representing disk args.
+            List holding dict of disk args.
         """
-        return [{
-            "type": "PERSISTENT",
-            "boot": True,
-            "mode": "READ_WRITE",
-            "autoDelete": True,
-            "initializeParams": {
-                "diskName": disk_name,
-                "sourceImage": self.GetImage(image_name, image_project)["selfLink"],
-            },
-        }]
+        args = copy.deepcopy(BASE_DISK_ARGS)
+        args["initializeParams"] = {
+            "diskName": disk_name,
+            "sourceImage": self.GetImage(image_name, image_project)["selfLink"],
+        }
+        # TODO: Remove this check once it's validated that we can either pass in
+        # a None diskSizeGb or we find an appropriate default val.
+        if disk_size_gb:
+            args["diskSizeGb"] = disk_size_gb
+        return [args]
 
-    def CreateInstance(self,
-                       instance,
-                       image_name,
-                       machine_type,
-                       metadata,
-                       network,
-                       zone,
-                       disk_args=None,
-                       image_project=None,
+    # pylint: disable=too-many-locals
+    def CreateInstance(self, instance, image_name, machine_type, metadata,
+                       network, zone, disk_args=None, image_project=None,
                        gpu=None):
         """Create a gce instance with a gce image.
 
         Args:
-            instance: instance name.
-            image_name: A source image used to create this disk.
-            machine_type: A string, representing machine_type, e.g. "n1-standard-1"
-            metadata: A dictionary that maps a metadata name to its value.
+            instance: A string, instance name.
+            image_name: A string, source image used to create this disk.
+            machine_type: A string, representing machine_type,
+                          e.g. "n1-standard-1"
+            metadata: A dict, maps a metadata name to its value.
             network: A string, representing network name, e.g. "default"
             zone: A string, representing zone name, e.g. "us-central1-f"
-            disk_args: A list of extra disk args, see _GetDiskArgs for example,
-                       if None, will create a disk using the given image.
-            image_project: A string, name of the project where the image belongs.
-                           Assume the default project if None.
-            gpu: The type of gpu to attach. e.g. "nvidia-tesla-k80", if None no
-                 gpus will be attached. For more details see:
+            disk_args: A list of extra disk args (strings), see _GetDiskArgs
+                       for example, if None, will create a disk using the given
+                       image.
+            image_project: A string, name of the project where the image
+                           belongs. Assume the default project if None.
+            gpu: A string, type of gpu to attach. e.g. "nvidia-tesla-k80", if
+                 None no gpus will be attached. For more details see:
                  https://cloud.google.com/compute/docs/gpus/add-gpus
         """
         disk_args = (disk_args or self._GetDiskArgs(instance, image_name,
@@ -1055,7 +1063,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                              for key, val in metadata.iteritems()]
             body["metadata"] = {"items": metadata_list}
         logger.info("Creating instance: project %s, zone %s, body:%s",
-            	    self._project, zone, body)
+                    self._project, zone, body)
         api = self.service.instances().insert(project=self._project,
                                               zone=zone,
                                               body=body)
@@ -1319,8 +1327,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
 
         entry = "%s:%s" % (user, rsa)
         logger.debug("New RSA entry: %s", entry)
-        sshkey_item["value"] = "\n".join([sshkey_item["value"].strip(), entry
-                                          ]).strip()
+        sshkey_item["value"] = "\n".join([sshkey_item["value"].strip(),
+                                          entry]).strip()
         self.SetCommonInstanceMetadata(metadata)
 
     def CheckAccess(self):
