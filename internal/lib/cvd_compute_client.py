@@ -41,7 +41,6 @@ Android build, and start Android within the host instance.
 
 import getpass
 import logging
-import os
 
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
@@ -50,115 +49,85 @@ logger = logging.getLogger(__name__)
 
 
 class CvdComputeClient(android_compute_client.AndroidComputeClient):
-  """Client that manages Anadroid Virtual Device."""
+    """Client that manages Anadroid Virtual Device."""
 
-  DATA_POLICY_CREATE_IF_MISSING = "create_if_missing"
+    DATA_POLICY_CREATE_IF_MISSING = "create_if_missing"
 
-  def __init__(self, acloud_config, oauth2_credentials):
-    """Initialize.
+    # TODO: refactor CreateInstance to take in an object that contains these
+    # args, this method differs too and holds way too cf-specific args to put in
+    # the parent method.
+    # pylint: disable=arguments-differ
+    def CreateInstance(self, instance, image_name, image_project, build_target,
+                       branch, build_id, kernel_branch=None,
+                       kernel_build_id=None, blank_data_disk_size_gb=None):
+        """Create a cuttlefish instance given stable host image and build id.
 
-    Args:
-      acloud_config: An AcloudConfig object.
-      oauth2_credentials: An oauth2client.OAuth2Credentials instance.
-    """
-    super(CvdComputeClient, self).__init__(acloud_config, oauth2_credentials)
+        Args:
+          instance: instance name.
+          image_name: A string, the name of the GCE image.
+          image_project: A string, name of the project where the image belongs.
+                         Assume the default project if None.
+          build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
+          branch: Branch name, e.g. "aosp-master"
+          build_id: Build id, a string, e.g. "2263051", "P2804227"
+          kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
+          kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
+          blank_data_disk_size_gb: Size of the blank data disk in GB.
+        """
+        self._CheckMachineSize()
 
-  def _GetDiskArgs(self, disk_name, image_name, image_project, disk_size_gb):
-    """Helper to generate disk args that is used to create an instance.
+        # A blank data disk would be created on the host. Make sure the size of
+        # the boot disk is large enough to hold it.
+        boot_disk_size_gb = (
+            int(self.GetImage(image_name, image_project)["diskSizeGb"]) +
+            blank_data_disk_size_gb)
+        disk_args = self._GetDiskArgs(
+            instance, image_name, image_project, boot_disk_size_gb)
 
-    Args:
-      disk_name: A string
-      image_name: A string
-      image_project: A string
-      disk_size_gb: An integer
+        # Transitional metadata variable as outlined in go/cuttlefish-deployment
+        # These metadata tell the host instance to fetch and launch one
+        # cuttlefish device (cvd-01). Ideally we should use a separate tool to
+        # manage CVD devices on the host instance and not through metadata.
+        # TODO(b/77626419): Remove these metadata once the
+        # cuttlefish-google.service is turned off on the host instance.
+        metadata = self._metadata.copy()
+        resolution = self._resolution.split("x")
+        metadata["cvd_01_dpi"] = resolution[3]
+        metadata["cvd_01_fetch_android_build_target"] = build_target
+        metadata["cvd_01_fetch_android_bid"] = "{branch}/{build_id}".format(
+            branch=branch, build_id=build_id)
+        if kernel_branch and kernel_build_id:
+            metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
+                branch=kernel_branch, build_id=kernel_build_id)
+        metadata["cvd_01_launch"] = "1"
+        metadata["cvd_01_x_res"] = resolution[0]
+        metadata["cvd_01_y_res"] = resolution[1]
+        if blank_data_disk_size_gb > 0:
+            # Policy 'create_if_missing' would create a blank userdata disk if
+            # missing. If already exist, reuse the disk.
+            metadata["cvd_01_data_policy"] = self.DATA_POLICY_CREATE_IF_MISSING
+            metadata["cvd_01_blank_data_disk_size"] = str(
+                blank_data_disk_size_gb * 1024)
 
-    Returns:
-      A dictionary representing disk args.
-    """
-    return [{
-        "type": "PERSISTENT",
-        "boot": True,
-        "mode": "READ_WRITE",
-        "autoDelete": True,
-        "initializeParams": {
-            "diskName": disk_name,
-            "sourceImage": self.GetImage(image_name, image_project)["selfLink"],
-            "diskSizeGb": disk_size_gb
-        },
-    }]
+        # Add per-instance ssh key
+        if self._ssh_public_key_path:
+            rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
+            logger.info("ssh_public_key_path is specified in config: %s, "
+                        "will add the key to the instance.",
+                        self._ssh_public_key_path)
+            metadata["sshKeys"] = "%s:%s" % (getpass.getuser(), rsa)
+        else:
+            logger.warning(
+                "ssh_public_key_path is not specified in config, "
+                "only project-wide key will be effective.")
 
-  def CreateInstance(
-      self, instance, image_name, image_project, build_target, branch, build_id,
-      kernel_branch=None, kernel_build_id=None, blank_data_disk_size_gb=None):
-    """Create a cuttlefish instance given a stable host image and a build id.
-
-    Args:
-      instance: instance name.
-      image_name: A string, the name of the GCE image.
-      image_project: A string, name of the project where the image belongs.
-                     Assume the default project if None.
-      build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
-      branch: Branch name, e.g. "aosp-master"
-      build_id: Build id, a string, e.g. "2263051", "P2804227"
-      kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
-      kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
-      blank_data_disk_size_gb: Size of the blank data disk in GB.
-    """
-    self._CheckMachineSize()
-
-    # A blank data disk would be created on the host. Make sure the size of the
-    # boot disk is large enough to hold it.
-    boot_disk_size_gb = (
-        int(self.GetImage(image_name, image_project)["diskSizeGb"]) +
-        blank_data_disk_size_gb)
-    disk_args = self._GetDiskArgs(
-        instance, image_name, image_project, boot_disk_size_gb)
-
-    # Transitional metadata variable as outlined in go/cuttlefish-deployment
-    # These metadata tell the host instance to fetch and launch one cuttlefish
-    # device (cvd-01). Ideally we should use a separate tool to manage CVD
-    # devices on the host instance and not through metadata.
-    # TODO(b/77626419): Remove these metadata once the cuttlefish-google.service
-    # is
-    # turned off on the host instance.
-    metadata = self._metadata.copy()
-    resolution = self._resolution.split("x")
-    metadata["cvd_01_dpi"] = resolution[3]
-    metadata["cvd_01_fetch_android_build_target"] = build_target
-    metadata["cvd_01_fetch_android_bid"] = "{branch}/{build_id}".format(
-        branch=branch, build_id=build_id)
-    if kernel_branch and kernel_build_id:
-      metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
-          branch=kernel_branch, build_id=kernel_build_id)
-    metadata["cvd_01_launch"] = "1"
-    metadata["cvd_01_x_res"] = resolution[0]
-    metadata["cvd_01_y_res"] = resolution[1]
-    if blank_data_disk_size_gb > 0:
-      # Policy 'create_if_missing' would create a blank userdata disk if
-      # missing. If already exist, reuse the disk.
-      metadata["cvd_01_data_policy"] = self.DATA_POLICY_CREATE_IF_MISSING
-      metadata["cvd_01_blank_data_disk_size"] = str(
-          blank_data_disk_size_gb * 1024)
-
-    # Add per-instance ssh key
-    if self._ssh_public_key_path:
-      rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
-      logger.info("ssh_public_key_path is specified in config: %s, "
-                  "will add the key to the instance.",
-                  self._ssh_public_key_path)
-      metadata["sshKeys"] = "%s:%s" % (getpass.getuser(), rsa)
-    else:
-      logger.warning(
-          "ssh_public_key_path is not specified in config, "
-          "only project-wide key will be effective.")
-
-    gcompute_client.ComputeClient.CreateInstance(
-        self,
-        instance=instance,
-        image_name=image_name,
-        image_project=image_project,
-        disk_args=disk_args,
-        metadata=metadata,
-        machine_type=self._machine_type,
-        network=self._network,
-        zone=self._zone)
+        gcompute_client.ComputeClient.CreateInstance(
+            self,
+            instance=instance,
+            image_name=image_name,
+            image_project=image_project,
+            disk_args=disk_args,
+            metadata=metadata,
+            machine_type=self._machine_type,
+            network=self._network,
+            zone=self._zone)
