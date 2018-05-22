@@ -13,16 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for acloud.internal.lib.gcompute_client."""
+# pylint: disable=too-many-lines
 
+import copy
 import os
 
-import apiclient.http
+import unittest
 import mock
+
+# pylint: disable=import-error
+import apiclient.http
 from absl.testing import parameterized
 
-import unittest
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
@@ -34,7 +37,7 @@ GS_IMAGE_SOURCE_DISK = (
     "us-east1-d/disks/fake-disk")
 PROJECT = "fake-project"
 
-
+# pylint: disable=protected-access, too-many-public-methods
 class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
     """Test ComputeClient."""
 
@@ -65,6 +68,11 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             fake_cfg, mock.MagicMock())
         self.compute_client._service = mock.MagicMock()
 
+        self._disk_args = copy.deepcopy(gcompute_client.BASE_DISK_ARGS)
+        self._disk_args["initializeParams"] = {"diskName": self.INSTANCE,
+                                               "sourceImage": self.IMAGE_URL}
+
+    # pylint: disable=invalid-name
     def _SetupMocksForGetOperationStatus(self, mock_result, operation_scope):
         """A helper class for setting up mocks for testGetOperationStatus*.
 
@@ -135,16 +143,17 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                                 {"name": self.OPERATION_NAME},
                                 gcompute_client.OperationScope.GLOBAL)
 
-    def testWaitOnOperation(self):
+    @mock.patch.object(errors, "GceOperationTimeoutError")
+    @mock.patch.object(utils, "PollAndWait")
+    def testWaitOnOperation(self, mock_poll, mock_gce_operation_timeout_error):
         """Test WaitOnOperation."""
         mock_error = mock.MagicMock()
-        self.Patch(utils, "PollAndWait")
-        self.Patch(errors, "GceOperationTimeoutError", return_value=mock_error)
+        mock_gce_operation_timeout_error.return_value = mock_error
         self.compute_client.WaitOnOperation(
             operation={"name": self.OPERATION_NAME},
             operation_scope=gcompute_client.OperationScope.REGION,
             scope_name=self.REGION)
-        utils.PollAndWait.assert_called_with(
+        mock_poll.assert_called_with(
             func=self.compute_client._GetOperationStatus,
             expected_return="DONE",
             timeout_exception=mock_error,
@@ -196,7 +205,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
     # pyformat: enable
     def testCreateImage(self, source_uri, source_disk, labels, expected_body):
         """Test CreateImage."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.images = mock.MagicMock(
             return_value=resource_mock)
@@ -205,34 +214,35 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             image_name=self.IMAGE, source_uri=source_uri,
             source_disk=source_disk, labels=labels)
         resource_mock.insert.assert_called_with(
-                project=PROJECT, body=expected_body)
-        self.compute_client.WaitOnOperation.assert_called_with(
+            project=PROJECT, body=expected_body)
+        mock_wait.assert_called_with(
             operation=mock.ANY,
             operation_scope=gcompute_client.OperationScope.GLOBAL)
 
-    @unittest.skip("Needs to use mock lib for proper mocking.")
-    def testSetImageLabel(self):
-        # TODO: AddMockObject() needs to be converted to use mock.
-        # self.AddMockObject(self.compute_client._service, "images",
-        #                    return_value=mock.MagicMock(setLabels=mock.MagicMock()))
-        image = {"name": self.IMAGE,
-                 "sourceDisk": GS_IMAGE_SOURCE_DISK,
-                 "labelFingerprint": self.IMAGE_FINGERPRINT,
-                 "labels": {"a": "aaa", "b": "bbb"}}
-        # self.AddMockObject(self.compute_client, "GetImage", return_value=image)
-        new_labels = {"a": "xxx", "c": "ccc"}
-        # Test
-        self.compute_client.SetImageLabels(
-            self.IMAGE, new_labels)
-        # Check result
-        expected_labels = {"a": "xxx", "b": "bbb", "c": "ccc"}
-        self.compute_client._service.images().setLabels.assert_called_with(
-            project=PROJECT,
-            resource=self.IMAGE,
-            body={
-                "labels": expected_labels,
-                "labelFingerprint": self.IMAGE_FINGERPRINT
-            })
+    @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
+    def testSetImageLabel(self, mock_get_image):
+        """Test SetImageLabel."""
+        with mock.patch.object(self.compute_client._service, "images",
+                               return_value=mock.MagicMock(
+                                   setLabels=mock.MagicMock())) as _:
+            image = {"name": self.IMAGE,
+                     "sourceDisk": GS_IMAGE_SOURCE_DISK,
+                     "labelFingerprint": self.IMAGE_FINGERPRINT,
+                     "labels": {"a": "aaa", "b": "bbb"}}
+            mock_get_image.return_value = image
+            new_labels = {"a": "xxx", "c": "ccc"}
+            # Test
+            self.compute_client.SetImageLabels(
+                self.IMAGE, new_labels)
+            # Check result
+            expected_labels = {"a": "xxx", "b": "bbb", "c": "ccc"}
+            self.compute_client._service.images().setLabels.assert_called_with(
+                project=PROJECT,
+                resource=self.IMAGE,
+                body={
+                    "labels": expected_labels,
+                    "labelFingerprint": self.IMAGE_FINGERPRINT
+                })
 
     @parameterized.parameters(
         (GS_IMAGE_SOURCE_URI, GS_IMAGE_SOURCE_DISK),
@@ -243,18 +253,14 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                           image_name=self.IMAGE, source_uri=source_uri,
                           source_disk=source_disk)
 
-    def testCreateImageFail(self):
-        """Test CreateImage fails."""
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "WaitOnOperation",
-            side_effect=errors.DriverError("Expected fake error"))
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "CheckImageExists",
-            return_value=True)
-        self.Patch(gcompute_client.ComputeClient, "DeleteImage")
 
+    @mock.patch.object(gcompute_client.ComputeClient, "DeleteImage")
+    @mock.patch.object(gcompute_client.ComputeClient, "CheckImageExists",
+                       return_value=True)
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation",
+                       side_effect=errors.DriverError("Expected fake error"))
+    def testCreateImageFail(self, mock_wait, mock_check, mock_delete):
+        """Test CreateImage fails."""
         resource_mock = mock.MagicMock()
         self.compute_client._service.images = mock.MagicMock(
             return_value=resource_mock)
@@ -274,11 +280,11 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             source_uri=GS_IMAGE_SOURCE_URI)
         resource_mock.insert.assert_called_with(
             project=PROJECT, body=expected_body)
-        self.compute_client.WaitOnOperation.assert_called_with(
+        mock_wait.assert_called_with(
             operation=mock.ANY,
             operation_scope=gcompute_client.OperationScope.GLOBAL)
-        self.compute_client.CheckImageExists.assert_called_with(self.IMAGE)
-        self.compute_client.DeleteImage.assert_called_with(self.IMAGE)
+        mock_check.assert_called_with(self.IMAGE)
+        mock_delete.assert_called_with(self.IMAGE)
 
     def testCheckImageExistsTrue(self):
         """Test CheckImageExists return True."""
@@ -301,9 +307,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             side_effect=errors.ResourceNotFoundError(404, "no image"))
         self.assertFalse(self.compute_client.CheckImageExists(self.IMAGE))
 
-    def testDeleteImage(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDeleteImage(self, mock_wait):
         """Test DeleteImage."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.images = mock.MagicMock(
             return_value=resource_mock)
@@ -311,7 +317,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         self.compute_client.DeleteImage(self.IMAGE)
         resource_mock.delete.assert_called_with(
             project=PROJECT, image=self.IMAGE)
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
     def _SetupBatchHttpRequestMock(self):
         """Setup BatchHttpRequest mock."""
@@ -330,10 +336,10 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         mock_batch.execute = _Execute
         self.Patch(apiclient.http, "BatchHttpRequest", return_value=mock_batch)
 
-    def testDeleteImages(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDeleteImages(self, mock_wait):
         """Test DeleteImages."""
         self._SetupBatchHttpRequestMock()
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         fake_images = ["fake_image_1", "fake_image_2"]
         mock_api = mock.MagicMock()
         resource_mock = mock.MagicMock()
@@ -349,8 +355,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             mock.call(project=PROJECT, image="fake_image_2")
         ]
         resource_mock.delete.assert_has_calls(calls, any_order=True)
-        self.assertEqual(
-            gcompute_client.ComputeClient.WaitOnOperation.call_count, 2)
+        self.assertEqual(mock_wait.call_count, 2)
         self.assertEqual(error_msgs, [])
         self.assertEqual(failed, [])
         self.assertEqual(set(deleted), set(fake_images))
@@ -438,22 +443,16 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         resource_mock.list.assert_has_calls(calls)
         self.assertEqual(instances, [instance_1, instance_2])
 
-    def testCreateInstance(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetNetworkUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testCreateInstance(self, mock_wait, mock_get_mach_type,
+                           mock_get_network_url, mock_get_image):
         """Test CreateInstance."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetMachineType",
-            return_value={"selfLink": self.MACHINE_TYPE_URL})
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetNetworkUrl",
-            return_value=self.NETWORK_URL)
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetImage",
-            return_value={"selfLink": self.IMAGE_URL})
-
+        mock_get_mach_type.return_value = {"selfLink": self.MACHINE_TYPE_URL}
+        mock_get_network_url.return_value = self.NETWORK_URL
+        mock_get_image.return_value = {"selfLink": self.IMAGE_URL}
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -471,18 +470,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     ],
                 }
             ],
-            "disks": [
-                {
-                    "type": "PERSISTENT",
-                    "boot": True,
-                    "mode": "READ_WRITE",
-                    "autoDelete": True,
-                    "initializeParams": {
-                        "diskName": self.INSTANCE,
-                        "sourceImage": self.IMAGE_URL,
-                    },
-                }
-            ],
+            "disks": [self._disk_args],
             "serviceAccounts": [
                 {"email": "default",
                  "scopes": self.compute_client.DEFAULT_INSTANCE_SCOPE}
@@ -503,30 +491,24 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
-        self.compute_client.WaitOnOperation.assert_called_with(
+        mock_wait.assert_called_with(
             mock.ANY,
             operation_scope=gcompute_client.OperationScope.ZONE,
             scope_name=self.ZONE)
 
-    def testCreateInstanceWithGpu(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "GetAcceleratorUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetNetworkUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testCreateInstanceWithGpu(self, mock_wait, mock_get_mach,
+                                  mock_get_network, mock_get_image,
+                                  mock_get_accel):
         """Test CreateInstance with a GPU parameter not set to None."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetMachineType",
-            return_value={"selfLink": self.MACHINE_TYPE_URL})
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetNetworkUrl",
-            return_value=self.NETWORK_URL)
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetAcceleratorUrl",
-            return_value=self.ACCELERATOR_URL)
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetImage",
-            return_value={"selfLink": self.IMAGE_URL})
+        mock_get_mach.return_value = {"selfLink": self.MACHINE_TYPE_URL}
+        mock_get_network.return_value = self.NETWORK_URL
+        mock_get_accel.return_value = self.ACCELERATOR_URL
+        mock_get_image.return_value = {"selfLink": self.IMAGE_URL}
 
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
@@ -546,16 +528,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     "type": "ONE_TO_ONE_NAT"
                 }],
             }],
-            "disks": [{
-                "type": "PERSISTENT",
-                "boot": True,
-                "mode": "READ_WRITE",
-                "autoDelete": True,
-                "initializeParams": {
-                    "diskName": self.INSTANCE,
-                    "sourceImage": self.IMAGE_URL,
-                },
-            }],
+            "disks": [self._disk_args],
             "serviceAccounts": [{
                 "email": "default",
                 "scopes": self.compute_client.DEFAULT_INSTANCE_SCOPE
@@ -586,13 +559,13 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
-        self.compute_client.WaitOnOperation.assert_called_with(
+        mock_wait.assert_called_with(
             mock.ANY, operation_scope=gcompute_client.OperationScope.ZONE,
             scope_name=self.ZONE)
 
-    def testDeleteInstance(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDeleteInstance(self, mock_wait):
         """Test DeleteInstance."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -601,15 +574,15 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             instance=self.INSTANCE, zone=self.ZONE)
         resource_mock.delete.assert_called_with(
             project=PROJECT, zone=self.ZONE, instance=self.INSTANCE)
-        self.compute_client.WaitOnOperation.assert_called_with(
+        mock_wait.assert_called_with(
             mock.ANY,
             operation_scope=gcompute_client.OperationScope.ZONE,
             scope_name=self.ZONE)
 
-    def testDeleteInstances(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDeleteInstances(self, mock_wait):
         """Test DeleteInstances."""
         self._SetupBatchHttpRequestMock()
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         fake_instances = ["fake_instance_1", "fake_instance_2"]
         mock_api = mock.MagicMock()
         resource_mock = mock.MagicMock()
@@ -629,8 +602,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                 zone=self.ZONE)
         ]
         resource_mock.delete.assert_has_calls(calls, any_order=True)
-        self.assertEqual(
-            gcompute_client.ComputeClient.WaitOnOperation.call_count, 2)
+        self.assertEqual(mock_wait.call_count, 2)
         self.assertEqual(error_msgs, [])
         self.assertEqual(failed, [])
         self.assertEqual(set(deleted), set(fake_instances))
@@ -639,7 +611,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                               (None, PROJECT))
     def testCreateDisk(self, source_project, expected_project_to_use):
         """Test CreateDisk with images."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.disks = mock.MagicMock(
             return_value=resource_mock)
@@ -660,14 +632,14 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     "projects/%s/zones/%s/diskTypes/pd-standard" % (PROJECT,
                                                                     self.ZONE)
             })
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
     @parameterized.parameters(
         (gcompute_client.PersistentDiskType.STANDARD, "pd-standard"),
         (gcompute_client.PersistentDiskType.SSD, "pd-ssd"))
     def testCreateDiskWithType(self, disk_type, expected_disk_type_string):
         """Test CreateDisk with images."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.disks = mock.MagicMock(
             return_value=resource_mock)
@@ -692,11 +664,11 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     "projects/%s/zones/%s/diskTypes/%s" %
                     (PROJECT, self.ZONE, expected_disk_type_string)
             })
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
-    def testAttachDisk(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testAttachDisk(self, mock_wait):
         """Test AttachDisk."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -712,11 +684,11 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                 "deviceName": "fake_disk",
                 "source": "fake-selfLink"
             })
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
-    def testDetachDisk(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDetachDisk(self, mock_wait):
         """Test DetachDisk."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -727,15 +699,13 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             zone=self.ZONE,
             instance="fake_instance_1",
             deviceName="fake_disk")
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
-    def testAttachAccelerator(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "GetAcceleratorUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testAttachAccelerator(self, mock_wait, mock_get_accel):
         """Test AttachAccelerator."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
-        self.Patch(
-            gcompute_client.ComputeClient,
-            "GetAcceleratorUrl",
-            return_value=self.ACCELERATOR_URL)
+        mock_get_accel.return_value = self.ACCELERATOR_URL
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -752,11 +722,12 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     "acceleratorCount": 1
                 }]
             })
-        self.assertTrue(self.compute_client.WaitOnOperation.called)
+        self.assertTrue(mock_wait.called)
 
-    def testBatchExecuteOnInstances(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testBatchExecuteOnInstances(self, mock_wait):
+        """Test BatchExecuteOnInstances."""
         self._SetupBatchHttpRequestMock()
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         action = mock.MagicMock(return_value=mock.MagicMock())
         fake_instances = ["fake_instance_1", "fake_instance_2"]
         done, failed, error_msgs = self.compute_client._BatchExecuteOnInstances(
@@ -764,15 +735,14 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         calls = [mock.call(instance="fake_instance_1"),
                  mock.call(instance="fake_instance_2")]
         action.assert_has_calls(calls, any_order=True)
-        self.assertEqual(
-            gcompute_client.ComputeClient.WaitOnOperation.call_count, 2)
+        self.assertEqual(mock_wait.call_count, 2)
         self.assertEqual(set(done), set(fake_instances))
         self.assertEqual(error_msgs, [])
         self.assertEqual(failed, [])
 
-    def testResetInstance(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testResetInstance(self, mock_wait):
         """Test ResetInstance."""
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -781,7 +751,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             instance=self.INSTANCE, zone=self.ZONE)
         resource_mock.reset.assert_called_with(
             project=PROJECT, zone=self.ZONE, instance=self.INSTANCE)
-        self.compute_client.WaitOnOperation.assert_called_with(
+        mock_wait.assert_called_with(
             mock.ANY,
             operation_scope=gcompute_client.OperationScope.ZONE,
             scope_name=self.ZONE)
@@ -799,7 +769,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             expected_result: An integer, 0, 1 or -1, or None if not set.
             expected_error_type: An exception type, if set will check for exception.
         """
-        self.Patch(
+        mock_get_mach_type = self.Patch(
             gcompute_client.ComputeClient,
             "GetMachineType",
             side_effect=[machine_info_1, machine_info_2])
@@ -812,7 +782,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                                                             self.ZONE)
             self.assertEqual(result, expected_result)
 
-        self.compute_client.GetMachineType.assert_has_calls(
+        mock_get_mach_type.assert_has_calls(
             [mock.call("name1", self.ZONE), mock.call("name2", self.ZONE)])
 
     def testCompareMachineSizeSmall(self):
@@ -887,10 +857,12 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             port=1)
 
     def testGetSerialPortOutput(self):
+        """Test GetSerialPortOutput."""
         response = {"contents": "fake contents"}
         self._GetSerialPortOutputTestHelper(response)
 
     def testGetSerialPortOutputFail(self):
+        """Test GetSerialPortOutputFail."""
         response = {"malformed": "fake contents"}
         self._GetSerialPortOutputTestHelper(response)
 
@@ -991,10 +963,10 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                                 self.compute_client.AddSshRsa, fake_user,
                                 "/path/to/test_rsa.pub")
 
-    def testDeleteDisks(self):
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testDeleteDisks(self, mock_wait):
         """Test DeleteDisks."""
         self._SetupBatchHttpRequestMock()
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         fake_disks = ["fake_disk_1", "fake_disk_2"]
         mock_api = mock.MagicMock()
         resource_mock = mock.MagicMock()
@@ -1010,19 +982,20 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             mock.call(project=PROJECT, disk="fake_disk_2", zone=self.ZONE)
         ]
         resource_mock.delete.assert_has_calls(calls, any_order=True)
-        self.assertEqual(
-            gcompute_client.ComputeClient.WaitOnOperation.call_count, 2)
+        self.assertEqual(mock_wait.call_count, 2)
         self.assertEqual(error_msgs, [])
         self.assertEqual(failed, [])
         self.assertEqual(set(deleted), set(fake_disks))
 
     def testRetryOnFingerPrintError(self):
+        """Test RetryOnFingerPrintError."""
         @utils.RetryOnException(gcompute_client._IsFingerPrintError, 10)
         def Raise412(sentinel):
-          if not sentinel.hitFingerPrintConflict.called:
-            sentinel.hitFingerPrintConflict()
-            raise errors.HttpError(412, "resource labels have changed")
-          return "Passed"
+            """Raise 412 HTTP exception."""
+            if not sentinel.hitFingerPrintConflict.called:
+                sentinel.hitFingerPrintConflict()
+                raise errors.HttpError(412, "resource labels have changed")
+            return "Passed"
 
         sentinel = mock.MagicMock()
         result = Raise412(sentinel)
