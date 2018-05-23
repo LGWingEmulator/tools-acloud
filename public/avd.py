@@ -13,10 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This module defines an AVD instance.
 
-TODO(fdeng):
+TODO:
   The current implementation only initialize an object
   with IP and instance name. A complete implementation
   will include the following features.
@@ -50,9 +49,10 @@ class AndroidVirtualDevice(object):
 
     @property
     def ip(self):
+        """Getter of _ip."""
         if not self._ip:
-            raise ValueError("IP of instance %s is unknown yet." %
-                             self._instance_name)
+            raise ValueError(
+                "IP of instance %s is unknown yet." % self._instance_name)
         return self._ip
 
     @ip.setter
@@ -61,6 +61,7 @@ class AndroidVirtualDevice(object):
 
     @property
     def instance_name(self):
+        """Getter of _instance_name."""
         return self._instance_name
 
     def __str__(self):
