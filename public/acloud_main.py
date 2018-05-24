@@ -367,8 +367,8 @@ def _ParseArgs(args):
     subparser_list.append(sshkey_parser)
 
     # Add common arguments.
-    for parser in subparser_list:
-        acloud_common.AddCommonArguments(parser)
+    for subparser in subparser_list:
+        acloud_common.AddCommonArguments(subparser)
 
     return parser.parse_args(args)
 
