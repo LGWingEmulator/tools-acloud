@@ -106,7 +106,7 @@ def _ParseArgs(args):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        usage="%(prog)s {" + usage + "} ...")
+        usage="acloud {" + usage + "} ...")
     subparsers = parser.add_subparsers()
     subparser_list = []
 
