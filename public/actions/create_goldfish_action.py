@@ -13,14 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Action to create goldfish device instances.
 
 A Goldfish device is an emulated android device based on the android
 emulator.
 """
 import logging
-import os
 
 from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
@@ -37,62 +35,88 @@ ALL_SCOPES = " ".join([
 
 
 class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
-  """A class that can produce a goldfish device."""
+    """A class that can produce a goldfish device.
 
-  def __init__(self,
-               cfg,
-               build_target,
-               build_id,
-               emulator_build_target,
-               emulator_build_id,
-               gpu=None):
-    self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
-
-    compute_client = goldfish_compute_client.GoldfishComputeClient(
-        cfg, self.credentials)
-    super(GoldfishDeviceFactory, self).__init__(compute_client)
-
-    # Private creation parameters
-    self._cfg = cfg
-    self._build_target = build_target
-    self._build_id = build_id
-    self._emulator_build_id = emulator_build_id
-    self._emulator_build_target = emulator_build_target
-    self._gpu = gpu
-    self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
-
-    # Configure clients
-    self._build_client = android_build_client.AndroidBuildClient(
-        self.credentials)
-
-    # Discover branches
-    self._branch = self._build_client.GetBranch(build_target, build_id)
-    self._emulator_branch = self._build_client.GetBranch(
-        emulator_build_target, emulator_build_id)
-
-  def CreateInstance(self):
-    """Creates singe configured goldfish device.
-
-    Override method from parent class.
-
-    Returns:
-      The name of the created instance.
+    Attributes:
+        _cfg: An AcloudConfig instance.
+        _build_target: String, the build target, e.g. aosp_x86-eng.
+        _build_id: String, Build id, e.g. "2263051", "P2804227"
+        _emulator_build_target: String, the emulator build target, e.g. aosp_x86-eng.
+        _emulator_build_id: String, emulator build id.
+        _gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
+        _blank_data_disk_size_gb: Integer, extra disk size
+        _build_client: An AndroidBuildClient instance
+        _branch: String, android branch name, e.g. git_master
+        _emulator_branch: String, emulator branch name, e.g. "aosp-emu-master-dev"
     """
-    instance = self._compute_client.GenerateInstanceName(self._build_id)
 
-    self._compute_client.CreateInstance(
-        instance=instance,
-        image_name=self._cfg.stable_goldfish_host_image_name,
-        image_project=self._cfg.stable_goldfish_host_image_project,
-        build_target=self._build_target,
-        branch=self._branch,
-        build_id=self._build_id,
-        emulator_branch=self._emulator_branch,
-        emulator_build_id=self._emulator_build_id,
-        gpu=self._gpu,
-        blank_data_disk_size_gb=self._blank_data_disk_size_gb)
+    def __init__(self,
+                 cfg,
+                 build_target,
+                 build_id,
+                 emulator_build_target,
+                 emulator_build_id,
+                 gpu=None):
 
-    return instance
+        """Initialize.
+
+        Args:
+            cfg: An AcloudConfig instance.
+            build_target: String, the build target, e.g. aosp_x86-eng.
+            build_id: String, Build id, e.g. "2263051", "P2804227"
+            emulator_build_target: String, the emulator build target, e.g. aosp_x86-eng.
+            emulator_build_id: String, emulator build id.
+            gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
+        """
+
+        self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+
+        compute_client = goldfish_compute_client.GoldfishComputeClient(
+            cfg, self.credentials)
+        super(GoldfishDeviceFactory, self).__init__(compute_client)
+
+        # Private creation parameters
+        self._cfg = cfg
+        self._build_target = build_target
+        self._build_id = build_id
+        self._emulator_build_id = emulator_build_id
+        self._emulator_build_target = emulator_build_target
+        self._gpu = gpu
+        self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
+
+        # Configure clients
+        self._build_client = android_build_client.AndroidBuildClient(
+            self.credentials)
+
+        # Discover branches
+        self._branch = self._build_client.GetBranch(build_target, build_id)
+        self._emulator_branch = self._build_client.GetBranch(
+            emulator_build_target, emulator_build_id)
+
+    def CreateInstance(self):
+        """Creates single configured goldfish device.
+
+        Override method from parent class.
+
+        Returns:
+            String, the name of the created instance.
+        """
+        instance = self._compute_client.GenerateInstanceName(self._build_id)
+
+        self._compute_client.CreateInstance(
+            instance=instance,
+            image_name=self._cfg.stable_goldfish_host_image_name,
+            image_project=self._cfg.stable_goldfish_host_image_project,
+            build_target=self._build_target,
+            branch=self._branch,
+            build_id=self._build_id,
+            emulator_branch=self._emulator_branch,
+            emulator_build_id=self._emulator_build_id,
+            gpu=self._gpu,
+            blank_data_disk_size_gb=self._blank_data_disk_size_gb)
+
+        return instance
+
 
 
 def CreateDevices(cfg,
@@ -104,35 +128,36 @@ def CreateDevices(cfg,
                   serial_log_file=None,
                   logcat_file=None,
                   autoconnect=False):
-  """Create one or multiple Goldfish devices.
+    """Create one or multiple Goldfish devices.
 
-  Args:
-    cfg: An AcloudConfig instance.
-    build_target: Target name.
-    build_id: Build id, a string, e.g. "2263051", "P2804227"
-    emulator_build_id: emulator build id, a string.
-    gpu: GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
-    num: Number of devices to create.
-    serial_log_file: A path to a file where serial output should
+    Args:
+        cfg: An AcloudConfig instance.
+        build_target: String, the build target, e.g. aosp_x86-eng.
+        build_id: String, Build id, e.g. "2263051", "P2804227"
+        emulator_build_id: String, emulator build id.
+        gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
+        num: Integer, Number of devices to create.
+        serial_log_file: String, A path to a file where serial output should
                         be saved to.
-    logcat_file: A path to a file where logcat logs should be saved.
-    autoconnect: Create ssh tunnel(s) and adb connect after device creation.
+        logcat_file: String, A path to a file where logcat logs should be saved.
+        autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
 
-  Returns:
-    A Report instance.
-  """
-  # TODO(fdeng, pinghao): Implement copying files from the instance, including
-  # the serial log (kernel log), and logcat log files.
-  # TODO(fdeng, pinghao): Implement autoconnect.
-  logger.info("Creating a goldfish device in project %s, build_target: %s, "
-              "build_id: %s, emulator_bid: %s, GPU: %s, num: %s, "
-              "serial_log_file: %s, logcat_file: %s, "
-              "autoconnect: %s", cfg.project, build_target, build_id,
-              emulator_build_id, gpu, num, serial_log_file, logcat_file,
-              autoconnect)
+    Returns:
+        A Report instance.
+    """
+    # TODO: Implement copying files from the instance, including
+    # the serial log (kernel log), and logcat log files.
+    # TODO: Implement autoconnect.
+    logger.info(
+        "Creating a goldfish device in project %s, build_target: %s, "
+        "build_id: %s, emulator_bid: %s, GPU: %s, num: %s, "
+        "serial_log_file: %s, logcat_file: %s, "
+        "autoconnect: %s", cfg.project, build_target, build_id,
+        emulator_build_id, gpu, num, serial_log_file, logcat_file, autoconnect)
 
-  device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
-                                         cfg.emulator_build_target,
-                                         emulator_build_id, gpu)
+    device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
+                                           cfg.emulator_build_target,
+                                           emulator_build_id, gpu)
 
-  return common_operations.CreateDevices("create_gf", cfg, device_factory, num)
+    return common_operations.CreateDevices("create_gf", cfg, device_factory,
+                                           num)
