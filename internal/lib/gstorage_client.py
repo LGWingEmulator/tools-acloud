@@ -157,9 +157,10 @@ class StorageClient(base_cloud_client.BaseCloudApiClient):
         """
         item = utils.RetryExceptionType(
             errors.ResourceNotFoundError,
-            max_retries=self.GET_OBJ_MAX_RETRY,
-            functor=self.Get,
-            sleep_multiplier=self.GET_OBJ_RETRY_SLEEP,
+            self.GET_OBJ_MAX_RETRY,
+            self.Get,
+            self.GET_OBJ_RETRY_SLEEP,
+            utils.DEFAULT_RETRY_BACKOFF_FACTOR,
             bucket_name=bucket_name,
             object_name=object_name)
         return item["selfLink"]

@@ -35,6 +35,8 @@ from acloud.public import errors
 logger = logging.getLogger(__name__)
 
 SSH_KEYGEN_CMD = ["ssh-keygen", "-t", "rsa", "-b", "4096"]
+DEFAULT_RETRY_BACKOFF_FACTOR = 1
+DEFAULT_SLEEP_MULTIPLIER = 0
 
 
 class TempDir(object):
@@ -165,7 +167,7 @@ def Retry(retry_checker,
                                                 (attempt_count - 1))
                 else:
                     sleep = sleep_multiplier * attempt_count
-                    time.sleep(sleep)
+                time.sleep(sleep)
             else:
                 raise
 
