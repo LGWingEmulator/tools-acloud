@@ -46,10 +46,12 @@ TODO:
 import logging
 import os
 
+from google.protobuf import text_format
+
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.public import errors
-from google.protobuf import text_format
+
 _CONFIG_DATA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data")
 
@@ -72,6 +74,7 @@ class AcloudConfig(object):
             internal_cfg: A protobuf object that holds internal configurations.
         """
         self.service_account_name = usr_cfg.service_account_name
+        # pylint: disable=invalid-name
         self.service_account_private_key_path = (
             usr_cfg.service_account_private_key_path)
         self.creds_cache_file = internal_cfg.creds_cache_file
@@ -83,31 +86,28 @@ class AcloudConfig(object):
         self.zone = usr_cfg.zone
         self.machine_type = (usr_cfg.machine_type or
                              internal_cfg.default_usr_cfg.machine_type)
-        self.network = (usr_cfg.network or
-                        internal_cfg.default_usr_cfg.network)
+        self.network = usr_cfg.network or internal_cfg.default_usr_cfg.network
         self.ssh_private_key_path = usr_cfg.ssh_private_key_path
         self.ssh_public_key_path = usr_cfg.ssh_public_key_path
         self.storage_bucket_name = usr_cfg.storage_bucket_name
         self.metadata_variable = {
-            key: val
-            for key, val in
+            key: val for key, val in
             internal_cfg.default_usr_cfg.metadata_variable.iteritems()
         }
         self.metadata_variable.update(usr_cfg.metadata_variable)
 
         self.device_resolution_map = {
-            device: resolution
-            for device, resolution in
+            device: resolution for device, resolution in
             internal_cfg.device_resolution_map.iteritems()
         }
         self.device_default_orientation_map = {
-            device: orientation
-            for device, orientation in
+            device: orientation for device, orientation in
             internal_cfg.device_default_orientation_map.iteritems()
         }
         self.no_project_access_msg_map = {
-            project: msg for project, msg
-            in internal_cfg.no_project_access_msg_map.iteritems()}
+            project: msg for project, msg in
+            internal_cfg.no_project_access_msg_map.iteritems()
+        }
         self.min_machine_size = internal_cfg.min_machine_size
         self.disk_image_name = internal_cfg.disk_image_name
         self.disk_image_mime_type = internal_cfg.disk_image_mime_type
@@ -115,13 +115,11 @@ class AcloudConfig(object):
         self.disk_raw_image_name = internal_cfg.disk_raw_image_name
         self.disk_raw_image_extension = internal_cfg.disk_raw_image_extension
         self.valid_branch_and_min_build_id = {
-            branch: min_build_id
-            for branch, min_build_id in
+            branch: min_build_id for branch, min_build_id in
             internal_cfg.valid_branch_and_min_build_id.iteritems()
         }
         self.precreated_data_image_map = {
-            size_gb: image_name
-            for size_gb, image_name in
+            size_gb: image_name for size_gb, image_name in
             internal_cfg.precreated_data_image.iteritems()
         }
         self.extra_data_disk_size_gb = (
@@ -185,8 +183,8 @@ class AcloudConfig(object):
         if missing:
             raise errors.ConfigError(
                 "Missing required configuration fields: %s" % missing)
-        if (self.extra_data_disk_size_gb and self.extra_data_disk_size_gb
-                not in self.precreated_data_image_map):
+        if (self.extra_data_disk_size_gb and self.extra_data_disk_size_gb not in
+                self.precreated_data_image_map):
             raise errors.ConfigError(
                 "Supported extra_data_disk_size_gb options(gb): %s, "
                 "invalid value: %d" % (self.precreated_data_image_map.keys(),
@@ -224,8 +222,7 @@ class AcloudConfigManager(object):
                 usr_cfg = self.LoadConfigFromProtocolBuffer(
                     config_file, user_config_pb2.UserConfig)
         except OSError as e:
-            raise errors.ConfigError("Could not load config files: %s" %
-                                     str(e))
+            raise errors.ConfigError("Could not load config files: %s" % str(e))
         return AcloudConfig(usr_cfg, internal_cfg)
 
     @staticmethod

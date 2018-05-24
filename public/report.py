@@ -89,8 +89,8 @@ class Status(object):
         """
         if (candidate not in cls.SEVERITY_ORDER or
                 reference not in cls.SEVERITY_ORDER):
-            raise ValueError("%s or %s is not recognized." %
-                             (candidate, reference))
+            raise ValueError(
+                "%s or %s is not recognized." % (candidate, reference))
         return cls.SEVERITY_ORDER[candidate] > cls.SEVERITY_ORDER[reference]
 
 
@@ -154,10 +154,11 @@ class Report(object):
             report_file: A path to a file where result will be dumped to.
                          If None, will only output result as logs.
         """
-        result = dict(command=self.command,
-                      status=self.status,
-                      errors=self.errors,
-                      data=self.data)
+        result = dict(
+            command=self.command,
+            status=self.status,
+            errors=self.errors,
+            data=self.data)
         logger.info("Report: %s", json.dumps(result, indent=2))
         if not report_file:
             return
