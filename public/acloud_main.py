@@ -66,8 +66,10 @@ import getpass
 import logging
 import sys
 
-# TODO: Find a better way to handling this import logic.
+# Needed to silence oauth2client.
+logging.basicConfig(level=logging.CRITICAL)
 
+# pylint: disable=wrong-import-position
 from acloud.internal import constants
 from acloud.public import acloud_common
 from acloud.public import config
