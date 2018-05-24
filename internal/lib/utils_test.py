@@ -176,12 +176,14 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
             utils.RetryExceptionType, (KeyError, ValueError),
             num_retry,
             _RaiseAndRetry,
+            0, # sleep_multiplier
+            1, # retry_backoff_factor
             sentinel=sentinel)
         self.assertEqual(1 + num_retry, sentinel.alert.call_count)
 
     def testRetry(self):
         """Test Retry."""
-        self.Patch(time, "sleep")
+        mock_sleep = self.Patch(time, "sleep")
 
         def _RaiseAndRetry(sentinel):
             sentinel.alert()
@@ -194,12 +196,12 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
             utils.RetryExceptionType, (ValueError, KeyError),
             num_retry,
             _RaiseAndRetry,
-            sleep_multiplier=1,
-            retry_backoff_factor=2,
+            1, # sleep_multiplier
+            2, # retry_backoff_factor
             sentinel=sentinel)
 
         self.assertEqual(1 + num_retry, sentinel.alert.call_count)
-        time.sleep.assert_has_calls(  #pylint: disable=no-member
+        mock_sleep.assert_has_calls(
             [
                 mock.call(1),
                 mock.call(2),
