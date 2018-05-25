@@ -15,10 +15,9 @@
 # limitations under the License.
 
 """Tests for acloud.public.config."""
-
+import unittest
 import mock
 
-import unittest
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.public import config
@@ -96,6 +95,7 @@ valid_branch_and_min_build_id {
     def setUp(self):
         self.config_file = mock.MagicMock()
 
+    # pylint: disable=no-member
     def testLoadUserConfig(self):
         """Test loading user config."""
         self.config_file.read.return_value = self.USER_CONFIG
@@ -115,9 +115,9 @@ valid_branch_and_min_build_id {
         self.assertEqual(cfg.resolution, "1200x1200x1200x1200")
         self.assertEqual(cfg.client_id, "fake_client_id")
         self.assertEqual(cfg.client_secret, "fake_client_secret")
-        self.assertEqual({key: val
-                          for key, val in cfg.metadata_variable.iteritems()},
-                         {"metadata_1": "metadata_value_1"})
+        self.assertEqual(
+            {key: val for key, val in cfg.metadata_variable.iteritems()},
+            {"metadata_1": "metadata_value_1"})
 
     def testLoadInternalConfig(self):
         """Test loading internal config."""
@@ -137,11 +137,12 @@ valid_branch_and_min_build_id {
         self.assertEqual({
             key: val
             for key, val in cfg.default_usr_cfg.metadata_variable.iteritems()
-        }, {"metadata_1": "metadata_value_1",
-            "metadata_2": "metadata_value_2"})
+        }, {
+            "metadata_1": "metadata_value_1",
+            "metadata_2": "metadata_value_2"
+        })
         self.assertEqual(
-            {key: val
-             for key, val in cfg.device_resolution_map.iteritems()},
+            {key: val for key, val in cfg.device_resolution_map.iteritems()},
             {"nexus5": "1080x1920x32x480"})
         device_resolution = {
             key: val
@@ -153,21 +154,17 @@ valid_branch_and_min_build_id {
             for key, val in cfg.valid_branch_and_min_build_id.iteritems()
         }
         self.assertEqual(valid_branch_and_min_build_id, {"aosp-master": 0})
-        self.assertEqual(
-            cfg.default_usr_cfg.stable_host_image_name,
-            "fake_stable_host_image_name")
-        self.assertEqual(
-            cfg.default_usr_cfg.stable_host_image_project,
-            "fake_stable_host_image_project")
+        self.assertEqual(cfg.default_usr_cfg.stable_host_image_name,
+                         "fake_stable_host_image_name")
+        self.assertEqual(cfg.default_usr_cfg.stable_host_image_project,
+                         "fake_stable_host_image_project")
         self.assertEqual(cfg.kernel_build_target, "kernel")
 
         # Emulator related
-        self.assertEqual(
-            cfg.default_usr_cfg.stable_goldfish_host_image_name,
-            "fake_stable_goldfish_host_image_name")
-        self.assertEqual(
-            cfg.default_usr_cfg.stable_goldfish_host_image_project,
-            "fake_stable_goldfish_host_image_project")
+        self.assertEqual(cfg.default_usr_cfg.stable_goldfish_host_image_name,
+                         "fake_stable_goldfish_host_image_name")
+        self.assertEqual(cfg.default_usr_cfg.stable_goldfish_host_image_project,
+                         "fake_stable_goldfish_host_image_project")
         self.assertEqual(cfg.emulator_build_target, "sdk_tools_linux")
 
     def testLoadConfigFails(self):
