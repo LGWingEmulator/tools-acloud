@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Define errors that are raised by the driver."""
 
 HTTP_NOT_FOUND_CODE = 404
@@ -79,8 +78,8 @@ class AuthentcationError(DriverError):
 
 
 class DeviceBootError(DriverError):
-  """To catch device boot errors."""
+    """To catch device boot errors."""
 
 
 class DeviceBootTimeoutError(DeviceBootError):
-  """Raised when an AVD defice failed to boot within timeout."""
+    """Raised when an AVD defice failed to boot within timeout."""
