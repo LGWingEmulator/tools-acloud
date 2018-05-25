@@ -1,0 +1,14 @@
+[run]
+branch = True
+
+# module names must be listed one per line.
+source =
+    acloud
+
+# omit file patterns must be listed one per line. */.local/* /usr/*
+omit =
+    *_test.py
+
+[html]
+directory = htmlcov
+
