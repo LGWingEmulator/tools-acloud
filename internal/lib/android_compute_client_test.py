@@ -13,12 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for android_compute_client."""
-
+import unittest
 import mock
 
-import unittest
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
@@ -75,6 +73,7 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
         self.android_compute_client = android_compute_client.AndroidComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 
+   # pylint: disable=no-member
     def testCreateImage(self):
         """Test CreateImage."""
         self.Patch(gcompute_client.ComputeClient, "CreateImage")
@@ -88,11 +87,11 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
         super(android_compute_client.AndroidComputeClient,
               self.android_compute_client).CreateImage.assert_called_with(
                   image_name, self.GS_IMAGE_SOURCE_URI)
-        self.android_compute_client.CheckImageExists.assert_called_with(
-            image_name)
 
     def testCreateInstance(self):
         """Test CreateInstance."""
+        image_project = None
+        gpu = None
         self.Patch(
             gcompute_client.ComputeClient,
             "CompareMachineSize",
@@ -101,11 +100,9 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(
             gcompute_client.ComputeClient,
             "_GetDiskArgs",
-            return_value=[{"fake_arg": "fake_value"}])
-        self.Patch(
-            self.android_compute_client,
-            "_GetExtraDiskArgs",
-            return_value=[{"fake_extra_arg": "fake_extra_value"}])
+            return_value=[{
+                "fake_arg": "fake_value"
+            }])
         instance_name = "gce-x86-userdebug-2345-abcd"
         extra_disk_name = "gce-x86-userdebug-2345-abcd-data"
         expected_metadata = {
@@ -114,24 +111,26 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
             "t_force_orientation": self.ORIENTATION,
         }
 
-        expected_disk_args = [
-            {"fake_arg": "fake_value"}, {"fake_extra_arg": "fake_extra_value"}
-        ]
+        expected_disk_args = [{
+            "fake_arg": "fake_value"
+        }]
 
         self.android_compute_client.CreateInstance(instance_name, self.IMAGE,
-                                                   extra_disk_name)
+                                                   extra_disk_name=extra_disk_name)
         super(android_compute_client.AndroidComputeClient,
               self.android_compute_client).CreateInstance.assert_called_with(
                   instance_name, self.IMAGE, self.MACHINE_TYPE,
                   expected_metadata, self.NETWORK, self.ZONE,
-                  expected_disk_args)
+                  expected_disk_args, image_project, gpu, extra_disk_name)
 
+    # pylint: disable=invalid-name
     def testCheckMachineSizeMeetsRequirement(self):
         """Test CheckMachineSize when machine size meets requirement."""
         self.Patch(
             gcompute_client.ComputeClient,
             "CompareMachineSize",
             return_value=1)
+        # pylint: disable=protected-access
         self.android_compute_client._CheckMachineSize()
         self.android_compute_client.CompareMachineSize.assert_called_with(
             self.MACHINE_TYPE, self.MIN_MACHINE_SIZE, self.ZONE)
@@ -145,21 +144,28 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
         self.assertRaisesRegexp(
             errors.DriverError,
             ".*does not meet the minimum required machine size.*",
+            # pylint: disable=protected-access
             self.android_compute_client._CheckMachineSize)
         self.android_compute_client.CompareMachineSize.assert_called_with(
             self.MACHINE_TYPE, self.MIN_MACHINE_SIZE, self.ZONE)
 
     def testCheckBoot(self):
-         """Test CheckBoot."""
-         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
-                    return_value="")
-         self.assertFalse(self.android_compute_client.CheckBoot(self.INSTANCE))
-         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
-                    return_value=self.BOOT_COMPLETED_MSG)
-         self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
-         self.Patch(gcompute_client.ComputeClient, "GetSerialPortOutput",
-                    return_value=self.BOOT_STARTED_MSG)
-         self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
+        """Test CheckBoot."""
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "GetSerialPortOutput",
+            return_value="")
+        self.assertFalse(self.android_compute_client.CheckBoot(self.INSTANCE))
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "GetSerialPortOutput",
+            return_value=self.BOOT_COMPLETED_MSG)
+        self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "GetSerialPortOutput",
+            return_value=self.BOOT_STARTED_MSG)
+        self.assertTrue(self.android_compute_client.CheckBoot(self.INSTANCE))
 
 
 if __name__ == "__main__":
