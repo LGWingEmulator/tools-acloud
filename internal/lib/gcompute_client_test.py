@@ -205,6 +205,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
     # pyformat: enable
     def testCreateImage(self, source_uri, source_disk, labels, expected_body):
         """Test CreateImage."""
+        mock_check = self.Patch(gcompute_client.ComputeClient,
+                                "CheckImageExists",
+                                return_value=False)
         mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.images = mock.MagicMock(
@@ -218,6 +221,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         mock_wait.assert_called_with(
             operation=mock.ANY,
             operation_scope=gcompute_client.OperationScope.GLOBAL)
+        mock_check.assert_called_with(self.IMAGE)
 
     @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
     def testSetImageLabel(self, mock_get_image):
@@ -249,6 +253,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         (None, None))
     def testCreateImageRaiseDriverError(self, source_uri, source_disk):
         """Test CreateImage."""
+        self.Patch(gcompute_client.ComputeClient, "CheckImageExists", return_value=False)
         self.assertRaises(errors.DriverError, self.compute_client.CreateImage,
                           image_name=self.IMAGE, source_uri=source_uri,
                           source_disk=source_disk)
@@ -256,7 +261,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
 
     @mock.patch.object(gcompute_client.ComputeClient, "DeleteImage")
     @mock.patch.object(gcompute_client.ComputeClient, "CheckImageExists",
-                       return_value=True)
+                       side_effect=[False, True])
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation",
                        side_effect=errors.DriverError("Expected fake error"))
     def testCreateImageFail(self, mock_wait, mock_check, mock_delete):
@@ -457,6 +462,13 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
         resource_mock.insert = mock.MagicMock()
+        self.Patch(
+            self.compute_client,
+            "_GetExtraDiskArgs",
+            return_value=[{"fake_extra_arg": "fake_extra_value"}])
+        extra_disk_name = "gce-x86-userdebug-2345-abcd-data"
+        expected_disk_args = [self._disk_args]
+        expected_disk_args.extend([{"fake_extra_arg": "fake_extra_value"}])
 
         expected_body = {
             "machineType": self.MACHINE_TYPE_URL,
@@ -470,7 +482,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     ],
                 }
             ],
-            "disks": [self._disk_args],
+            "disks": expected_disk_args,
             "serviceAccounts": [
                 {"email": "default",
                  "scopes": self.compute_client.DEFAULT_INSTANCE_SCOPE}
@@ -487,7 +499,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             machine_type=self.MACHINE_TYPE,
             metadata={self.METADATA[0]: self.METADATA[1]},
             network=self.NETWORK,
-            zone=self.ZONE)
+            zone=self.ZONE,
+            extra_disk_name=extra_disk_name)
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
