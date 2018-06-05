@@ -15,7 +15,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ACLOUD_DIR=$(dirname $(realpath $0))
-TOOLS_DIR=$(dirname $ACLOUD_DIR)
-# TODO: Add in path to 3rd party libs.
-PYTHONPATH=${TOOLS_DIR}:$PYTHONPATH python ${ACLOUD_DIR}/public/acloud_main.py "$@"
+source $(dirname $(realpath $0))/utils.sh
+PYTHONPATH=$(get_python_path) python ${ACLOUD_DIR}/public/acloud_main.py "$@"

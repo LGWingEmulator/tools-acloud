@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ACLOUD_DIR=`dirname $0`
+source $(dirname $(realpath $0))/utils.sh
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -20,8 +20,8 @@ function print_summary() {
     local test_results=$1
     local coverage_run=$2
     if [[ $coverage_run == "coverage" ]]; then
-        PYTHONPATH=$ANDROID_BUILD_TOP/tools coverage report -m
-        PYTHONPATH=$ANDROID_BUILD_TOP/tools coverage html
+        PYTHONPATH=$(get_python_path) coverage report -m
+        PYTHONPATH=$(get_python_path) coverage html
     fi
     if [[ $test_results -eq 0 ]]; then
         echo -e "${GREEN}All unittests pass${NC}!"
@@ -36,14 +36,14 @@ function run_unittests() {
     local rc=0
     if [[ $coverage_run == "coverage" ]]; then
         # clear previously collected coverage data.
-        PYTHONPATH=$ANDROID_BUILD_TOP/tools coverage erase
+        PYTHONPATH=$(get_python_path) coverage erase
         run_cmd="coverage run --append"
     fi
 
     # Runs all unit tests under tools/acloud.
     for t in $(find $ACLOUD_DIR -type f -name "*_test.py");
     do
-        if ! PYTHONPATH=$ANDROID_BUILD_TOP/tools $run_cmd $t; then
+        if ! PYTHONPATH=$(get_python_path) $run_cmd $t; then
             rc=1
             echo -e "${RED}$t failed${NC}"
         fi
