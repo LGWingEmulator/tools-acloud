@@ -37,6 +37,7 @@ function run_unittests() {
     done
 
     print_summary $rc
+    cleanup
     exit $rc
 }
 
@@ -59,5 +60,24 @@ function check_env() {
     fi
 }
 
+function gen_proto_py() {
+    # Use aprotoc to generate python proto files.
+    local protoc_cmd=$ANDROID_BUILD_TOP/prebuilts/misc/linux-x86/protobuf/aprotoc
+    pushd $ACLOUD_DIR &> /dev/null
+    $protoc_cmd internal/proto/*.proto --python_out=./
+    touch internal/proto/__init__.py
+    popd &> /dev/null
+}
+
+function cleanup() {
+    # Search for *.pyc and delete them.
+    find $ACLOUD_DIR -name "*.pyc" -exec rm -f {} \;
+
+    # Delete the generated proto files too.
+    find $ACLOUD_DIR/internal/proto -name "*.py" -exec rm -f {} \;
+}
+
 check_env
+cleanup
+gen_proto_py
 run_unittests

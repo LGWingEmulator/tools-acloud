@@ -80,8 +80,11 @@ python_library_host{
     name: "acloud_proto",
     defaults: ["acloud_default"],
     srcs: [
-         "internal/proto/*.py",
+        "internal/proto/*.proto",
     ],
+    proto: {
+        canonical_path_from_root: false,
+    },
 }
 
 python_library_host{
