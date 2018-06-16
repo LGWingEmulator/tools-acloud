@@ -41,7 +41,10 @@ python_binary_host {
         "acloud_public",
         "acloud_internal",
         "acloud_proto",
+        "py-apitools",
         "py-dateutil",
+        "py-google-api-python-client",
+        "py-oauth2client",
     ],
 }
 
