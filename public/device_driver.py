@@ -27,12 +27,14 @@ TODO: The following APIs have not been implemented
   - CleanupStaleDevices():
 """
 
+from __future__ import print_function
 import datetime
 import logging
 import os
 import socket
 import subprocess
 
+# pylint: disable=import-error
 import dateutil.parser
 import dateutil.tz
 
@@ -638,6 +640,6 @@ def CheckAccess(cfg):
     if not compute_client.CheckAccess():
         logger.error("User does not have access to project %s", cfg.project)
         # Print here so that command line user can see it.
-        print "Looks like you do not have access to %s. " % cfg.project
+        print("Looks like you do not have access to %s. " % cfg.project)
         if cfg.project in cfg.no_project_access_msg_map:
-            print cfg.no_project_access_msg_map[cfg.project]
+            print(cfg.no_project_access_msg_map[cfg.project])
