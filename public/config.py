@@ -176,6 +176,8 @@ class AcloudConfig(object):
                     parsed_args.spec, "")
         if parsed_args.email:
             self.service_account_name = parsed_args.email
+        if parsed_args.which == "create_gf" and parsed_args.base_image:
+            self.stable_goldfish_host_image_name = parsed_args.base_image
 
     def Verify(self):
         """Verify configuration fields."""
