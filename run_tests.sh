@@ -28,7 +28,7 @@ function run_unittests() {
     PYTHONPATH=$(get_python_path) python -m coverage erase
 
     # Runs all unit tests under tools/acloud.
-    for t in $(find $ACLOUD_DIR -type f -name "*_test.py");
+    for t in $(find $ACLOUD_DIR -type f -name "*_test.py" ! -name "acloud_test.py");
     do
         if ! PYTHONPATH=$(get_python_path):$PYTHONPATH $run_cmd $t; then
             rc=1

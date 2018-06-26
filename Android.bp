@@ -49,12 +49,33 @@ python_binary_host {
     ],
 }
 
-python_library_host{
+python_test_host {
+    name: "acloud_test",
+    main: "acloud_test.py",
+    defaults: ["acloud_default"],
+    srcs: [
+        "acloud_test.py",
+        "public/*_test.py",
+        "public/actions/*_test.py",
+        "internal/lib/*_test.py",
+    ],
+    libs: [
+        "acloud_public",
+        "acloud_internal",
+        "acloud_proto",
+        "py-apitools",
+        "py-dateutil",
+        "py-google-api-python-client",
+        "py-oauth2client",
+    ],
+}
+
+python_library_host {
     name: "acloud_public",
     defaults: ["acloud_default"],
     srcs: [
-         "public/*.py",
-         "public/actions/*.py",
+        "public/*.py",
+        "public/actions/*.py",
     ],
     exclude_srcs: [
         "public/*_test.py",
@@ -63,20 +84,19 @@ python_library_host{
     ]
 }
 
-python_library_host{
+python_library_host {
     name: "acloud_internal",
     defaults: ["acloud_default"],
     srcs: [
-         "internal/*.py",
-         "internal/lib/*.py",
+        "internal/*.py",
+        "internal/lib/*.py",
     ],
     exclude_srcs: [
-        "internal/*_test.py",
         "internal/lib/*_test.py",
     ]
 }
 
-python_library_host{
+python_library_host {
     name: "acloud_proto",
     defaults: ["acloud_default"],
     srcs: [
