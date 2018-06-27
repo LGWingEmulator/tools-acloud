@@ -317,6 +317,14 @@ def _ParseArgs(args):
         help=
         "For each instance created, we will automatically creates both 2 ssh"
         " tunnels forwarding both adb & vnc. Then add the device to adb.")
+    create_gf_parser.add_argument(
+        "--base_image",
+        type=str,
+        dest="base_image",
+        required=False,
+        help="Name of the goldfish base image to be used to create the instance. "
+        "This will override stable_goldfish_host_image_name from config. "
+        "e.g. emu-dev-cts-061118")
 
     subparser_list.append(create_gf_parser)
 
