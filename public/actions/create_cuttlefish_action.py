@@ -47,6 +47,9 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
     """
 
+    RELEASE_BRANCH_SUFFIX = "-release"
+    RELEASE_BRANCH_PATH_GLOB_PATTERN = "*-%s"
+
     def __init__(self, cfg, build_target, build_id, kernel_build_id=None):
 
         self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
@@ -88,13 +91,18 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         instance = self._compute_client.GenerateInstanceName(self._build_id)
 
         # Create an instance from Stable Host Image
+        if self.RELEASE_BRANCH_SUFFIX in self._branch:
+            # Workaround for release branch builds.
+            bid = self.RELEASE_BRANCH_PATH_GLOB_PATTERN % self._build_id
+        else:
+            bid = self._build_id
         self._compute_client.CreateInstance(
             instance=instance,
             image_name=self._cfg.stable_host_image_name,
             image_project=self._cfg.stable_host_image_project,
             build_target=self._build_target,
             branch=self._branch,
-            build_id=self._build_id,
+            build_id=bid,
             kernel_branch=self._kernel_branch,
             kernel_build_id=self._kernel_build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb)
