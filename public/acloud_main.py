@@ -77,6 +77,8 @@ from acloud.public import device_driver
 from acloud.public import errors
 from acloud.public.actions import create_cuttlefish_action
 from acloud.public.actions import create_goldfish_action
+from acloud.setup import setup
+from acloud.setup import setup_args
 
 LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 LOGGER_NAME = "acloud_main"
@@ -101,7 +103,8 @@ def _ParseArgs(args):
         Parsed args.
     """
     usage = ",".join([
-        CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_DELETE, CMD_CLEANUP, CMD_SSHKEY
+        CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_DELETE, CMD_CLEANUP, CMD_SSHKEY,
+        setup_args.CMD_SETUP,
     ])
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -374,6 +377,9 @@ def _ParseArgs(args):
         "that will be added as project-wide ssh key.")
     subparser_list.append(sshkey_parser)
 
+    # Command "setup"
+    subparser_list.append(setup_args.GetSetupArgParser(subparsers))
+
     # Add common arguments.
     for subparser in subparser_list:
         acloud_common.AddCommonArguments(subparser)
@@ -497,6 +503,7 @@ def main(argv):
     # Check access.
     device_driver.CheckAccess(cfg)
 
+    report = None
     if args.which == CMD_CREATE:
         report = device_driver.CreateAndroidVirtualDevices(
             cfg,
@@ -537,15 +544,18 @@ def main(argv):
         report = device_driver.Cleanup(cfg, args.expiration_mins)
     elif args.which == CMD_SSHKEY:
         report = device_driver.AddSshRsa(cfg, args.user, args.ssh_rsa_path)
+    elif args.which == setup_args.CMD_SETUP:
+        setup.Run(args)
     else:
         sys.stderr.write("Invalid command %s" % args.which)
         return 2
 
-    report.Dump(args.report_file)
-    if report.errors:
-        msg = "\n".join(report.errors)
-        sys.stderr.write("Encountered the following errors:\n%s\n" % msg)
-        return 1
+    if report:
+        report.Dump(args.report_file)
+        if report.errors:
+            msg = "\n".join(report.errors)
+            sys.stderr.write("Encountered the following errors:\n%s\n" % msg)
+            return 1
     return 0
 
 
