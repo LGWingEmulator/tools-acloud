@@ -14,6 +14,7 @@
 
 python_defaults {
     name: "acloud_default",
+    pkg_path: "acloud",
     version: {
         py2: {
             enabled: true,
@@ -29,7 +30,6 @@ python_defaults {
 python_binary_host {
     name: "acloud",
     defaults: ["acloud_default"],
-    pkg_path: "acloud",
     main: "public/acloud_main.py",
     srcs: [
         "public/acloud_main.py",
@@ -41,6 +41,7 @@ python_binary_host {
         "acloud_public",
         "acloud_internal",
         "acloud_proto",
+        "acloud_setup",
         "py-apitools",
         "py-dateutil",
         "py-google-api-python-client",
@@ -51,7 +52,6 @@ python_binary_host {
 python_library_host{
     name: "acloud_public",
     defaults: ["acloud_default"],
-    pkg_path: "acloud",
     srcs: [
          "public/*.py",
          "public/actions/*.py",
@@ -66,7 +66,6 @@ python_library_host{
 python_library_host{
     name: "acloud_internal",
     defaults: ["acloud_default"],
-    pkg_path: "acloud",
     srcs: [
          "internal/*.py",
          "internal/lib/*.py",
@@ -80,8 +79,15 @@ python_library_host{
 python_library_host{
     name: "acloud_proto",
     defaults: ["acloud_default"],
-    pkg_path: "acloud",
     srcs: [
          "internal/proto/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_setup",
+    defaults: ["acloud_default"],
+    srcs: [
+         "setup/*.py",
     ],
 }
