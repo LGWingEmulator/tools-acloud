@@ -221,7 +221,7 @@ class AcloudConfigManager(object):
             user_config_path: path to the user config.
             internal_config_path: path to the internal conifg.
         """
-        self._user_config_path = user_config_path
+        self.user_config_path = user_config_path
         self._internal_config_path = internal_config_path
 
     def Load(self):
@@ -244,18 +244,18 @@ class AcloudConfigManager(object):
         except OSError as e:
             raise errors.ConfigError("Could not load config files: %s" % str(e))
         # Load user config file
-        if self._user_config_path:
-            if os.path.exists(self._user_config_path):
-                with open(self._user_config_path, "r") as config_file:
+        if self.user_config_path:
+            if os.path.exists(self.user_config_path):
+                with open(self.user_config_path, "r") as config_file:
                     usr_cfg = self.LoadConfigFromProtocolBuffer(
                         config_file, user_config_pb2.UserConfig)
             else:
                 raise errors.ConfigError("The file doesn't exist: %s" %
-                                         (self._user_config_path))
+                                         (self.user_config_path))
         else:
-            self._user_config_path = GetDefaultConfigFile()
-            if os.path.exists(self._user_config_path):
-                with open(self._user_config_path, "r") as config_file:
+            self.user_config_path = GetDefaultConfigFile()
+            if os.path.exists(self.user_config_path):
+                with open(self.user_config_path, "r") as config_file:
                     usr_cfg = self.LoadConfigFromProtocolBuffer(
                         config_file, user_config_pb2.UserConfig)
             else:
