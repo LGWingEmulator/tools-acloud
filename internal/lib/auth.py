@@ -38,11 +38,12 @@ service account*               | oauth2 + private key
 
 import logging
 import os
-import sys
 
 import httplib2
 
+# pylint: disable=import-error
 from oauth2client import client as oauth2_client
+from oauth2client import service_account as oauth2_service_account
 from oauth2client.contrib import multistore_file
 from oauth2client import tools as oauth2_tools
 
@@ -68,14 +69,12 @@ def _CreateOauthServiceAccountCreds(email, private_key_path, scopes):
         errors.AuthentcationError: if failed to authenticate.
     """
     try:
-        with open(private_key_path) as f:
-            private_key = f.read()
-            credentials = oauth2_client.SignedJwtAssertionCredentials(
-                email, private_key, scopes)
+        credentials = oauth2_service_account.ServiceAccountCredentials.from_p12_keyfile(
+            email, private_key_path, scopes=scopes)
     except EnvironmentError as e:
         raise errors.AuthentcationError(
-            "Could not authenticate using private key file %s, error message: %s",
-            private_key_path, str(e))
+            "Could not authenticate using private key file (%s) "
+            " error message: %s" % (private_key_path, str(e)))
     return credentials
 
 
