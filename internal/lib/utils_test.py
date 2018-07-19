@@ -124,9 +124,9 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         """Test when the key pair already exists."""
         public_key = "/fake/public_key"
         private_key = "/fake/private_key"
-        self.Patch(
-            os.path, "exists", side_effect=lambda path: path == public_key)
+        self.Patch(os.path, "exists", side_effect=[True, True])
         self.Patch(subprocess, "check_call")
+        self.Patch(os, "makedirs", return_value=True)
         utils.CreateSshKeyPairIfNotExist(private_key, public_key)
         self.assertEqual(subprocess.check_call.call_count, 0)  #pylint: disable=no-member
 
@@ -135,6 +135,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         public_key = "/fake/public_key"
         private_key = "/fake/private_key"
         self.Patch(os.path, "exists", return_value=False)
+        self.Patch(os, "makedirs", return_value=True)
         self.Patch(subprocess, "check_call")
         self.Patch(os, "rename")
         utils.CreateSshKeyPairIfNotExist(private_key, public_key)
@@ -144,6 +145,21 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
             ["-C", getpass.getuser(), "-f", private_key],
             stdout=mock.ANY,
             stderr=mock.ANY)
+
+    def testCreatePublicKeyAreCreated(self):
+        """Test when the PublicKey created."""
+        public_key = "/fake/public_key"
+        private_key = "/fake/private_key"
+        self.Patch(os.path, "exists", side_effect=[False, True, True])
+        self.Patch(os, "makedirs", return_value=True)
+        mock_open = mock.mock_open(read_data=public_key)
+        self.Patch(__builtins__, "open", mock_open, create=True)
+        self.Patch(subprocess, "check_output")
+        self.Patch(os, "rename")
+        utils.CreateSshKeyPairIfNotExist(private_key, public_key)
+        self.assertEqual(subprocess.check_output.call_count, 1)  #pylint: disable=no-member
+        subprocess.check_output.assert_called_with(  #pylint: disable=no-member
+            utils.SSH_KEYGEN_PUB_CMD +["-f", private_key])
 
     def TestRetryOnException(self):
         """Test Retry."""
