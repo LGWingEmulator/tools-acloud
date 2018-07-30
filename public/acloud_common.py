@@ -36,6 +36,11 @@ def AddCommonArguments(parser):
         default=DEFAULT_CONFIG_FILE,
         help="Path to the config file, default to acloud.config"
         "in the current working directory")
+    parser.add_argument(
+        "--service_account_json_private_key_path",
+        type=str,
+        dest="service_account_json_private_key_path",
+        help="Path to service account's json private key file.")
     parser.add_argument("--report_file",
                         type=str,
                         dest="report_file",

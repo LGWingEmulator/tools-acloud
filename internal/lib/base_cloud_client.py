@@ -89,6 +89,10 @@ class BaseCloudApiClient(object):
             retry_backoff_factor=cls.RETRY_BACKOFF_FACTOR,
             serviceName=cls.API_NAME,
             version=cls.API_VERSION,
+            # This is workaround for a known issue of some veriosn
+            # of api client.
+            # https://github.com/google/google-api-python-client/issues/435
+            cache_discovery=False,
             http=http_auth)
 
     @staticmethod
