@@ -66,16 +66,41 @@ def _CreateOauthServiceAccountCreds(email, private_key_path, scopes):
         An oauth2client.OAuth2Credentials instance.
 
     Raises:
-        errors.AuthentcationError: if failed to authenticate.
+        errors.AuthenticationError: if failed to authenticate.
     """
     try:
         credentials = oauth2_service_account.ServiceAccountCredentials.from_p12_keyfile(
             email, private_key_path, scopes=scopes)
     except EnvironmentError as e:
-        raise errors.AuthentcationError(
+        raise errors.AuthenticationError(
             "Could not authenticate using private key file (%s) "
             " error message: %s" % (private_key_path, str(e)))
     return credentials
+
+
+def _CreateOauthServiceAccountCredsWithJsonKey(json_private_key_path, scopes):
+    """Create credentials with a normal service account from json key file.
+
+    Args:
+        json_private_key_path: Path to the service account json key file.
+        scopes: string, multiple scopes should be saperated by space.
+                        Api scopes to request for the oauth token.
+
+    Returns:
+        An oauth2client.OAuth2Credentials instance.
+
+    Raises:
+        errors.AuthenticationError: if failed to authenticate.
+    """
+    try:
+        return (
+            oauth2_service_account.ServiceAccountCredentials
+            .from_json_keyfile_name(
+                json_private_key_path, scopes=scopes))
+    except EnvironmentError as e:
+        raise errors.AuthenticationError(
+            "Could not authenticate using json private key file (%s) "
+            " error message: %s" % (json_private_key_path, str(e)))
 
 
 class RunFlowFlags(object):
@@ -128,7 +153,7 @@ def _CreateOauthUserCreds(creds_cache_file, client_id, client_secret,
         An oauth2client.OAuth2Credentials instance.
     """
     if not client_id or not client_secret:
-        raise errors.AuthentcationError(
+        raise errors.AuthenticationError(
             "Could not authenticate using Oauth2 flow, please set client_id "
             "and client_secret in your config file. Contact the cloud project's "
             "admin if you don't have the client_id and client_secret.")
@@ -159,7 +184,11 @@ def CreateCredentials(acloud_config, scopes):
     Returns:
         An oauth2client.OAuth2Credentials instance.
     """
-    if acloud_config.service_account_private_key_path:
+    if acloud_config.service_account_json_private_key_path:
+        return _CreateOauthServiceAccountCredsWithJsonKey(
+            acloud_config.service_account_json_private_key_path,
+            scopes=scopes)
+    elif acloud_config.service_account_private_key_path:
         return _CreateOauthServiceAccountCreds(
             acloud_config.service_account_name,
             acloud_config.service_account_private_key_path,

@@ -77,6 +77,8 @@ class AcloudConfig(object):
         # pylint: disable=invalid-name
         self.service_account_private_key_path = (
             usr_cfg.service_account_private_key_path)
+        self.service_account_json_private_key_path = (
+            usr_cfg.service_account_json_private_key_path)
         self.creds_cache_file = internal_cfg.creds_cache_file
         self.user_agent = internal_cfg.user_agent
         self.client_id = usr_cfg.client_id
@@ -176,6 +178,9 @@ class AcloudConfig(object):
                     parsed_args.spec, "")
         if parsed_args.email:
             self.service_account_name = parsed_args.email
+        if parsed_args.service_account_json_private_key_path:
+            self.service_account_json_private_key_path = (
+                parsed_args.service_account_json_private_key_path)
         if parsed_args.which == "create_gf" and parsed_args.base_image:
             self.stable_goldfish_host_image_name = parsed_args.base_image
 
