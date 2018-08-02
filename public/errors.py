@@ -73,7 +73,7 @@ class HasRetriableRequestsError(DriverError):
     """Raised when some retriable requests fail in a batch execution."""
 
 
-class AuthentcationError(DriverError):
+class AuthenticationError(DriverError):
     """Raised when authentication fails."""
 
 
