@@ -26,6 +26,8 @@ This CLI manages google compute engine project for android devices.
      # If using service account
      service_account_name: "your_account@developer.gserviceaccount.com"
      service_account_private_key_path: "/path/to/your-project.p12"
+     # Or
+     service_account_json_private_key_path: "/path/to/your-project.json"
 
      # If using OAuth2 authentication flow
      client_id: <client id created in the project>

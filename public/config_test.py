@@ -30,6 +30,7 @@ class AcloudConfigManagerTest(unittest.TestCase):
     USER_CONFIG = """
 service_account_name: "fake@developer.gserviceaccount.com"
 service_account_private_key_path: "/path/to/service/account/key"
+service_account_json_private_key_path: "/path/to/service/account/json_key"
 project: "fake-project"
 zone: "us-central1-f"
 machine_type: "n1-standard-1"
@@ -105,6 +106,8 @@ valid_branch_and_min_build_id {
                          "fake@developer.gserviceaccount.com")
         self.assertEqual(cfg.service_account_private_key_path,
                          "/path/to/service/account/key")
+        self.assertEqual(cfg.service_account_json_private_key_path,
+                         "/path/to/service/account/json_key")
         self.assertEqual(cfg.project, "fake-project")
         self.assertEqual(cfg.zone, "us-central1-f")
         self.assertEqual(cfg.machine_type, "n1-standard-1")
