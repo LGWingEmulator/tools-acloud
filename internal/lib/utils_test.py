@@ -153,10 +153,10 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         self.Patch(os.path, "exists", side_effect=[False, True, True])
         self.Patch(os, "makedirs", return_value=True)
         mock_open = mock.mock_open(read_data=public_key)
-        self.Patch(__builtins__, "open", mock_open, create=True)
         self.Patch(subprocess, "check_output")
         self.Patch(os, "rename")
-        utils.CreateSshKeyPairIfNotExist(private_key, public_key)
+        with mock.patch("__builtin__.open", mock_open):
+            utils.CreateSshKeyPairIfNotExist(private_key, public_key)
         self.assertEqual(subprocess.check_output.call_count, 1)  #pylint: disable=no-member
         subprocess.check_output.assert_called_with(  #pylint: disable=no-member
             utils.SSH_KEYGEN_PUB_CMD +["-f", private_key])
