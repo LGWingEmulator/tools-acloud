@@ -105,7 +105,12 @@ def _ParseArgs(args):
         Parsed args.
     """
     usage = ",".join([
-        CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_DELETE, CMD_CLEANUP, CMD_SSHKEY,
+        CMD_CLEANUP,
+        CMD_CREATE,
+        CMD_CREATE_CUTTLEFISH,
+        CMD_CREATE_GOLDFISH,
+        CMD_DELETE,
+        CMD_SSHKEY,
         setup_args.CMD_SETUP,
     ])
     parser = argparse.ArgumentParser(
