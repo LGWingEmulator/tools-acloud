@@ -23,8 +23,8 @@ import unittest
 import mock
 
 # pylint: disable=import-error
-import apiclient.http
 from absl.testing import parameterized
+import apiclient.http
 
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
@@ -937,7 +937,6 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
 
         self.Patch(os.path, "exists", return_value=True)
         m = mock.mock_open(read_data=sshkey)
-        self.Patch(__builtins__, "open", m, create=True)
         self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         self.Patch(
             gcompute_client.ComputeClient, "GetProject", return_value=project)
@@ -946,9 +945,10 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             return_value=resource_mock)
         resource_mock.setCommonInstanceMetadata = mock.MagicMock()
 
-        self.compute_client.AddSshRsa(fake_user, "/path/to/test_rsa.pub")
-        resource_mock.setCommonInstanceMetadata.assert_called_with(
-            project=PROJECT, body=expected)
+        with mock.patch("__builtin__.open", m):
+            self.compute_client.AddSshRsa(fake_user, "/path/to/test_rsa.pub")
+            resource_mock.setCommonInstanceMetadata.assert_called_with(
+                project=PROJECT, body=expected)
 
     def testAddSshRsaInvalidKey(self):
         """Test AddSshRsa.."""
@@ -968,13 +968,13 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         }
         self.Patch(os.path, "exists", return_value=True)
         m = mock.mock_open(read_data=sshkey)
-        self.Patch(__builtins__, "open", m, create=True)
         self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         self.Patch(
             gcompute_client.ComputeClient, "GetProject", return_value=project)
-        self.assertRaisesRegexp(errors.DriverError, "rsa key is invalid:*",
-                                self.compute_client.AddSshRsa, fake_user,
-                                "/path/to/test_rsa.pub")
+        with mock.patch("__builtin__.open", m):
+            self.assertRaisesRegexp(errors.DriverError, "rsa key is invalid:*",
+                                    self.compute_client.AddSshRsa, fake_user,
+                                    "/path/to/test_rsa.pub")
 
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
     def testDeleteDisks(self, mock_wait):
