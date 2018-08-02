@@ -71,6 +71,9 @@ message UserConfig {
   // [GOLDFISH only] The project that the stable goldfish host image is
   // released to (emu-dev-cts)
 
-
   optional string stable_goldfish_host_image_project = 19;
+
+  // Account information for accessing Cloud API
+  // This is the new way to provide service account auth.
+  optional string service_account_json_private_key_path = 20;
 }
