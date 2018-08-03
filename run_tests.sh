@@ -1,9 +1,27 @@
 #!/bin/bash
 
-source $(dirname $(realpath $0))/utils.sh
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
+ACLOUD_DIR=$(dirname $(realpath $0))
+TOOLS_DIR=$(dirname $ACLOUD_DIR)
+THIRD_PARTY_DIR=$(dirname $TOOLS_DIR)/external/python
+
+function get_python_path() {
+    local python_path=$TOOLS_DIR
+    local third_party_libs=(
+        "apitools"
+        "dateutil"
+        "google-api-python-client"
+        "oauth2client"
+    )
+    for lib in ${third_party_libs[*]};
+    do
+        python_path=$THIRD_PARTY_DIR/$lib:$python_path
+    done
+    python_path=$python_path:$PYTHONPATH
+    echo $python_path
+}
 
 function print_summary() {
     local test_results=$1

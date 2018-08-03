@@ -1,19 +1,19 @@
-The Cloud Android Driver Binaries (namely, acloud) in this project provide the
-standard APIs to access and control Cloud Android devices (i.e., Android Virtual
-Devices on Google Compute Engine) instantiated by using the Android source code
+Acloud is a tool to facilitate creation and all related interactions with an
+Android Virtual Device. The tool is currently getting revamped so this README.md
+will get updated when we're ready to announce that the changes are ready for
+general availability.
+
+If you are so inclined to try it out right now, follow the instructions below
+to get a taste.
 
 #1. Compilation:
 
-    `$ make acloud` # this produces acloud.zip
+    `$ make acloud`
 
-#2. Installation:
-
-    `$ pip install -r tools/acloud/pip_requirements.txt out/host/linux-x86/tools/acloud.zip`
-
-#3. Execution:
+#2. Execution:
 
     `$ acloud <flags>
 
-To run all unit tests:
+To run unit tests:
 
     `$ tools\acloud\run_tests.sh`
