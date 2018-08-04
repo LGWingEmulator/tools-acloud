@@ -23,7 +23,6 @@ import unittest
 import mock
 
 # pylint: disable=import-error
-from absl.testing import parameterized
 import apiclient.http
 
 from acloud.internal.lib import driver_test_lib
@@ -38,7 +37,7 @@ GS_IMAGE_SOURCE_DISK = (
 PROJECT = "fake-project"
 
 # pylint: disable=protected-access, too-many-public-methods
-class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
+class ComputeClientTest(driver_test_lib.BaseDriverTest):
     """Test ComputeClient."""
 
     PROJECT_OTHER = "fake-project-other"
@@ -190,21 +189,64 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         resource_mock.get.assert_called_with(
             project=self.PROJECT_OTHER, image=self.IMAGE_OTHER)
 
-    # pyformat: disable
-    @parameterized.parameters(
-        (GS_IMAGE_SOURCE_URI, None, None,
-         {"name": IMAGE,
-          "rawDisk": {"source": GS_IMAGE_SOURCE_URI}}),
-        (None, GS_IMAGE_SOURCE_DISK, None,
-         {"name": IMAGE,
-          "sourceDisk": GS_IMAGE_SOURCE_DISK}),
-        (None, GS_IMAGE_SOURCE_DISK, {"label1": "xxx"},
-         {"name": IMAGE,
-          "sourceDisk": GS_IMAGE_SOURCE_DISK,
-          "labels": {"label1": "xxx"}}))
-    # pyformat: enable
-    def testCreateImage(self, source_uri, source_disk, labels, expected_body):
-        """Test CreateImage."""
+    def testCreateImageWithSourceURI(self):
+        """Test CreateImage with src uri."""
+        source_uri = GS_IMAGE_SOURCE_URI
+        source_disk = None
+        labels = None
+        expected_body = {"name": self.IMAGE,
+                         "rawDisk": {"source": GS_IMAGE_SOURCE_URI}}
+        mock_check = self.Patch(gcompute_client.ComputeClient,
+                                "CheckImageExists",
+                                return_value=False)
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        resource_mock = mock.MagicMock()
+        self.compute_client._service.images = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.insert = mock.MagicMock()
+        self.compute_client.CreateImage(
+            image_name=self.IMAGE, source_uri=source_uri,
+            source_disk=source_disk, labels=labels)
+        resource_mock.insert.assert_called_with(
+            project=PROJECT, body=expected_body)
+        mock_wait.assert_called_with(
+            operation=mock.ANY,
+            operation_scope=gcompute_client.OperationScope.GLOBAL)
+        mock_check.assert_called_with(self.IMAGE)
+
+    def testCreateImageWithSourceDisk(self):
+        """Test CreateImage with src disk."""
+        source_uri = None
+        source_disk = GS_IMAGE_SOURCE_DISK
+        labels = None
+        expected_body = {"name": self.IMAGE,
+                         "sourceDisk": GS_IMAGE_SOURCE_DISK}
+        mock_check = self.Patch(gcompute_client.ComputeClient,
+                                "CheckImageExists",
+                                return_value=False)
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        resource_mock = mock.MagicMock()
+        self.compute_client._service.images = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.insert = mock.MagicMock()
+        self.compute_client.CreateImage(
+            image_name=self.IMAGE, source_uri=source_uri,
+            source_disk=source_disk, labels=labels)
+        resource_mock.insert.assert_called_with(
+            project=PROJECT, body=expected_body)
+        mock_wait.assert_called_with(
+            operation=mock.ANY,
+            operation_scope=gcompute_client.OperationScope.GLOBAL)
+        mock_check.assert_called_with(self.IMAGE)
+
+    def testCreateImageWithSourceDiskAndLabel(self):
+        """Test CreateImage with src disk and label."""
+        source_uri = None
+        source_disk = GS_IMAGE_SOURCE_DISK
+        labels = {"label1": "xxx"}
+        expected_body = {"name": self.IMAGE,
+                         "sourceDisk": GS_IMAGE_SOURCE_DISK,
+                         "labels": {"label1": "xxx"}}
         mock_check = self.Patch(gcompute_client.ComputeClient,
                                 "CheckImageExists",
                                 return_value=False)
@@ -248,16 +290,23 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
                     "labelFingerprint": self.IMAGE_FINGERPRINT
                 })
 
-    @parameterized.parameters(
-        (GS_IMAGE_SOURCE_URI, GS_IMAGE_SOURCE_DISK),
-        (None, None))
-    def testCreateImageRaiseDriverError(self, source_uri, source_disk):
-        """Test CreateImage."""
+    def testCreateImageRaiseDriverErrorWithValidInput(self):
+        """Test CreateImage with valid input."""
+        source_uri = GS_IMAGE_SOURCE_URI
+        source_disk = GS_IMAGE_SOURCE_DISK
         self.Patch(gcompute_client.ComputeClient, "CheckImageExists", return_value=False)
         self.assertRaises(errors.DriverError, self.compute_client.CreateImage,
                           image_name=self.IMAGE, source_uri=source_uri,
                           source_disk=source_disk)
 
+    def testCreateImageRaiseDriverErrorWithInvalidInput(self):
+        """Test CreateImage with valid input."""
+        source_uri = None
+        source_disk = None
+        self.Patch(gcompute_client.ComputeClient, "CheckImageExists", return_value=False)
+        self.assertRaises(errors.DriverError, self.compute_client.CreateImage,
+                          image_name=self.IMAGE, source_uri=source_uri,
+                          source_disk=source_disk)
 
     @mock.patch.object(gcompute_client.ComputeClient, "DeleteImage")
     @mock.patch.object(gcompute_client.ComputeClient, "CheckImageExists",
@@ -620,10 +669,10 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
         self.assertEqual(failed, [])
         self.assertEqual(set(deleted), set(fake_instances))
 
-    @parameterized.parameters(("fake-image-project", "fake-image-project"),
-                              (None, PROJECT))
-    def testCreateDisk(self, source_project, expected_project_to_use):
-        """Test CreateDisk with images."""
+    def testCreateDiskWithProject(self):
+        """Test CreateDisk with images using a set project."""
+        source_project = "fake-image-project"
+        expected_project_to_use = "fake-image-project"
         mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.disks = mock.MagicMock(
@@ -647,11 +696,68 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest, parameterized.TestCase):
             })
         self.assertTrue(mock_wait.called)
 
-    @parameterized.parameters(
-        (gcompute_client.PersistentDiskType.STANDARD, "pd-standard"),
-        (gcompute_client.PersistentDiskType.SSD, "pd-ssd"))
-    def testCreateDiskWithType(self, disk_type, expected_disk_type_string):
-        """Test CreateDisk with images."""
+    def testCreateDiskWithNoSourceProject(self):
+        """Test CreateDisk with images with no set project."""
+        source_project = None
+        expected_project_to_use = PROJECT
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        resource_mock = mock.MagicMock()
+        self.compute_client._service.disks = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.insert = mock.MagicMock()
+        self.compute_client.CreateDisk(
+            "fake_disk", "fake_image", 10, self.ZONE, source_project=source_project)
+        resource_mock.insert.assert_called_with(
+            project=PROJECT,
+            zone=self.ZONE,
+            sourceImage="projects/%s/global/images/fake_image" %
+            expected_project_to_use,
+            body={
+                "name":
+                    "fake_disk",
+                "sizeGb":
+                    10,
+                "type":
+                    "projects/%s/zones/%s/diskTypes/pd-standard" % (PROJECT,
+                                                                    self.ZONE)
+            })
+        self.assertTrue(mock_wait.called)
+
+    def testCreateDiskWithTypeStandard(self):
+        """Test CreateDisk with images using standard."""
+        disk_type = gcompute_client.PersistentDiskType.STANDARD
+        expected_disk_type_string = "pd-standard"
+        mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        resource_mock = mock.MagicMock()
+        self.compute_client._service.disks = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.insert = mock.MagicMock()
+        self.compute_client.CreateDisk(
+            "fake_disk",
+            "fake_image",
+            10,
+            self.ZONE,
+            source_project="fake-project",
+            disk_type=disk_type)
+        resource_mock.insert.assert_called_with(
+            project=PROJECT,
+            zone=self.ZONE,
+            sourceImage="projects/%s/global/images/fake_image" % "fake-project",
+            body={
+                "name":
+                    "fake_disk",
+                "sizeGb":
+                    10,
+                "type":
+                    "projects/%s/zones/%s/diskTypes/%s" %
+                    (PROJECT, self.ZONE, expected_disk_type_string)
+            })
+        self.assertTrue(mock_wait.called)
+
+    def testCreateDiskWithTypeSSD(self):
+        """Test CreateDisk with images using standard."""
+        disk_type = gcompute_client.PersistentDiskType.SSD
+        expected_disk_type_string = "pd-ssd"
         mock_wait = self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
         resource_mock = mock.MagicMock()
         self.compute_client._service.disks = mock.MagicMock(
