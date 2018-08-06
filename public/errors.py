@@ -83,3 +83,19 @@ class DeviceBootError(DriverError):
 
 class DeviceBootTimeoutError(DeviceBootError):
     """Raised when an AVD defice failed to boot within timeout."""
+
+
+class SetupError(Exception):
+    """Base Setup cmd exception."""
+
+
+class OSTypeError(SetupError):
+    """Error related to OS type."""
+
+
+class NoGoogleSDKDetected(SetupError):
+    """Can't find the SDK path."""
+
+
+class UnsupportedGoogleSDKFileType(SetupError):
+    """Don't support the compression file type."""
