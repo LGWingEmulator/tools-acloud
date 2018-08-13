@@ -38,6 +38,7 @@ python_binary_host {
         "public/data/default.config",
     ],
     libs: [
+        "acloud_create",
         "acloud_public",
         "acloud_internal",
         "acloud_proto",
@@ -115,5 +116,13 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "setup/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_create",
+    defaults: ["acloud_default"],
+    srcs: [
+         "create/*.py",
     ],
 }
