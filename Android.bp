@@ -53,6 +53,9 @@ python_test_host {
     name: "acloud_test",
     main: "acloud_test.py",
     defaults: ["acloud_default"],
+    data: [
+        "public/data/default.config",
+    ],
     srcs: [
         "acloud_test.py",
         "public/*_test.py",
