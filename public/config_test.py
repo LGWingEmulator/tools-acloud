@@ -17,6 +17,7 @@
 """Tests for acloud.public.config."""
 import unittest
 import os
+import tempfile
 import mock
 
 # pylint: disable=no-name-in-module,import-error
@@ -144,24 +145,32 @@ valid_branch_and_min_build_id {
         # Test default config
         config_unspecify = config.AcloudConfigManager(None)
         cfg = config_unspecify.Load()
-        self.assertEqual(config_unspecify._user_config_path, config.GetDefaultConfigFile())
+        self.assertEqual(config_unspecify._user_config_path,
+                         config.GetDefaultConfigFile())
         self.assertEqual(cfg.project, "")
         self.assertEqual(cfg.zone, "")
-        # Test user config exist
+
+        # Test default user config exist
         mock_file_exist.return_value = True
-        backup_file = config.GetDefaultConfigFile() + ".backup"
-        if os.path.exists(config.GetDefaultConfigFile()):
-            os.rename(config.GetDefaultConfigFile(), backup_file)
-        with open(config.GetDefaultConfigFile(), "w") as cfg_file:
+        # Write the config data into a tmp file and have GetDefaultConfigFile
+        # return that.
+        _, temp_cfg_file_path = tempfile.mkstemp()
+        with open(temp_cfg_file_path, "w") as cfg_file:
             cfg_file.writelines(self.USER_CONFIG)
-        config_exist = config.AcloudConfigManager(None)
-        cfg = config_exist.Load()
-        self.assertEqual(cfg.project, "fake-project")
-        self.assertEqual(cfg.zone, "us-central1-f")
-        self.assertEqual(cfg.client_id, "fake_client_id")
-        self.assertEqual(cfg.client_secret, "fake_client_secret")
-        if os.path.exists(backup_file):
-            os.rename(backup_file, config.GetDefaultConfigFile())
+        default_patcher = mock.patch.object(config, "GetDefaultConfigFile",
+                                            return_value=temp_cfg_file_path)
+        default_patcher.start()
+        try:
+            config_exist = config.AcloudConfigManager(None)
+            cfg = config_exist.Load()
+            self.assertEqual(cfg.project, "fake-project")
+            self.assertEqual(cfg.zone, "us-central1-f")
+            self.assertEqual(cfg.client_id, "fake_client_id")
+            self.assertEqual(cfg.client_secret, "fake_client_secret")
+        finally:
+            # Delete tmp file
+            os.remove(temp_cfg_file_path)
+            default_patcher.stop()
 
     def testLoadInternalConfig(self):
         """Test loading internal config."""
