@@ -79,6 +79,8 @@ from acloud.public import device_driver
 from acloud.public import errors
 from acloud.public.actions import create_cuttlefish_action
 from acloud.public.actions import create_goldfish_action
+from acloud.create import create
+from acloud.create import create_args
 from acloud.setup import setup
 from acloud.setup import setup_args
 
@@ -86,7 +88,6 @@ LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 LOGGER_NAME = "acloud_main"
 
 # Commands
-CMD_CREATE = "create"
 CMD_CREATE_CUTTLEFISH = "create_cf"
 CMD_CREATE_GOLDFISH = "create_gf"
 CMD_DELETE = "delete"
@@ -106,11 +107,11 @@ def _ParseArgs(args):
     """
     usage = ",".join([
         CMD_CLEANUP,
-        CMD_CREATE,
         CMD_CREATE_CUTTLEFISH,
         CMD_CREATE_GOLDFISH,
         CMD_DELETE,
         CMD_SSHKEY,
+        create_args.CMD_CREATE,
         setup_args.CMD_SETUP,
     ])
     parser = argparse.ArgumentParser(
@@ -121,84 +122,7 @@ def _ParseArgs(args):
     subparser_list = []
 
     # Command "create"
-    create_parser = subparsers.add_parser(CMD_CREATE)
-    create_parser.required = False
-    create_parser.set_defaults(which=CMD_CREATE)
-    create_parser.add_argument(
-        "--build_target",
-        type=str,
-        dest="build_target",
-        help="Android build target, e.g. aosp_cf_x86_phone-userdebug, "
-        "or short names: phone, tablet, or tablet_mobile.")
-    create_parser.add_argument(
-        "--branch",
-        type=str,
-        dest="branch",
-        help="Android branch, e.g. mnc-dev or git_mnc-dev")
-    # TODO: Support HEAD (the latest build)
-    create_parser.add_argument(
-        "--build_id",
-        type=str,
-        dest="build_id",
-        help="Android build id, e.g. 2145099, P2804227")
-    create_parser.add_argument(
-        "--spec",
-        type=str,
-        dest="spec",
-        required=False,
-        help="The name of a pre-configured device spec that we are "
-        "going to use. Choose from: %s" % ", ".join(constants.SPEC_NAMES))
-    create_parser.add_argument(
-        "--num",
-        type=int,
-        dest="num",
-        required=False,
-        default=1,
-        help="Number of instances to create.")
-    create_parser.add_argument(
-        "--gce_image",
-        type=str,
-        dest="gce_image",
-        required=False,
-        help="Name of an existing compute engine image to reuse.")
-    create_parser.add_argument(
-        "--local_disk_image",
-        type=str,
-        dest="local_disk_image",
-        required=False,
-        help="Path to a local disk image to use, "
-        "e.g /tmp/avd-system.tar.gz")
-    create_parser.add_argument(
-        "--no_cleanup",
-        dest="no_cleanup",
-        default=False,
-        action="store_true",
-        help="Do not clean up temporary disk image and compute engine image. "
-        "For debugging purposes.")
-    create_parser.add_argument(
-        "--serial_log_file",
-        type=str,
-        dest="serial_log_file",
-        required=False,
-        help="Path to a *tar.gz file where serial logs will be saved "
-        "when a device fails on boot.")
-    create_parser.add_argument(
-        "--logcat_file",
-        type=str,
-        dest="logcat_file",
-        required=False,
-        help="Path to a *tar.gz file where logcat logs will be saved "
-        "when a device fails on boot.")
-    create_parser.add_argument(
-        "--autoconnect",
-        action="store_true",
-        dest="autoconnect",
-        required=False,
-        help=
-        "For each instance created, we will automatically creates both 2 ssh"
-        " tunnels forwarding both adb & vnc. Then add the device to adb.")
-
-    subparser_list.append(create_parser)
+    subparser_list.append(create_args.GetCreateArgParser(subparsers))
 
     # Command "create_cf", create cuttlefish instances
     create_cf_parser = subparsers.add_parser(CMD_CREATE_CUTTLEFISH)
@@ -228,36 +152,8 @@ def _ParseArgs(args):
         " kernel build with a particular Android build (--build_id). If not"
         " specified, the kernel that's bundled with the Android build would"
         " be used.")
-    create_cf_parser.add_argument(
-        "--num",
-        type=int,
-        dest="num",
-        required=False,
-        default=1,
-        help="Number of instances to create.")
-    create_cf_parser.add_argument(
-        "--serial_log_file",
-        type=str,
-        dest="serial_log_file",
-        required=False,
-        help="Path to a *tar.gz file where serial logs will be saved "
-        "when a device fails on boot.")
-    create_cf_parser.add_argument(
-        "--logcat_file",
-        type=str,
-        dest="logcat_file",
-        required=False,
-        help="Path to a *tar.gz file where logcat logs will be saved "
-        "when a device fails on boot.")
-    create_cf_parser.add_argument(
-        "--autoconnect",
-        action="store_true",
-        dest="autoconnect",
-        required=False,
-        help=
-        "For each instance created, we will automatically creates both 2 ssh"
-        " tunnels forwarding both adb & vnc. Then add the device to adb.")
 
+    create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
 
     # Command "create_gf", create goldfish instances
@@ -299,35 +195,6 @@ def _ParseArgs(args):
         help="GPU accelerator to use if any."
         " e.g. nvidia-tesla-k80, omit to use swiftshader")
     create_gf_parser.add_argument(
-        "--num",
-        type=int,
-        dest="num",
-        required=False,
-        default=1,
-        help="Number of instances to create.")
-    create_gf_parser.add_argument(
-        "--serial_log_file",
-        type=str,
-        dest="serial_log_file",
-        required=False,
-        help="Path to a *tar.gz file where serial logs will be saved "
-        "when a device fails on boot.")
-    create_gf_parser.add_argument(
-        "--logcat_file",
-        type=str,
-        dest="logcat_file",
-        required=False,
-        help="Path to a *tar.gz file where logcat logs will be saved "
-        "when a device fails on boot.")
-    create_gf_parser.add_argument(
-        "--autoconnect",
-        action="store_true",
-        dest="autoconnect",
-        required=False,
-        help=
-        "For each instance created, we will automatically creates both 2 ssh"
-        " tunnels forwarding both adb & vnc. Then add the device to adb.")
-    create_gf_parser.add_argument(
         "--base_image",
         type=str,
         dest="base_image",
@@ -336,6 +203,7 @@ def _ParseArgs(args):
         "This will override stable_goldfish_host_image_name from config. "
         "e.g. emu-dev-cts-061118")
 
+    create_args.AddCommonCreateArgs(create_gf_parser)
     subparser_list.append(create_gf_parser)
 
     # Command "Delete"
@@ -408,7 +276,7 @@ def _TranslateAlias(parsed_args):
     Returns:
         Parsed args with its values being translated.
     """
-    if parsed_args.which == CMD_CREATE:
+    if parsed_args.which == create_args.CMD_CREATE:
         if (parsed_args.branch and
                 not parsed_args.branch.startswith(constants.BRANCH_PREFIX)):
             parsed_args.branch = constants.BRANCH_PREFIX + parsed_args.branch
@@ -426,7 +294,8 @@ def _VerifyArgs(parsed_args):
     Raises:
         errors.CommandArgError: If args are invalid.
     """
-    if parsed_args.which == CMD_CREATE:
+    if (parsed_args.which == create_args.CMD_CREATE
+            and parsed_args.avd_type == constants.TYPE_GCE):
         if (parsed_args.spec and parsed_args.spec not in constants.SPEC_NAMES):
             raise errors.CommandArgError(
                 "%s is not valid. Choose from: %s" %
@@ -451,7 +320,7 @@ def _VerifyArgs(parsed_args):
             raise errors.CommandArgError("Must specify --emulator_build_id")
 
     if parsed_args.which in [
-            CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_CREATE_GOLDFISH
+            create_args.CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_CREATE_GOLDFISH
     ]:
         if (parsed_args.serial_log_file
                 and not parsed_args.serial_log_file.endswith(".tar.gz")):
@@ -505,11 +374,13 @@ def main(argv):
     cfg = config_mgr.Load()
     cfg.OverrideWithArgs(args)
 
+    # TODO: Move this check into the functions it is actually needed.
     # Check access.
-    device_driver.CheckAccess(cfg)
+    # device_driver.CheckAccess(cfg)
 
     report = None
-    if args.which == CMD_CREATE:
+    if (args.which == create_args.CMD_CREATE
+            and args.avd_type == constants.TYPE_GCE):
         report = device_driver.CreateAndroidVirtualDevices(
             cfg,
             args.build_target,
@@ -521,6 +392,8 @@ def main(argv):
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
             autoconnect=args.autoconnect)
+    elif args.which == create_args.CMD_CREATE:
+        create.Run()
     elif args.which == CMD_CREATE_CUTTLEFISH:
         report = create_cuttlefish_action.CreateDevices(
             cfg=cfg,

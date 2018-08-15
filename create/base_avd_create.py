@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 - The Android Open Source Project
+# Copyright 2018 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,22 +13,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""BaseAVDCreate class.
 
-"""This module holds constants used by the driver."""
-BRANCH_PREFIX = "git_"
-BUILD_TARGET_MAPPING = {
-    # TODO: Add aosp goldfish targets and internal cf targets to vendor code
-    # base.
-    "aosp_phone": "aosp_cf_x86_phone-userdebug",
-    "aosp_tablet": "aosp_cf_x86_tablet-userdebug",
-}
-SPEC_NAMES = {"nexus5", "nexus6", "nexus7_2012", "nexus7_2013", "nexus9",
-              "nexus10"}
+Parent class that will hold common logic for AVD creation use cases.
+"""
 
-DEFAULT_SERIAL_PORT = 1
-LOGCAT_SERIAL_PORT = 2
+from __future__ import print_function
 
-# AVD types
-TYPE_GCE = "gce"
-TYPE_CF = "cuttlefish"
-TYPE_GF = "goldfish"
+
+class BaseAVDCreate(object):
+    """Base class for all AVD intance creation classes."""
+
+    # pylint: disable=no-self-use
+    def Create(self):
+        """Create the AVD."""
+        print("Feature coming soon.")

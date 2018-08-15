@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 - The Android Open Source Project
+# Copyright 2018 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""Create entry point.
 
-"""This module holds constants used by the driver."""
-BRANCH_PREFIX = "git_"
-BUILD_TARGET_MAPPING = {
-    # TODO: Add aosp goldfish targets and internal cf targets to vendor code
-    # base.
-    "aosp_phone": "aosp_cf_x86_phone-userdebug",
-    "aosp_tablet": "aosp_cf_x86_tablet-userdebug",
-}
-SPEC_NAMES = {"nexus5", "nexus6", "nexus7_2012", "nexus7_2013", "nexus9",
-              "nexus10"}
+Create will handle all the logic related to creating a local/remote instance
+an Android Virtual Device and the logic related to prepping the local/remote
+image artifacts.
+"""
 
-DEFAULT_SERIAL_PORT = 1
-LOGCAT_SERIAL_PORT = 2
+from acloud.create import base_avd_create
 
-# AVD types
-TYPE_GCE = "gce"
-TYPE_CF = "cuttlefish"
-TYPE_GF = "goldfish"
+
+def Run():
+    """Run create.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+    """
+    avd_creator = base_avd_create.BaseAVDCreate()
+    avd_creator.Create()
