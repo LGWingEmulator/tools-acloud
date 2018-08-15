@@ -36,6 +36,7 @@ class AVDSpec(object):
         """
         # Let's define the private class vars here and then process the user
         # args afterwards.
+        self._autoconnect = None
         self._avd_type = None
         self._remote_image = None
         self._num_of_instances = None
@@ -49,6 +50,7 @@ class AVDSpec(object):
         representation = []
         representation.append("")
         representation.append(" - avd type: %s" % self._avd_type)
+        representation.append(" - autoconnect: %s" % self._autoconnect)
         representation.append(" - num of instances requested: %s" %
                               self._num_of_instances)
         representation.append(" - remote image details: %s" %
@@ -74,6 +76,7 @@ class AVDSpec(object):
         Args:
             args: Namespace object from argparse.parse_args.
         """
+        self._autoconnect = args.autoconnect
         self._avd_type = args.avd_type
         self._num_of_instances = args.num
 
