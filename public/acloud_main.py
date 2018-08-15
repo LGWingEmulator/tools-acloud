@@ -423,7 +423,7 @@ def main(argv):
     elif args.which == CMD_SSHKEY:
         report = device_driver.AddSshRsa(cfg, args.user, args.ssh_rsa_path)
     elif args.which == setup_args.CMD_SETUP:
-        setup.Run(args)
+        setup.Run()
     else:
         sys.stderr.write("Invalid command %s" % args.which)
         return 2

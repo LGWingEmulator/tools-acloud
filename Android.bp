@@ -33,6 +33,7 @@ python_binary_host {
     main: "public/acloud_main.py",
     srcs: [
         "public/acloud_main.py",
+        "errors.py"
     ],
     data: [
         "public/data/default.config",
@@ -116,6 +117,9 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "setup/*.py",
+    ],
+    exclude_srcs: [
+        "setup/*_test.py",
     ],
 }
 

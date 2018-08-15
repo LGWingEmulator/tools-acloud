@@ -21,12 +21,46 @@ or remote instance of an Android Virtual Device.
 
 from __future__ import print_function
 
+from acloud.internal.lib import utils
+from acloud.setup import host_setup_runner
 
-def Run(args):
+
+def Run():
     """Run setup.
 
     Args:
         args: Namespace object from argparse.parse_args.
     """
-    # TODO: Delete once we're actually doing setup stuff.
-    print ("TODO: implement actual setup functions with these args: %s" % args)
+    # Setup process will be in the following manner:
+    # 1.Print welcome message.
+    _PrintWelcomeMessage()
+
+    # 2.Init all subtasks in queue and traverse them.
+    task_queue = [host_setup_runner.CuttlefishPkgInstaller(),
+                  host_setup_runner.CuttlefishHostSetup(),]
+
+    for subtask in task_queue:
+        subtask.Run()
+
+    # 3.Print the usage hints.
+    _PrintUsage()
+
+
+def _PrintWelcomeMessage():
+    """Print welcome message when acloud setup been called."""
+
+    # pylint: disable=anomalous-backslash-in-string
+    asc_art = "                                    \n" \
+            "   ___  _______   ____  __  _____ \n" \
+            "  / _ |/ ___/ /  / __ \/ / / / _ \\ \n" \
+            " / __ / /__/ /__/ /_/ / /_/ / // /  \n" \
+            "/_/ |_\\___/____/\\____/\\____/____/ \n" \
+            "                                  \n"
+
+    print("\nWelcome to")
+    print(asc_art)
+
+
+def _PrintUsage():
+    """Print cmd usage hints when acloud setup been finished."""
+    utils.PrintColorString("\nIf you'd like more info, run '#acloud create --help'")
