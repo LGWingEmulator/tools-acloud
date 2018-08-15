@@ -393,7 +393,7 @@ def main(argv):
             logcat_file=args.logcat_file,
             autoconnect=args.autoconnect)
     elif args.which == create_args.CMD_CREATE:
-        create.Run()
+        create.Run(args)
     elif args.which == CMD_CREATE_CUTTLEFISH:
         report = create_cuttlefish_action.CreateDevices(
             cfg=cfg,

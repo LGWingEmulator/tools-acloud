@@ -20,14 +20,16 @@ an Android Virtual Device and the logic related to prepping the local/remote
 image artifacts.
 """
 
+from acloud.create import avd_spec
 from acloud.create import base_avd_create
 
 
-def Run():
+def Run(args):
     """Run create.
 
     Args:
         args: Namespace object from argparse.parse_args.
     """
+    spec = avd_spec.AVDSpec(args)
     avd_creator = base_avd_create.BaseAVDCreate()
-    avd_creator.Create()
+    avd_creator.Create(spec)
