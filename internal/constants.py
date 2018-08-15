@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This module holds constants used by the driver."""
 BRANCH_PREFIX = "git_"
 BUILD_TARGET_MAPPING = {
@@ -22,8 +21,9 @@ BUILD_TARGET_MAPPING = {
     "aosp_phone": "aosp_cf_x86_phone-userdebug",
     "aosp_tablet": "aosp_cf_x86_tablet-userdebug",
 }
-SPEC_NAMES = {"nexus5", "nexus6", "nexus7_2012", "nexus7_2013", "nexus9",
-              "nexus10"}
+SPEC_NAMES = {
+    "nexus5", "nexus6", "nexus7_2012", "nexus7_2013", "nexus9", "nexus10"
+}
 
 DEFAULT_SERIAL_PORT = 1
 LOGCAT_SERIAL_PORT = 2
@@ -32,3 +32,5 @@ LOGCAT_SERIAL_PORT = 2
 TYPE_GCE = "gce"
 TYPE_CF = "cuttlefish"
 TYPE_GF = "goldfish"
+
+USER_ANSWER_YES = {"y", "yes", "Y"}

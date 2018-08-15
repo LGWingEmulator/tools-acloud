@@ -15,6 +15,7 @@
 # limitations under the License.
 """Common Utilities."""
 
+from __future__ import print_function
 import base64
 import binascii
 import errno
@@ -44,7 +45,7 @@ class TempDir(object):
     """A context manager that ceates a temporary directory.
 
     Attributes:
-      path: The path of the temporary directory.
+        path: The path of the temporary directory.
     """
 
     def __init__(self):
@@ -220,7 +221,7 @@ def PollAndWait(func, expected_return, timeout_exception, timeout_secs,
 
 
 def GenerateUniqueName(prefix=None, suffix=None):
-    """Generate a random unque name using uuid4.
+    """Generate a random unique name using uuid4.
 
     Args:
         prefix: String, desired prefix to prepend to the generated name.
@@ -362,6 +363,43 @@ def VerifyRsaPubKey(rsa):
             "rsa key is invalid: %s, error: %s" % (rsa, str(e)))
 
 
+# pylint: disable=old-style-class,no-init
+class TextColors:
+    """A class that defines common color ANSI code."""
+
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
+def PrintColorString(message, colors=TextColors.OKBLUE):
+    """A helper function to print out colored text.
+
+    Args:
+        message: String, the message text.
+        colors: String, color code.
+    """
+    print(colors + message + TextColors.ENDC)
+
+
+def InteractWithQuestion(question, colors=TextColors.WARNING):
+    """A helper function to define the common way to run interactive cmd.
+
+    Args:
+        question: String, the question to ask user.
+        colors: String, color code.
+
+    Returns:
+        String, input from user.
+    """
+    return str(raw_input(colors + question + TextColors.ENDC).strip())
+
+
 class BatchHttpRequestExecutor(object):
     """A helper class that executes requests in batch with retry.
 
@@ -407,7 +445,11 @@ class BatchHttpRequestExecutor(object):
         self._other_retriable_errors = other_retriable_errors
 
     def _ShoudRetry(self, exception):
-        """Check if an exception is retriable."""
+        """Check if an exception is retriable.
+
+        Args:
+            exception: An exception instance.
+        """
         if isinstance(exception, self._other_retriable_errors):
             return True
 

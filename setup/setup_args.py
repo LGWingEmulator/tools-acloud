@@ -33,4 +33,10 @@ def GetSetupArgParser(subparser):
     setup_parser = subparser.add_parser(CMD_SETUP)
     setup_parser.required = False
     setup_parser.set_defaults(which=CMD_SETUP)
+    setup_parser.add_argument(
+        "--host",
+        action="store_true",
+        dest="host",
+        required=False,
+        help="Setup host to run local instance of an Android Virtual Device.")
     return setup_parser
