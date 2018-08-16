@@ -123,5 +123,112 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(report.command, "create_gf")
         self.assertEquals(report.status, "SUCCESS")
 
+    def testCreateDevicesWithoutBuildId(self):
+        """Test CreateDevices when emulator sys image build id is not provided."""
+        cfg = self._CreateCfg()
+
+        # Mock uuid
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+
+        # Mock compute client methods
+        self.compute_client.GetInstanceIP.return_value = self.IP
+        self.compute_client.GenerateImageName.return_value = self.IMAGE
+        self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
+
+        # Mock build client method
+        self.build_client.GetBranch.side_effect = [
+            self.BRANCH, self.EMULATOR_BRANCH
+        ]
+
+        # Mock _FetchBuildIdFromFile method
+        self.Patch(
+            create_goldfish_action,
+            "_FetchBuildIdFromFile",
+            return_value=self.BUILD_ID)
+
+        # Call CreateDevices
+        report = create_goldfish_action.CreateDevices(
+            cfg,
+            self.BUILD_TARGET,
+            None,
+            self.EMULATOR_BUILD_ID,
+            self.GPU,
+            branch=self.BRANCH)
+
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            image_name=self.GOLDFISH_HOST_IMAGE_NAME,
+            image_project=self.GOLDFISH_HOST_IMAGE_PROJECT,
+            build_target=self.BUILD_TARGET,
+            branch=self.BRANCH,
+            build_id=self.BUILD_ID,
+            emulator_branch=self.EMULATOR_BRANCH,
+            emulator_build_id=self.EMULATOR_BUILD_ID,
+            gpu=self.GPU)
+
+        self.assertEquals(report.data, {
+            "devices": [{
+                "instance_name": self.INSTANCE,
+                "ip": self.IP,
+            },],
+        })
+        self.assertEquals(report.command, "create_gf")
+        self.assertEquals(report.status, "SUCCESS")
+
+    #pylint: disable=invalid-name
+    def testCreateDevicesWithoutEmulatorBuildId(self):
+        """Test CreateDevices when emulator build id is not provided."""
+        cfg = self._CreateCfg()
+
+        # Mock uuid
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+
+        # Mock compute client methods
+        self.compute_client.GetInstanceIP.return_value = self.IP
+        self.compute_client.GenerateImageName.return_value = self.IMAGE
+        self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
+
+        # Mock build client method
+        self.build_client.GetBranch.side_effect = [
+            self.BRANCH, self.EMULATOR_BRANCH
+        ]
+
+        # Mock _FetchBuildIdFromFile method
+        self.Patch(
+            create_goldfish_action,
+            "_FetchBuildIdFromFile",
+            return_value=self.EMULATOR_BUILD_ID)
+
+        # Call CreateDevices
+        report = create_goldfish_action.CreateDevices(
+            cfg, self.BUILD_TARGET, self.BUILD_ID, None, self.GPU)
+
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            image_name=self.GOLDFISH_HOST_IMAGE_NAME,
+            image_project=self.GOLDFISH_HOST_IMAGE_PROJECT,
+            build_target=self.BUILD_TARGET,
+            branch=self.BRANCH,
+            build_id=self.BUILD_ID,
+            emulator_branch=self.EMULATOR_BRANCH,
+            emulator_build_id=self.EMULATOR_BUILD_ID,
+            gpu=self.GPU)
+
+        self.assertEquals(report.data, {
+            "devices": [{
+                "instance_name": self.INSTANCE,
+                "ip": self.IP,
+            },],
+        })
+        self.assertEquals(report.command, "create_gf")
+        self.assertEquals(report.status, "SUCCESS")
+
+
 if __name__ == "__main__":
     unittest.main()
