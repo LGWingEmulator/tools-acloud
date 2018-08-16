@@ -60,6 +60,12 @@ def AddCommonCreateArgs(parser):
         help=
         "For each instance created, we will automatically creates both 2 ssh"
         " tunnels forwarding both adb & vnc. Then add the device to adb.")
+    parser.add_argument(
+        "--no-autoconnect",
+        action="store_false",
+        dest="autoconnect",
+        required=False)
+    parser.set_defaults(autoconnect=True)
 
 
 def GetCreateArgParser(subparser):
