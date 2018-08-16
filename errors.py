@@ -38,3 +38,15 @@ class NotSupportedPlatformError(SetupError):
 
 class ParseBucketRegionError(SetupError):
     """Raised when parsing bucket information without region information."""
+
+
+class CreateError(Exception):
+    """Base Create cmd exception."""
+
+
+class GetEnvAndroidProductOutError(CreateError):
+    """Can't get client environment ANDROID_PRODUCT_OUT."""
+
+
+class CheckPathError(CreateError):
+    """Path does not exist."""
