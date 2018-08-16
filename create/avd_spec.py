@@ -20,6 +20,8 @@ get passed into the create classes. The inferring magic will happen within
 initialization of AVDSpec (like LKGB build id, image branch, etc).
 """
 
+from acloud.internal import constants
+
 _BUILD_TARGET = "build_target"
 _BUILD_BRANCH = "build_branch"
 _BUILD_ID = "build_id"
@@ -38,6 +40,8 @@ class AVDSpec(object):
         # args afterwards.
         self._autoconnect = None
         self._avd_type = None
+        self._flavor = None
+        self._instance_type = None
         self._remote_image = None
         self._num_of_instances = None
 
@@ -49,7 +53,9 @@ class AVDSpec(object):
         # quite sure what that would be.
         representation = []
         representation.append("")
+        representation.append(" - instance_type: %s" % self._instance_type)
         representation.append(" - avd type: %s" % self._avd_type)
+        representation.append(" - flavor: %s" % self._flavor)
         representation.append(" - autoconnect: %s" % self._autoconnect)
         representation.append(" - num of instances requested: %s" %
                               self._num_of_instances)
@@ -78,6 +84,10 @@ class AVDSpec(object):
         """
         self._autoconnect = args.autoconnect
         self._avd_type = args.avd_type
+        self._flavor = args.flavor
+        self._instance_type = (constants.INSTANCE_TYPE_LOCAL
+                               if args.local_instance else
+                               constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
 
     def _ProcessRemoteBuildArgs(self, args):
