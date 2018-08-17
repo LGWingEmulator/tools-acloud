@@ -310,14 +310,17 @@ def _VerifyArgs(parsed_args):
             raise errors.CommandArgError(
                 "Must specify --build_id and --build_target at the same time.")
 
-    if parsed_args.which in [CMD_CREATE_CUTTLEFISH, CMD_CREATE_GOLDFISH]:
+    if parsed_args.which == CMD_CREATE_CUTTLEFISH:
         if not parsed_args.build_id or not parsed_args.build_target:
             raise errors.CommandArgError(
                 "Must specify --build_id and --build_target")
 
     if parsed_args.which == CMD_CREATE_GOLDFISH:
-        if not parsed_args.emulator_build_id:
-            raise errors.CommandArgError("Must specify --emulator_build_id")
+        if not parsed_args.emulator_build_id and not parsed_args.build_id:
+            raise errors.CommandArgError("Must specify either "
+                                         "--emulator_build_id or --build_id")
+        if not parsed_args.build_target:
+            raise errors.CommandArgError("Must specify --build_target")
 
     if parsed_args.which in [
             create_args.CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_CREATE_GOLDFISH
@@ -414,7 +417,8 @@ def main(argv):
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
-            autoconnect=args.autoconnect)
+            autoconnect=args.autoconnect,
+            branch=args.branch)
     elif args.which == CMD_DELETE:
         report = device_driver.DeleteAndroidVirtualDevices(
             cfg, args.instance_names)
