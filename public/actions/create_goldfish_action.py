@@ -19,12 +19,15 @@ A Goldfish device is an emulated android device based on the android
 emulator.
 """
 import logging
+import os
 
+from acloud.public import errors
 from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import goldfish_compute_client
+from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,11 @@ ALL_SCOPES = " ".join([
     android_build_client.AndroidBuildClient.SCOPE,
     goldfish_compute_client.GoldfishComputeClient.SCOPE
 ])
+
+_EMULATOR_INFO_FILENAME = "emulator-info.txt"
+_EMULATOR_VERSION_PATTERN = "version-emulator"
+_SYSIMAGE_INFO_FILENAME = "android-info.txt"
+_SYSIMAGE_VERSION_PATTERN = "version-sysimage-{}-{}"
 
 
 class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
@@ -118,6 +126,59 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         return instance
 
 
+def ParseBuildInfo(filename, pattern):
+    """Parse build id based on a substring.
+
+    This will parse a file which contains build information to be used. For an
+    emulator build, the file will contain the information about the corresponding
+    stable system image build id. Similarly, for a system image build, the file
+    will contain the information about the corresponding stable emulator build id.
+    Pattern is a substring being used as a key to parse the build info. For
+    example, "version-sysimage-git_pi-dev-sdk_gphone_x86_64-userdebug".
+
+    Args:
+        filename: Name of file to parse.
+        pattern: Substring to look for in file
+
+    Returns:
+        Build id parsed from the file based on pattern
+        Returns None if pattern not found in file
+    """
+    with open(filename) as build_info_file:
+        for line in build_info_file:
+            if pattern in line:
+                return line.rstrip().split("=")[1]
+    return None
+
+
+def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
+    """Parse and fetch build id from a file based on a pattern.
+
+    Verify if one of the system image or emulator binary build id is missing.
+    If found missing, then update according to the resource file.
+
+    Args:
+        cfg: An AcloudConfig instance.
+        build_target: Target name.
+        build_id: Build id, a string, e.g. "2263051", "P2804227"
+        pattern: A string to parse build info file.
+        filename: Name of file containing the build info.
+
+    Returns:
+        A build id or None
+    """
+    build_client = android_build_client.AndroidBuildClient(
+        auth.CreateCredentials(cfg, ALL_SCOPES))
+
+    with utils.TempDir() as tempdir:
+        temp_filename = os.path.join(tempdir, filename)
+        build_client.DownloadArtifact(build_target,
+                                      build_id,
+                                      filename,
+                                      temp_filename)
+
+        return ParseBuildInfo(temp_filename, pattern)
+
 
 def CreateDevices(cfg,
                   build_target=None,
@@ -127,7 +188,8 @@ def CreateDevices(cfg,
                   num=1,
                   serial_log_file=None,
                   logcat_file=None,
-                  autoconnect=False):
+                  autoconnect=False,
+                  branch=None):
     """Create one or multiple Goldfish devices.
 
     Args:
@@ -141,10 +203,33 @@ def CreateDevices(cfg,
                         be saved to.
         logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
+        branch: String, Branch name for system image.
 
     Returns:
         A Report instance.
     """
+    if emulator_build_id is None:
+        emulator_build_id = _FetchBuildIdFromFile(cfg,
+                                                  build_target,
+                                                  build_id,
+                                                  _EMULATOR_VERSION_PATTERN,
+                                                  _EMULATOR_INFO_FILENAME)
+
+    if emulator_build_id is None:
+        raise errors.CommandArgError("Emulator build id not found "
+                                     "in %s" % _EMULATOR_INFO_FILENAME)
+
+    if build_id is None:
+        pattern = _SYSIMAGE_VERSION_PATTERN.format(branch, build_target)
+        build_id = _FetchBuildIdFromFile(cfg,
+                                         cfg.emulator_build_target,
+                                         emulator_build_id,
+                                         pattern,
+                                         _SYSIMAGE_INFO_FILENAME)
+
+    if build_id is None:
+        raise errors.CommandArgError("Emulator system image build id not found "
+                                     "in %s" % _SYSIMAGE_INFO_FILENAME)
     # TODO: Implement copying files from the instance, including
     # the serial log (kernel log), and logcat log files.
     # TODO: Implement autoconnect.
