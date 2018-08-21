@@ -81,12 +81,25 @@ def GetCreateArgParser(subparser):
     create_parser.required = False
     create_parser.set_defaults(which=CMD_CREATE)
     create_parser.add_argument(
+        "--local_instance",
+        action="store_true",
+        dest="local_instance",
+        required=False,
+        help="Create a local instance of the AVD.")
+    create_parser.add_argument(
         "--avd_type",
         type=str,
         dest="avd_type",
         default=constants.TYPE_CF,
         choices=[constants.TYPE_GCE, constants.TYPE_CF, constants.TYPE_GF],
         help="Android Virtual Device type (default %s)." % constants.TYPE_CF)
+    create_parser.add_argument(
+        "--flavor",
+        type=str,
+        dest="flavor",
+        default=constants.FLAVOR_PHONE,
+        choices=constants.ALL_FLAVORS,
+        help="The device flavor of the AVD (default %s)." % constants.FLAVOR_PHONE)
     create_parser.add_argument(
         "--build_target",
         type=str,
