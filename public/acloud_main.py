@@ -267,6 +267,7 @@ def _ParseArgs(args):
     return parser.parse_args(args)
 
 
+# TODO(b/112803893): Delete this method once the new create method has been completed.
 def _TranslateAlias(parsed_args):
     """Translate alias to Launch Control compatible values.
 
@@ -410,7 +411,8 @@ def main(argv):
     """
     args = _ParseArgs(argv)
     _SetupLogging(args.log_file, args.verbose)
-    args = _TranslateAlias(args)
+    # Translation of the branch will happen in AvdSpec(), skip it for now.
+    #args = _TranslateAlias(args)
     _VerifyArgs(args)
 
     config_mgr = config.AcloudConfigManager(args.config_file)
