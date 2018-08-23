@@ -50,13 +50,6 @@ def AddCommonArguments(parser):
                         type=str,
                         default=None,
                         help="Path to log file.")
-    parser.add_argument("-v",
-                        dest="verbose",
-                        action="store_true",
-                        default=False,
-                        help="Verbose mode")
-    parser.add_argument("-vv",
-                        dest="very_verbose",
-                        action="store_true",
-                        default=False,
-                        help="Very verbose mode")
+    parser.add_argument('--verbose', '-v',
+                        action='count',
+                        default=0)

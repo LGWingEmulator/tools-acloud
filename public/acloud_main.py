@@ -69,7 +69,12 @@ import logging
 import sys
 
 # Needed to silence oauth2client.
-logging.basicConfig(level=logging.CRITICAL)
+# This is a workaround to get rid of below warning message:
+# 'No handlers could be found for logger "oauth2client.contrib.multistore_file'
+# TODO(b/112803893): Remove this code once bug is fixed.
+OAUTH2_LOGGER = logging.getLogger('oauth2client.contrib.multistore_file')
+OAUTH2_LOGGER.setLevel(logging.CRITICAL)
+OAUTH2_LOGGER.addHandler(logging.FileHandler("/dev/null"))
 
 # pylint: disable=wrong-import-position
 from acloud.internal import constants
@@ -84,8 +89,8 @@ from acloud.create import create_args
 from acloud.setup import setup
 from acloud.setup import setup_args
 
-LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
-LOGGER_NAME = "acloud_main"
+LOGGING_FMT = "%(asctime)s |%(levelname)s| %(name)s:%(lineno)s| %(message)s"
+ACLOUD_LOGGER = "acloud"
 
 # Commands
 CMD_CREATE_CUTTLEFISH = "create_cf"
@@ -335,28 +340,59 @@ def _VerifyArgs(parsed_args):
                 "--logcat_file must ends with .tar.gz")
 
 
-def _SetupLogging(log_file, verbose, very_verbose):
+def _SetupLogging(log_file, verbose):
     """Setup logging.
 
+    This function define the logging policy in below manners.
+    - without -v , -vv ,--log_file:
+    Only display critical log and print() message on screen.
+
+    - with -v:
+    Display INFO log and set StreamHandler to acloud parent logger to turn on
+    ONLY acloud modules logging.(silence all 3p libraries)
+
+    - with -vv:
+    Display INFO/DEBUG log and set StreamHandler to root logger to turn on all
+    acloud modules and 3p libraries logging.
+
+    - with --log_file.
+    Dump logs to FileHandler with DEBUG level.
+
     Args:
-        log_file: path to log file.
-        verbose: If True, log at DEBUG level, otherwise log at INFO level.
-        very_verbose: If True, log at DEBUG level and turn on logging on
-                      all libraries. Take take precedence over |verbose|.
+        log_file: String, if not None, dump the log to log file.
+        verbose: Int, if verbose = 1(-v), log at INFO level and turn on
+                 logging on libraries to a StreamHandler.
+                 If verbose = 2(-vv), log at DEBUG level and turn on logging on
+                 all libraries and 3rd party libraries to a StreamHandler.
     """
-    if very_verbose:
+    # Define logging level and hierarchy by verbosity.
+    shandler_level = None
+    logger = None
+    if verbose == 0:
+        shandler_level = logging.CRITICAL
+        logger = logging.getLogger(ACLOUD_LOGGER)
+    elif verbose == 1:
+        shandler_level = logging.INFO
+        logger = logging.getLogger(ACLOUD_LOGGER)
+    elif verbose > 1:
+        shandler_level = logging.DEBUG
         logger = logging.getLogger()
-    else:
-        logger = logging.getLogger(LOGGER_NAME)
 
-    logging_level = logging.DEBUG if verbose or very_verbose else logging.INFO
-    logger.setLevel(logging_level)
+    # Add StreamHandler by default.
+    shandler = logging.StreamHandler()
+    shandler.setFormatter(logging.Formatter(LOGGING_FMT))
+    shandler.setLevel(shandler_level)
+    logger.addHandler(shandler)
+    # Set the default level to DEBUG, the other handlers will handle
+    # their own levels via the args supplied (-v and --log_file).
+    logger.setLevel(logging.DEBUG)
 
+    # Add FileHandler if log_file is provided.
     if log_file:
-        handler = logging.FileHandler(filename=log_file)
-        log_formatter = logging.Formatter(LOGGING_FMT)
-        handler.setFormatter(log_formatter)
-        logger.addHandler(handler)
+        fhandler = logging.FileHandler(filename=log_file)
+        fhandler.setFormatter(logging.Formatter(LOGGING_FMT))
+        fhandler.setLevel(logging.DEBUG)
+        logger.addHandler(fhandler)
 
 
 def main(argv):
@@ -369,7 +405,7 @@ def main(argv):
         0 if success. None-zero if fails.
     """
     args = _ParseArgs(argv)
-    _SetupLogging(args.log_file, args.verbose, args.very_verbose)
+    _SetupLogging(args.log_file, args.verbose)
     args = _TranslateAlias(args)
     _VerifyArgs(args)
 
