@@ -13,16 +13,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-r"""BaseAVDCreate class.
+r"""LocalImageRemoteInstance class.
 
-Parent class that will hold common logic for AVD creation use cases.
+Create class that is responsible for creating a remote instance AVD with a
+local image.
 """
 
-from __future__ import print_function
+from acloud.create import base_avd_create
 
-
-class BaseAVDCreate(object):
-    """Base class for all AVD intance creation classes."""
+class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
+    """Create class for a local image remote instance AVD."""
 
     # pylint: disable=no-self-use
     def Create(self, avd_spec):
@@ -31,4 +31,5 @@ class BaseAVDCreate(object):
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
         """
-        raise NotImplementedError
+        print("We will create a remote instance AVD with a local image: %s" %
+              avd_spec)
