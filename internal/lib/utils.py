@@ -31,6 +31,7 @@ import tempfile
 import time
 import uuid
 
+from acloud.internal import constants
 from acloud.public import errors
 
 logger = logging.getLogger(__name__)
@@ -398,6 +399,19 @@ def InteractWithQuestion(question, colors=TextColors.WARNING):
         String, input from user.
     """
     return str(raw_input(colors + question + TextColors.ENDC).strip())
+
+def GetUserAnswerYes(question):
+    """Ask user about acloud setup question.
+
+    Args:
+        question: String, ask question for user.
+            Ex: "Are you sure to change bucket name:[y/n]"
+
+    Returns:
+        Boolean, True if answer is "Yes", False otherwise.
+    """
+    answer = InteractWithQuestion(question)
+    return answer.lower() in constants.USER_ANSWER_YES
 
 
 class BatchHttpRequestExecutor(object):
