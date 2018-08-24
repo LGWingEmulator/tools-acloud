@@ -138,14 +138,14 @@ valid_branch_and_min_build_id {
         """
         config_specify = config.AcloudConfigManager(self.config_file)
         self.config_file.read.return_value = self.USER_CONFIG
-        self.assertEqual(config_specify._user_config_path, self.config_file)
+        self.assertEqual(config_specify.user_config_path, self.config_file)
         mock_file_exist.return_value = False
         with self.assertRaises(errors.ConfigError):
             config_specify.Load()
         # Test default config
         config_unspecify = config.AcloudConfigManager(None)
         cfg = config_unspecify.Load()
-        self.assertEqual(config_unspecify._user_config_path,
+        self.assertEqual(config_unspecify.user_config_path,
                          config.GetDefaultConfigFile())
         self.assertEqual(cfg.project, "")
         self.assertEqual(cfg.zone, "")

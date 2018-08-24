@@ -39,4 +39,11 @@ def GetSetupArgParser(subparser):
         dest="host",
         required=False,
         help="Setup host to run local instance of an Android Virtual Device.")
+    setup_parser.add_argument(
+        "--gcp_init",
+        action="store_true",
+        dest="gcp_init",
+        required=False,
+        help="Setup Google Cloud project name and enable required GCP APIs."
+        "Ex: Google Cloud Storage/ Internal Android Build/ Compute Engine")
     return setup_parser

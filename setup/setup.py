@@ -23,10 +23,16 @@ from __future__ import print_function
 
 from acloud.internal.lib import utils
 from acloud.setup import host_setup_runner
+from acloud.setup import gcp_setup_runner
 
 
-def Run():
+def Run(args):
     """Run setup.
+
+    Setup options:
+        -host: Setup host settings.
+        -gcp_init: Setup gcp settings.
+        -None, default behavior will setup host and gcp settings.
 
     Args:
         args: Namespace object from argparse.parse_args.
@@ -36,8 +42,15 @@ def Run():
     _PrintWelcomeMessage()
 
     # 2.Init all subtasks in queue and traverse them.
-    task_queue = [host_setup_runner.CuttlefishPkgInstaller(),
-                  host_setup_runner.CuttlefishHostSetup(),]
+    host_runner = host_setup_runner.CuttlefishPkgInstaller()
+    host_env_runner = host_setup_runner.CuttlefishHostSetup()
+    gcp_runner = gcp_setup_runner.GcpTaskRunner(args.config_file)
+    task_queue = []
+    if args.host or not args.gcp_init:
+        task_queue.append(host_runner)
+        task_queue.append(host_env_runner)
+    if args.gcp_init or not args.host:
+        task_queue.append(gcp_runner)
 
     for subtask in task_queue:
         subtask.Run()
@@ -63,4 +76,6 @@ def _PrintWelcomeMessage():
 
 def _PrintUsage():
     """Print cmd usage hints when acloud setup been finished."""
-    utils.PrintColorString("\nIf you'd like more info, run '#acloud create --help'")
+    utils.PrintColorString("")
+    utils.PrintColorString("Setup process finished")
+    utils.PrintColorString("To get started creating AVDs, run '#acloud create'")
