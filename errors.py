@@ -54,3 +54,7 @@ class CheckPathError(CreateError):
 
 class UnsupportedInstanceImageType(CreateError):
     """Unsupported create action for given instance/image type."""
+
+
+class GetBuildIDError(CreateError):
+    """Can't get build id from Android Build."""
