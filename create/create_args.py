@@ -18,6 +18,9 @@ r"""Create args.
 Defines the create arg parser that holds create specific args.
 """
 
+import os
+
+from acloud import errors
 from acloud.internal import constants
 
 
@@ -137,6 +140,15 @@ def GetCreateArgParser(subparser):
         help="Path to a local disk image to use, "
         "e.g /tmp/avd-system.tar.gz")
     create_parser.add_argument(
+        "--local_image",
+        type=str,
+        dest="local_image",
+        nargs="?",
+        default="",
+        required=False,
+        help="Path to a local disk image folder to use, "
+        "e.g /tmp/acloud/out/target/product/vsoc_x86_64")
+    create_parser.add_argument(
         "--no_cleanup",
         dest="no_cleanup",
         default=False,
@@ -146,3 +158,17 @@ def GetCreateArgParser(subparser):
 
     AddCommonCreateArgs(create_parser)
     return create_parser
+
+
+def VerifyArgs(args):
+    """Verify args.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+
+    Raises:
+        errors.CreateError: Path doesn't exist.
+    """
+    if args.local_image and not os.path.exists(args.local_image):
+        raise errors.CheckPathError(
+            "Specified path doesn't exist: %s" % args.local_image)

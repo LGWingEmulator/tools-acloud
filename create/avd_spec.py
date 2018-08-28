@@ -20,11 +20,15 @@ get passed into the create classes. The inferring magic will happen within
 initialization of AVDSpec (like LKGB build id, image branch, etc).
 """
 
+import os
+
+from acloud import errors
 from acloud.internal import constants
 
 _BUILD_TARGET = "build_target"
 _BUILD_BRANCH = "build_branch"
 _BUILD_ID = "build_id"
+_ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
 
 
 class AVDSpec(object):
@@ -42,6 +46,8 @@ class AVDSpec(object):
         self._avd_type = None
         self._flavor = None
         self._instance_type = None
+        self._image_source = None
+        self._local_image_path = None
         self._remote_image = None
         self._num_of_instances = None
 
@@ -59,8 +65,17 @@ class AVDSpec(object):
         representation.append(" - autoconnect: %s" % self._autoconnect)
         representation.append(" - num of instances requested: %s" %
                               self._num_of_instances)
-        representation.append(" - remote image details: %s" %
-                              self._remote_image)
+        representation.append(" - image source type: %s" %
+                              self._image_source)
+        image_summary = None
+        image_details = None
+        if self._image_source == constants.IMAGE_SRC_LOCAL:
+            image_summary = "local image path"
+            image_details = self._local_image_path
+        elif self._image_source == constants.IMAGE_SRC_REMOTE:
+            image_summary = "remote image details"
+            image_details = self._remote_image
+        representation.append(" - %s: %s" % (image_summary, image_details))
         return "\n".join(representation)
 
     def _ProcessArgs(self, args):
@@ -74,7 +89,21 @@ class AVDSpec(object):
             args: Namespace object from argparse.parse_args.
         """
         self._ProcessMiscArgs(args)
-        self._ProcessRemoteBuildArgs(args)
+        self._ProcessImageArgs(args)
+
+    def _ProcessImageArgs(self, args):
+        """ Process Image Args.
+
+        Args:
+            args: Namespace object from argparse.parse_args.
+        """
+        # If user didn't specify --local_image, infer remote image args
+        if args.local_image == "":
+            self._image_source = constants.IMAGE_SRC_REMOTE
+            self._ProcessRemoteBuildArgs(args)
+        else:
+            self._image_source = constants.IMAGE_SRC_LOCAL
+            self._ProcessLocalImageArgs(args)
 
     def _ProcessMiscArgs(self, args):
         """These args we can take as and don't belong to a group of args.
@@ -89,6 +118,30 @@ class AVDSpec(object):
                                if args.local_instance else
                                constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
+
+    def _ProcessLocalImageArgs(self, args):
+        """Get local image path.
+
+        -Specified local_image with no arg: Set $ANDROID_PRODUCT_OUT.
+        -Specified local_image with an arg: Set user specified path.
+
+        Args:
+            args: Namespace object from argparse.parse_args.
+
+        Raises:
+            errors.CreateError: Can't get $ANDROID_PRODUCT_OUT.
+        """
+        if args.local_image:
+            self._local_image_path = args.local_image
+        else:
+            try:
+                self._local_image_path = os.environ[_ENV_ANDROID_PRODUCT_OUT]
+            except KeyError as e:
+                raise errors.GetEnvAndroidProductOutError(
+                    "Could not get environment: %s"
+                    "\nTry to run '#. build/envsetup.sh && lunch'"
+                    % str(e)
+                )
 
     def _ProcessRemoteBuildArgs(self, args):
         """Get the remote build args.
