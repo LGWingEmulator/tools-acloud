@@ -290,6 +290,7 @@ def _TranslateAlias(parsed_args):
     return parsed_args
 
 
+# pylint: disable=too-many-branches
 def _VerifyArgs(parsed_args):
     """Verify args.
 
@@ -299,6 +300,9 @@ def _VerifyArgs(parsed_args):
     Raises:
         errors.CommandArgError: If args are invalid.
     """
+    if parsed_args.which == create_args.CMD_CREATE:
+        create_args.VerifyArgs(parsed_args)
+
     if (parsed_args.which == create_args.CMD_CREATE
             and parsed_args.avd_type == constants.TYPE_GCE):
         if (parsed_args.spec and parsed_args.spec not in constants.SPEC_NAMES):
