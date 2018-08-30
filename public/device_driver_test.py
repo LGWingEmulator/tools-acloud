@@ -22,12 +22,14 @@ import uuid
 import unittest
 import mock
 
+# pylint: disable=import-error
 import dateutil.parser
 
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import gstorage_client
 from acloud.public import device_driver
 
@@ -75,7 +77,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         """Test CreateAndroidVirtualDevices."""
         cfg = _CreateCfg()
         fake_gs_url = "fake_gs_url"
-        fake_ip = "140.1.1.1"
+        fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
         fake_instance = "fake-instance"
         fake_image = "fake-image"
         fake_build_target = "fake_target"
@@ -116,7 +118,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
                 "devices": [
                     {
                         "instance_name": fake_instance,
-                        "ip": fake_ip,
+                        "ip": fake_ip.external,
                     },
                 ],
             }
@@ -124,6 +126,32 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(report.command, "create")
         self.assertEquals(report.status, "SUCCESS")
 
+    # pylint: disable=invalid-name
+    def testCreateAndroidVirtualDevicesInternalIP(self):
+        """Test CreateAndroidVirtualDevices with internal IP."""
+        cfg = _CreateCfg()
+        fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
+        fake_instance = "fake-instance"
+        fake_build_target = "fake_target"
+        fake_build_id = "12345"
+
+        self.compute_client.GetInstanceIP.return_value = fake_ip
+        self.compute_client.GenerateInstanceName.return_value = fake_instance
+
+        report = device_driver.CreateAndroidVirtualDevices(
+            cfg, fake_build_target, fake_build_id, report_internal_ip=True)
+
+        self.assertEquals(
+            report.data,
+            {
+                "devices": [
+                    {
+                        "instance_name": fake_instance,
+                        "ip": fake_ip.internal,
+                    },
+                ],
+            }
+        )
 
     def testDeleteAndroidVirtualDevices(self):
         """Test DeleteAndroidVirtualDevices."""

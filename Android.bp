@@ -66,9 +66,10 @@ python_test_host {
         "internal/lib/*_test.py",
     ],
     libs: [
-        "acloud_public",
+        "acloud_create",
         "acloud_internal",
         "acloud_proto",
+        "acloud_public",
         "py-apitools",
         "py-dateutil",
         "py-google-api-python-client",
