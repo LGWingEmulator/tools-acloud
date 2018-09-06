@@ -24,11 +24,16 @@ import os
 
 from acloud import errors
 from acloud.internal import constants
+from acloud.internal.lib import android_build_client
+from acloud.internal.lib import auth
+from acloud.public import config
 
 _BUILD_TARGET = "build_target"
 _BUILD_BRANCH = "build_branch"
 _BUILD_ID = "build_id"
 _ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
+
+ALL_SCOPES = [android_build_client.AndroidBuildClient.SCOPE]
 
 
 class AVDSpec(object):
@@ -50,6 +55,9 @@ class AVDSpec(object):
         self._local_image_path = None
         self._num_of_instances = None
         self._remote_image = None
+        # Create config instance for android_build_client to query build api.
+        config_mgr = config.AcloudConfigManager(args.config_file)
+        self.cfg = config_mgr.Load()
 
         self._ProcessArgs(args)
 
@@ -167,11 +175,13 @@ class AVDSpec(object):
             # TODO: infer from user workspace
             pass
 
-        if args.build_id:
-            self._remote_image[_BUILD_ID] = args.build_id
-        else:
-            #  TODO: extract this info from Android Build.
-            pass
+        self._remote_image[_BUILD_ID] = args.build_id
+        if not self._remote_image[_BUILD_ID]:
+            credentials = auth.CreateCredentials(self.cfg, ALL_SCOPES)
+            build_client = android_build_client.AndroidBuildClient(credentials)
+            self._remote_image[_BUILD_ID] = build_client.GetLKGB(
+                self._remote_image[_BUILD_TARGET],
+                self._remote_image[_BUILD_BRANCH])
 
     @property
     def instance_type(self):
