@@ -45,11 +45,11 @@ class AVDSpec(object):
         self._autoconnect = None
         self._avd_type = None
         self._flavor = None
-        self._instance_type = None
         self._image_source = None
+        self._instance_type = None
         self._local_image_path = None
-        self._remote_image = None
         self._num_of_instances = None
+        self._remote_image = None
 
         self._ProcessArgs(args)
 
@@ -172,3 +172,13 @@ class AVDSpec(object):
         else:
             #  TODO: extract this info from Android Build.
             pass
+
+    @property
+    def instance_type(self):
+        """Return the instance type."""
+        return self._instance_type
+
+    @property
+    def image_source(self):
+        """Return the image type."""
+        return self._image_source
