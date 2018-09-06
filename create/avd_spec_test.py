@@ -28,6 +28,7 @@ class AvdSpecTest(unittest.TestCase):
         """Initialize new avd_spec.AVDSpec."""
         self.args = mock.MagicMock()
         self.args.local_image = ""
+        self.args.config_file = ""
         self.AvdSpec = avd_spec.AVDSpec(self.args)
 
     def testProcessLocalImageArgs(self):
