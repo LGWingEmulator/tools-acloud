@@ -70,6 +70,7 @@ class AVDSpec(object):
         self._flavor = None
         self._image_source = None
         self._instance_type = None
+        self._kernel_build_id = None
         self._local_image_dir = None
         self._num_of_instances = None
         self._remote_image = None
@@ -208,6 +209,7 @@ class AVDSpec(object):
                                if args.local_instance else
                                constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
+        self._kernel_build_id = args.kernel_build_id
 
     def _ProcessLocalImageArgs(self, args):
         """Get local image path.
@@ -257,9 +259,9 @@ class AVDSpec(object):
         if not self._remote_image[_BUILD_ID]:
             credentials = auth.CreateCredentials(self._cfg, ALL_SCOPES)
             build_client = android_build_client.AndroidBuildClient(credentials)
-            self._remote_image[_BUILD_ID] = build_client.GetLKGB(
-                self._remote_image[_BUILD_TARGET],
-                self._remote_image[_BUILD_BRANCH])
+            self._remote_image[constants.BUILD_ID] = build_client.GetLKGB(
+                self._remote_image[constants.BUILD_TARGET],
+                self._remote_image[constants.BUILD_BRANCH])
 
     @staticmethod
     def _GetBranchFromRepo():
@@ -321,3 +323,38 @@ class AVDSpec(object):
     def local_image_dir(self):
         """Return local image dir."""
         return self._local_image_dir
+
+    @property
+    def avd_type(self):
+        """Return the avd type."""
+        return self._avd_type
+
+    @property
+    def autoconnect(self):
+        """Return autoconnect."""
+        return self._autoconnect
+
+    @property
+    def remote_image(self):
+        """Return the remote image."""
+        return self._remote_image
+
+    @property
+    def num(self):
+        """Return num of instances."""
+        return self._num_of_instances
+
+    @property
+    def kernel_build_id(self):
+        """Return kernel build id."""
+        return self._kernel_build_id
+
+    @property
+    def flavor(self):
+        """Return flavor."""
+        return self._flavor
+
+    @property
+    def cfg(self):
+        """Return cfg instance."""
+        return self._cfg
