@@ -16,6 +16,7 @@
 import unittest
 import mock
 
+from acloud import errors
 from acloud.create import avd_spec
 from acloud.internal import constants
 
@@ -57,6 +58,33 @@ class AvdSpecTest(unittest.TestCase):
         self.AvdSpec._ProcessImageArgs(self.args)
         self.assertEqual(self.AvdSpec._image_source, constants.IMAGE_SRC_LOCAL)
         self.assertEqual(self.AvdSpec._local_image_path, "test_path")
+        self.AvdSpec = avd_spec.AVDSpec(self.args)
+
+    @mock.patch("subprocess.check_output")
+    def testGetBranchFromRepo(self, mock_repo):
+        """Test get branch name from repo info."""
+        mock_repo.return_value = "Manifest branch: master"
+        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "aosp-master")
+
+        mock_repo.return_value = "Manifest branch:"
+        with self.assertRaises(errors.GetBranchFromRepoInfoError):
+            self.AvdSpec._GetBranchFromRepo()
+
+    def testGetBuildTarget(self):
+        """Test get build target name."""
+        self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "master"
+        self.args.flavor = constants.FLAVOR_IOT
+        self.args.avd_type = constants.TYPE_GCE
+        self.assertEqual(
+            self.AvdSpec._GetBuildTarget(self.args),
+            "aosp_gce_x86_iot-userdebug")
+
+        self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "aosp-master"
+        self.args.flavor = constants.FLAVOR_PHONE
+        self.args.avd_type = constants.TYPE_CF
+        self.assertEqual(
+            self.AvdSpec._GetBuildTarget(self.args),
+            "aosp_cf_x86_phone-userdebug")
 
 
 if __name__ == "__main__":
