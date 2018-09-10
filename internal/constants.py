@@ -37,6 +37,13 @@ TYPE_GF = "goldfish"
 IMAGE_SRC_REMOTE = "remote_image"
 IMAGE_SRC_LOCAL = "local_image"
 
+# AVD types in build target
+AVD_TYPES_MAPPING = {
+    TYPE_GCE: "gce",
+    TYPE_CF: "cf",
+    TYPE_GF: "sdk",
+}
+
 # Instance types
 INSTANCE_TYPE_REMOTE = "remote"
 INSTANCE_TYPE_LOCAL = "local"

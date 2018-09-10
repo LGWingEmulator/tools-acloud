@@ -21,6 +21,8 @@ initialization of AVDSpec (like LKGB build id, image branch, etc).
 """
 
 import os
+import re
+import subprocess
 
 from acloud import errors
 from acloud.internal import constants
@@ -32,6 +34,13 @@ _BUILD_TARGET = "build_target"
 _BUILD_BRANCH = "build_branch"
 _BUILD_ID = "build_id"
 _ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
+_BRANCH_RE = re.compile(r"^Manifest branch: (?P<branch>.+)")
+_COMMAND_REPO_IMFO = ["repo", "info"]
+# Default values for build target.
+_BRANCH_PREFIX = "aosp-"
+_TARGET_PREFIX = "aosp_"
+_DEFAULT_BUILD_BITNESS = "x86"
+_DEFAULT_BUILD_TYPE = "userdebug"
 
 ALL_SCOPES = [android_build_client.AndroidBuildClient.SCOPE]
 
@@ -163,17 +172,13 @@ class AVDSpec(object):
         # TODO: We need some logic here to determine if we should infer remote
         # build info or not.
         self._remote_image = {}
-        if args.build_target:
-            self._remote_image[_BUILD_TARGET] = args.build_target
-        else:
-            # TODO: actually figure out what we want here.
-            pass
+        self._remote_image[_BUILD_BRANCH] = args.branch
+        if not self._remote_image[_BUILD_BRANCH]:
+            self._remote_image[_BUILD_BRANCH] = self._GetBranchFromRepo()
 
-        if args.branch:
-            self._remote_image[_BUILD_BRANCH] = args.branch
-        else:
-            # TODO: infer from user workspace
-            pass
+        self._remote_image[_BUILD_TARGET] = args.build_target
+        if not self._remote_image[_BUILD_TARGET]:
+            self._remote_image[_BUILD_TARGET] = self._GetBuildTarget(args)
 
         self._remote_image[_BUILD_ID] = args.build_id
         if not self._remote_image[_BUILD_ID]:
@@ -182,6 +187,47 @@ class AVDSpec(object):
             self._remote_image[_BUILD_ID] = build_client.GetLKGB(
                 self._remote_image[_BUILD_TARGET],
                 self._remote_image[_BUILD_BRANCH])
+
+    @staticmethod
+    def _GetBranchFromRepo():
+        """Get branch information from command "repo info".
+
+        Returns:
+            branch: String, git branch name. e.g. "aosp-master"
+
+        Raises:
+            errors.GetBranchFromRepoInfoError: Can't get branch from
+            output of "repo info".
+        """
+        repo_output = subprocess.check_output(_COMMAND_REPO_IMFO)
+        for line in repo_output.splitlines():
+            match = _BRANCH_RE.match(line)
+            if match:
+                # Android Build will expect the branch in the following format:
+                # aosp-master
+                return _BRANCH_PREFIX + match.group("branch")
+        raise errors.GetBranchFromRepoInfoError(
+            "No branch mentioned in repo info output: %s" % repo_output
+        )
+
+    @staticmethod
+    def _GetBuildTarget(args):
+        """Infer build target if user doesn't specified target name.
+
+        Target = {REPO_PREFIX}{avd_type}_{bitness}_{flavor}-
+            {DEFAULT_BUILD_TARGET_TYPE}.
+        Example target: aosp_cf_x86_phone-userdebug
+
+        Args:
+            args: Namespace object from argparse.parse_args.
+
+        Returns:
+            build_target: String, name of build target.
+        """
+        return "%s%s_%s_%s-%s" % (
+            _TARGET_PREFIX, constants.AVD_TYPES_MAPPING[args.avd_type],
+            _DEFAULT_BUILD_BITNESS, args.flavor,
+            _DEFAULT_BUILD_TYPE)
 
     @property
     def instance_type(self):
