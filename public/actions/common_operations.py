@@ -22,7 +22,6 @@ directly.
 
 from __future__ import print_function
 import logging
-import time
 
 from acloud.public import avd
 from acloud.public import errors
@@ -100,6 +99,7 @@ class DevicePool(object):
             self.devices.append(
                 avd.AndroidVirtualDevice(ip=ip, instance_name=instance))
 
+    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
     def WaitForBoot(self):
         """Waits for all devices to boot up.
 
@@ -149,32 +149,14 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
     """
     reporter = report.Report(command=command)
     try:
-        gce_start_time = time.time()
-        utils.PrintColorString("Creating GCE instance%s..." %
-                               ("s" if num > 1 else ""), end="")
         CreateSshKeyPairIfNecessary(cfg)
         device_pool = DevicePool(device_factory)
-        try:
-            device_pool.CreateDevices(num)
-        except:
-            utils.PrintColorString("Fail (%ds)" % (time.time() - gce_start_time),
-                                   utils.TextColors.FAIL)
-            raise
-        utils.PrintColorString("OK (%ds)" % (time.time() - gce_start_time),
-                               utils.TextColors.OKGREEN)
-
-        utils.PrintColorString("Starting up AVD%s..." %
-                               ("s" if num > 1 else ""), end="")
-        start_boot_time = time.time()
+        device_pool.CreateDevices(num)
         failures = device_pool.WaitForBoot()
         if failures:
             reporter.SetStatus(report.Status.BOOT_FAIL)
-            utils.PrintColorString("Fail (%ds)" % (time.time() - start_boot_time),
-                                   utils.TextColors.FAIL)
         else:
             reporter.SetStatus(report.Status.SUCCESS)
-            utils.PrintColorString("OK (%ds)" % (time.time() - start_boot_time),
-                                   utils.TextColors.OKGREEN)
         # Write result to report.
         for device in device_pool.devices:
             device_dict = {

@@ -19,6 +19,8 @@
 import unittest
 import mock
 
+from acloud.create import avd_spec
+from acloud.internal import constants
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
@@ -115,6 +117,35 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE)
 
+        #test use local image in the remote instance.
+        args = mock.MagicMock()
+        args.local_image = "/tmp/path"
+        args.config_file = ""
+        args.avd_type = "cf"
+        args.flavor = "phone"
+        fake_avd_spec = avd_spec.AVDSpec(args)
+        fake_avd_spec.hw_property[constants.HW_X_RES] = str(self.X_RES)
+        fake_avd_spec.hw_property[constants.HW_Y_RES] = str(self.Y_RES)
+        fake_avd_spec.hw_property[constants.HW_ALIAS_DPI] = str(self.DPI)
+        fake_avd_spec.hw_property[constants.HW_ALIAS_DISK] = str(
+            self.EXTRA_DATA_DISK_SIZE_GB * 1024)
+        expected_metadata["cvd_01_launch"] = "0"
+        expected_metadata["avd_type"] = "cf"
+        expected_metadata["flavor"] = "phone"
+        self.cvd_compute_client.CreateInstance(
+            self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
+            self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+            self.EXTRA_DATA_DISK_SIZE_GB, fake_avd_spec)
 
+        mock_create.assert_called_with(
+            self.cvd_compute_client,
+            instance=self.INSTANCE,
+            image_name=self.IMAGE,
+            image_project=self.IMAGE_PROJECT,
+            disk_args=expected_disk_args,
+            metadata=expected_metadata,
+            machine_type=self.MACHINE_TYPE,
+            network=self.NETWORK,
+            zone=self.ZONE)
 if __name__ == "__main__":
     unittest.main()
