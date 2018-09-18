@@ -95,4 +95,7 @@ message InternalConfig {
   // [GOLDFISH only] The emulator build target: "sdk_tools_linux".
   // It's very unlikely that this will ever change.
   optional string emulator_build_target = 17;
+
+  // Common hw property
+  map <string, string>  common_hw_property_map = 18;
 }
