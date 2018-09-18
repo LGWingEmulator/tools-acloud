@@ -51,6 +51,7 @@ from google.protobuf import text_format
 # pylint: disable=no-name-in-module,import-error
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
+from acloud.create import create_args
 from acloud.public import errors
 
 _CONFIG_DATA_PATH = os.path.join(
@@ -168,6 +169,9 @@ class AcloudConfig(object):
             usr_cfg.stable_goldfish_host_image_project or
             internal_cfg.default_usr_cfg.stable_goldfish_host_image_project)
 
+        self.common_hw_property_map = internal_cfg.common_hw_property_map
+        self.hw_property = usr_cfg.hw_property
+
         # Verify validity of configurations.
         self.Verify()
 
@@ -177,7 +181,7 @@ class AcloudConfig(object):
         Args:
             parsed_args: Args parsed from command line.
         """
-        if parsed_args.which == "create" and parsed_args.spec:
+        if parsed_args.which == create_args.CMD_CREATE and parsed_args.spec:
             if not self.resolution:
                 self.resolution = self.device_resolution_map.get(
                     parsed_args.spec, "")
@@ -191,6 +195,9 @@ class AcloudConfig(object):
                 parsed_args.service_account_json_private_key_path)
         if parsed_args.which == "create_gf" and parsed_args.base_image:
             self.stable_goldfish_host_image_name = parsed_args.base_image
+        if parsed_args.which == create_args.CMD_CREATE and not self.hw_property:
+            self.hw_property = self.common_hw_property_map.get(
+                parsed_args.flavor, "")
 
     def Verify(self):
         """Verify configuration fields."""

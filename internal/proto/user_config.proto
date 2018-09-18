@@ -76,4 +76,7 @@ message UserConfig {
   // Account information for accessing Cloud API
   // This is the new way to provide service account auth.
   optional string service_account_json_private_key_path = 20;
+
+  // Desired hw_property
+  optional string hw_property = 21;
 }

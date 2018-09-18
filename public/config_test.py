@@ -48,6 +48,7 @@ metadata_variable {
     key: "metadata_1"
     value: "metadata_value_1"
 }
+hw_property: "cpu:3,resolution:1080x1920,dpi=480,memory=4g,disk=10g"
 """
 
     INTERNAL_CONFIG = """
@@ -94,6 +95,11 @@ valid_branch_and_min_build_id {
     key: "aosp-master"
     value: 0
 }
+
+common_hw_property_map {
+  key: "phone"
+  value: "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g"
+}
 """
 
     def setUp(self):
@@ -124,6 +130,8 @@ valid_branch_and_min_build_id {
         self.assertEqual(
             {key: val for key, val in cfg.metadata_variable.iteritems()},
             {"metadata_1": "metadata_value_1"})
+        self.assertEqual(cfg.hw_property,
+                         "cpu:3,resolution:1080x1920,dpi=480,memory=4g,disk=10g")
 
     # pylint: disable=protected-access
     @mock.patch("os.path.exists")
@@ -220,12 +228,45 @@ valid_branch_and_min_build_id {
                          "fake_stable_goldfish_host_image_project")
         self.assertEqual(cfg.emulator_build_target, "sdk_tools_linux")
 
+        # hw property
+        self.assertEqual(
+            {key: val for key, val in cfg.common_hw_property_map.iteritems()},
+            {"phone": "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g"})
+
     def testLoadConfigFails(self):
         """Test loading a bad file."""
         self.config_file.read.return_value = "malformed text"
         with self.assertRaises(errors.ConfigError):
             config.AcloudConfigManager.LoadConfigFromProtocolBuffer(
                 self.config_file, internal_config_pb2.InternalConfig)
+
+    def testOverrideWithHWProperty(self):
+        """Test override hw property by flavor type."""
+        # initial config with test config.
+        self.config_file.read.return_value = self.INTERNAL_CONFIG
+        internal_cfg = config.AcloudConfigManager.LoadConfigFromProtocolBuffer(
+            self.config_file, internal_config_pb2.InternalConfig)
+        self.config_file.read.return_value = self.USER_CONFIG
+        usr_cfg = config.AcloudConfigManager.LoadConfigFromProtocolBuffer(
+            self.config_file, user_config_pb2.UserConfig)
+        cfg = config.AcloudConfig(usr_cfg, internal_cfg)
+
+        # test override with an exist flavor.
+        cfg.hw_property = None
+        args = mock.MagicMock()
+        args.flavor = "phone"
+        args.which = "create"
+        cfg.OverrideWithArgs(args)
+        self.assertEqual(cfg.hw_property,
+                         "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g")
+
+        # test override with a nonexistent flavor.
+        cfg.hw_property = None
+        args = mock.MagicMock()
+        args.flavor = "non-exist-flavor"
+        args.which = "create"
+        cfg.OverrideWithArgs(args)
+        self.assertEqual(cfg.hw_property, "")
 
 
 if __name__ == "__main__":
