@@ -60,6 +60,7 @@ python_test_host {
     ],
     srcs: [
         "acloud_test.py",
+        "errors.py",
         "public/*_test.py",
         "public/actions/*_test.py",
         "internal/lib/*_test.py",
