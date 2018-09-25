@@ -73,6 +73,7 @@ python_test_host {
         "py-apitools",
         "py-dateutil",
         "py-google-api-python-client",
+        "py-mock",
         "py-oauth2client",
     ],
 }
