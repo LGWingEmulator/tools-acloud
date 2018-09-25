@@ -117,7 +117,8 @@ def CreateDevices(cfg,
                   num=1,
                   serial_log_file=None,
                   logcat_file=None,
-                  autoconnect=False):
+                  autoconnect=False,
+                  report_internal_ip=False):
     """Create one or multiple Cuttlefish devices.
 
     Args:
@@ -130,6 +131,8 @@ def CreateDevices(cfg,
                         be saved to.
         logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
+        report_internal_ip: Boolean to report the internal ip instead of
+                            external ip.
 
     Returns:
         A Report instance.
@@ -140,9 +143,10 @@ def CreateDevices(cfg,
     logger.info(
         "Creating a cuttlefish device in project %s, build_target: %s, "
         "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
-        "autoconnect: %s", cfg.project, build_target, build_id, num,
-        serial_log_file, logcat_file, autoconnect)
+        "autoconnect: %s, report_internal_ip: %s", cfg.project, build_target,
+        build_id, num, serial_log_file, logcat_file, autoconnect,
+        report_internal_ip)
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
                                              kernel_build_id)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
-                                           num)
+                                           num, report_internal_ip)

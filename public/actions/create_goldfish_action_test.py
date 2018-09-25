@@ -22,6 +22,7 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import goldfish_compute_client
 from acloud.public.actions import create_goldfish_action
 
@@ -29,7 +30,7 @@ from acloud.public.actions import create_goldfish_action
 class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
     """Tests create_goldfish_action."""
 
-    IP = "127.0.0.1"
+    IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     IMAGE = "fake-image"
     BUILD_TARGET = "fake-build-target"
@@ -116,7 +117,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "devices": [
                 {
                     "instance_name": self.INSTANCE,
-                    "ip": self.IP,
+                    "ip": self.IP.external,
                 },
             ],
         })
@@ -172,7 +173,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(report.data, {
             "devices": [{
                 "instance_name": self.INSTANCE,
-                "ip": self.IP,
+                "ip": self.IP.external,
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -223,7 +224,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(report.data, {
             "devices": [{
                 "instance_name": self.INSTANCE,
-                "ip": self.IP,
+                "ip": self.IP.external,
             },],
         })
         self.assertEquals(report.command, "create_gf")
