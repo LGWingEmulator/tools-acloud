@@ -341,7 +341,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             zone: String, representing zone name, e.g. "us-central1-f"
 
         Returns:
-            string, IP of the instance.
+            NamedTuple of (internal, external) IP of the instance.
         """
         return super(AndroidComputeClient, self).GetInstanceIP(
             instance, zone or self._zone)

@@ -26,13 +26,14 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import gcompute_client
 from acloud.public import report
 from acloud.public.actions import common_operations
 
 
 class CommonOperationsTest(driver_test_lib.BaseDriverTest):
     """Test Common Operations."""
-    IP = "127.0.0.1"
+    IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     CMD = "test-cmd"
 
@@ -82,16 +83,31 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
     def testCreateDevices(self):
         """Test Create Devices."""
         cfg = self._CreateCfg()
-        _report = common_operations.CreateDevices(self.CMD, cfg, self.device_factory, 1)
+        _report = common_operations.CreateDevices(self.CMD, cfg,
+                                                  self.device_factory, 1)
         self.assertEqual(_report.command, self.CMD)
         self.assertEqual(_report.status, report.Status.SUCCESS)
         self.assertEqual(
             _report.data,
             {"devices": [{
-                "ip": self.IP,
+                "ip": self.IP.external,
                 "instance_name": self.INSTANCE
             }]})
 
+    def testCreateDevicesInternalIP(self):
+        """Test Create Devices and report internal IP."""
+        cfg = self._CreateCfg()
+        _report = common_operations.CreateDevices(self.CMD, cfg,
+                                                  self.device_factory, 1,
+                                                  report_internal_ip=True)
+        self.assertEqual(_report.command, self.CMD)
+        self.assertEqual(_report.status, report.Status.SUCCESS)
+        self.assertEqual(
+            _report.data,
+            {"devices": [{
+                "ip": self.IP.internal,
+                "instance_name": self.INSTANCE
+            }]})
 
 if __name__ == "__main__":
     unittest.main()

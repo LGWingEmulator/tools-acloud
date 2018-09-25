@@ -47,28 +47,36 @@ def AddCommonCreateArgs(parser):
         dest="serial_log_file",
         required=False,
         help="Path to a *tar.gz file where serial logs will be saved "
-        "when a device fails on boot.")
+             "when a device fails on boot.")
     parser.add_argument(
         "--logcat_file",
         type=str,
         dest="logcat_file",
         required=False,
         help="Path to a *tar.gz file where logcat logs will be saved "
-        "when a device fails on boot.")
+             "when a device fails on boot.")
     parser.add_argument(
         "--autoconnect",
         action="store_true",
         dest="autoconnect",
         required=False,
-        help=
-        "For each instance created, we will automatically creates both 2 ssh"
-        " tunnels forwarding both adb & vnc. Then add the device to adb.")
+        help="For each instance created, we will automatically creates both 2 "
+             "ssh tunnels forwarding both adb & vnc. Then add the device to "
+             "adb.")
     parser.add_argument(
         "--no-autoconnect",
         action="store_false",
         dest="autoconnect",
         required=False)
     parser.set_defaults(autoconnect=True)
+    parser.add_argument(
+        "--report_internal_ip",
+        action="store_true",
+        dest="report_internal_ip",
+        required=False,
+        help="Report internal ip of the created instance instead of external "
+             "ip. Using the internal ip is valid when connecting from another "
+             "GCE instance.")
 
 
 def GetCreateArgParser(subparser):
@@ -108,7 +116,7 @@ def GetCreateArgParser(subparser):
         type=str,
         dest="build_target",
         help="Android build target, e.g. aosp_cf_x86_phone-userdebug, "
-        "or short names: phone, tablet, or tablet_mobile.")
+             "or short names: phone, tablet, or tablet_mobile.")
     create_parser.add_argument(
         "--branch",
         type=str,
@@ -125,7 +133,7 @@ def GetCreateArgParser(subparser):
         dest="spec",
         required=False,
         help="The name of a pre-configured device spec that we are "
-        "going to use. Choose from: %s" % ", ".join(constants.SPEC_NAMES))
+             "going to use. Choose from: %s" % ", ".join(constants.SPEC_NAMES))
     create_parser.add_argument(
         "--gce_image",
         type=str,
@@ -138,7 +146,7 @@ def GetCreateArgParser(subparser):
         dest="local_disk_image",
         required=False,
         help="Path to a local disk image to use, "
-        "e.g /tmp/avd-system.tar.gz")
+             "e.g /tmp/avd-system.tar.gz")
     create_parser.add_argument(
         "--local_image",
         type=str,
@@ -154,7 +162,7 @@ def GetCreateArgParser(subparser):
         default=False,
         action="store_true",
         help="Do not clean up temporary disk image and compute engine image. "
-        "For debugging purposes.")
+             "For debugging purposes.")
 
     AddCommonCreateArgs(create_parser)
     return create_parser

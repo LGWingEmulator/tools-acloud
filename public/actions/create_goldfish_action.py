@@ -189,7 +189,8 @@ def CreateDevices(cfg,
                   serial_log_file=None,
                   logcat_file=None,
                   autoconnect=False,
-                  branch=None):
+                  branch=None,
+                  report_internal_ip=False):
     """Create one or multiple Goldfish devices.
 
     Args:
@@ -204,6 +205,8 @@ def CreateDevices(cfg,
         logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
         branch: String, Branch name for system image.
+        report_internal_ip: Boolean to report the internal ip instead of
+                            external ip.
 
     Returns:
         A Report instance.
@@ -245,4 +248,4 @@ def CreateDevices(cfg,
                                            emulator_build_id, gpu)
 
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
-                                           num)
+                                           num, report_internal_ip)
