@@ -124,7 +124,7 @@ class DevicePool(object):
         return self._devices
 
 
-def CreateDevices(command, cfg, device_factory, num):
+def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
     """Create a set of devices using the given factory.
 
     Args:
@@ -132,6 +132,8 @@ def CreateDevices(command, cfg, device_factory, num):
         cfg: An AcloudConfig instance.
         device_factory: A factory capable of producing a single device.
         num: The number of devices to create.
+        report_internal_ip: Boolean to report the internal ip instead of
+                            external ip.
 
     Returns:
         A Report instance.
@@ -145,7 +147,8 @@ def CreateDevices(command, cfg, device_factory, num):
         # Write result to report.
         for device in device_pool.devices:
             device_dict = {
-                "ip": device.ip,
+                "ip": (device.ip.internal if report_internal_ip
+                       else device.ip.external),
                 "instance_name": device.instance_name
             }
             if device.instance_name in failures:

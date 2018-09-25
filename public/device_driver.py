@@ -388,7 +388,8 @@ def CreateAndroidVirtualDevices(cfg,
                                 cleanup=True,
                                 serial_log_file=None,
                                 logcat_file=None,
-                                autoconnect=False):
+                                autoconnect=False,
+                                report_internal_ip=False):
     """Creates one or multiple android devices.
 
     Args:
@@ -407,6 +408,8 @@ def CreateAndroidVirtualDevices(cfg,
                          be saved to.
         logcat_file: A path to a file where logcat logs should be saved.
         autoconnect: Create ssh tunnel(s) and adb connect after device creation.
+        report_internal_ip: Boolean to report the internal ip instead of
+                            external ip.
 
     Returns:
         A Report instance.
@@ -431,7 +434,8 @@ def CreateAndroidVirtualDevices(cfg,
         failures = device_pool.WaitForBoot()
         # Write result to report.
         for device in device_pool.devices:
-            device_dict = {"ip": device.ip,
+            device_dict = {"ip": (device.ip.internal if report_internal_ip
+                                  else device.ip.external),
                            "instance_name": device.instance_name}
             if autoconnect:
                 _AutoConnect(device_dict, cfg.ssh_private_key_path)

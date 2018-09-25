@@ -26,6 +26,7 @@ and it only keeps states about authentication. ComputeClient should be very
 generic, and only knows how to talk to Compute Engine APIs.
 """
 # pylint: disable=too-many-lines
+import collections
 import copy
 import functools
 import logging
@@ -46,6 +47,8 @@ BASE_DISK_ARGS = {
     "autoDelete": True,
     "initializeParams": {},
 }
+
+IP = collections.namedtuple("IP", ["external", "internal"])
 
 
 class OperationScope(object):
@@ -1313,13 +1316,12 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             zone: String, name of the zone.
 
         Returns:
-            string, IP of the instance.
+            NamedTuple of (internal, external) IP of the instance.
         """
-        # TODO(fdeng): This is for accessing external IP.
-        # We should handle internal IP as well when the script is running
-        # on a GCE instance in the same network of |instance|.
         instance = self.GetInstance(instance, zone)
-        return instance["networkInterfaces"][0]["accessConfigs"][0]["natIP"]
+        internal_ip = instance["networkInterfaces"][0]["networkIP"]
+        external_ip = instance["networkInterfaces"][0]["accessConfigs"][0]["natIP"]
+        return IP(internal=internal_ip, external=external_ip)
 
     def SetCommonInstanceMetadata(self, body):
         """Set project-wide metadata.

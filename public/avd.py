@@ -42,7 +42,8 @@ class AndroidVirtualDevice(object):
 
         Args:
             instance_name: Name of the gce instance, e.g. "instance-1"
-            ip: Ip address of the gce instance, e.g. "140.110.20.1"
+            ip: namedtuple (internal, external) that holds IP address of the
+                gce instance, e.g. "external:140.110.20.1, internal:10.0.0.1"
         """
         self._ip = ip
         self._instance_name = instance_name
@@ -66,4 +67,7 @@ class AndroidVirtualDevice(object):
 
     def __str__(self):
         """Return a string representation."""
-        return "<ip: %s, instance_name: %s >" % (self._ip, self._instance_name)
+        return "<ip: (internal: %s, external: %s), instance_name: %s >" % (
+            self._ip.internal if self._ip else "",
+            self._ip.external if self._ip else "",
+            self._instance_name)

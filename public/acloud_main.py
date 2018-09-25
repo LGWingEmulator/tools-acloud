@@ -436,7 +436,8 @@ def main(argv):
             cleanup=not args.no_cleanup,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
-            autoconnect=args.autoconnect)
+            autoconnect=args.autoconnect,
+            report_internal_ip=args.report_internal_ip)
     elif args.which == create_args.CMD_CREATE:
         create.Run(args)
     elif args.which == CMD_CREATE_CUTTLEFISH:
@@ -448,7 +449,8 @@ def main(argv):
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
-            autoconnect=args.autoconnect)
+            autoconnect=args.autoconnect,
+            report_internal_ip=args.report_internal_ip)
     elif args.which == CMD_CREATE_GOLDFISH:
         report = create_goldfish_action.CreateDevices(
             cfg=cfg,
@@ -460,7 +462,8 @@ def main(argv):
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
             autoconnect=args.autoconnect,
-            branch=args.branch)
+            branch=args.branch,
+            report_internal_ip=args.report_internal_ip)
     elif args.which == CMD_DELETE:
         report = device_driver.DeleteAndroidVirtualDevices(
             cfg, args.instance_names)
