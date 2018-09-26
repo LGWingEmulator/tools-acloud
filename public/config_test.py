@@ -48,7 +48,7 @@ metadata_variable {
     key: "metadata_1"
     value: "metadata_value_1"
 }
-hw_property: "cpu:3,resolution:1080x1920,dpi=480,memory=4g,disk=10g"
+hw_property: "cpu:3,resolution:1080x1920,dpi:480,memory:4g,disk:10g"
 """
 
     INTERNAL_CONFIG = """
@@ -98,7 +98,7 @@ valid_branch_and_min_build_id {
 
 common_hw_property_map {
   key: "phone"
-  value: "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g"
+  value: "cpu:2,resolution:1080x1920,dpi:420,memory:4g,disk:8g"
 }
 """
 
@@ -131,7 +131,8 @@ common_hw_property_map {
             {key: val for key, val in cfg.metadata_variable.iteritems()},
             {"metadata_1": "metadata_value_1"})
         self.assertEqual(cfg.hw_property,
-                         "cpu:3,resolution:1080x1920,dpi=480,memory=4g,disk=10g")
+                         "cpu:3,resolution:1080x1920,dpi:480,memory:4g,"
+                         "disk:10g")
 
     # pylint: disable=protected-access
     @mock.patch("os.path.exists")
@@ -231,7 +232,7 @@ common_hw_property_map {
         # hw property
         self.assertEqual(
             {key: val for key, val in cfg.common_hw_property_map.iteritems()},
-            {"phone": "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g"})
+            {"phone": "cpu:2,resolution:1080x1920,dpi:420,memory:4g,disk:8g"})
 
     def testLoadConfigFails(self):
         """Test loading a bad file."""
@@ -258,7 +259,7 @@ common_hw_property_map {
         args.which = "create"
         cfg.OverrideWithArgs(args)
         self.assertEqual(cfg.hw_property,
-                         "cpu:2,resolution:1080x1920,dpi=420,memory=4g,disk=8g")
+                         "cpu:2,resolution:1080x1920,dpi:420,memory:4g,disk:8g")
 
         # test override with a nonexistent flavor.
         cfg.hw_property = None
