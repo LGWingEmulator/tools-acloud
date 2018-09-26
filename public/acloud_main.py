@@ -415,10 +415,7 @@ def main(argv):
     #args = _TranslateAlias(args)
     _VerifyArgs(args)
 
-    config_mgr = config.AcloudConfigManager(args.config_file)
-    cfg = config_mgr.Load()
-    cfg.OverrideWithArgs(args)
-
+    cfg = config.GetAcloudConfig(args)
     # TODO: Move this check into the functions it is actually needed.
     # Check access.
     # device_driver.CheckAccess(cfg)

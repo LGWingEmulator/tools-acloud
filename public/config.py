@@ -67,6 +67,21 @@ def GetDefaultConfigFile():
     return os.path.join(config_path, _DEFAULT_CONFIG_FILE)
 
 
+def GetAcloudConfig(args):
+    """Helper function to initialize Config object.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+
+    Return:
+        An instance of AcloudConfig.
+    """
+    config_mgr = AcloudConfigManager(args.config_file)
+    cfg = config_mgr.Load()
+    cfg.OverrideWithArgs(args)
+    return cfg
+
+
 class AcloudConfig(object):
     """A class that holds all configurations for acloud."""
 

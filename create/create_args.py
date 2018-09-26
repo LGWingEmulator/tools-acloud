@@ -21,6 +21,7 @@ Defines the create arg parser that holds create specific args.
 import os
 
 from acloud import errors
+from acloud.create import create_common
 from acloud.internal import constants
 
 
@@ -128,13 +129,6 @@ def GetCreateArgParser(subparser):
         dest="build_id",
         help="Android build id, e.g. 2145099, P2804227")
     create_parser.add_argument(
-        "--spec",
-        type=str,
-        dest="spec",
-        required=False,
-        help="The name of a pre-configured device spec that we are "
-             "going to use. Choose from: %s" % ", ".join(constants.SPEC_NAMES))
-    create_parser.add_argument(
         "--gce_image",
         type=str,
         dest="gce_image",
@@ -163,6 +157,23 @@ def GetCreateArgParser(subparser):
         action="store_true",
         help="Do not clean up temporary disk image and compute engine image. "
              "For debugging purposes.")
+    # User should not specify --spec and --hw_property at the same time.
+    hw_spec_group = create_parser.add_mutually_exclusive_group()
+    hw_spec_group.add_argument(
+        "--hw_property",
+        type=str,
+        dest="hw_property",
+        required=False,
+        help="Supported HW properties and example values: %s" %
+        constants.HW_PROPERTIES_CMD_EXAMPLE)
+    hw_spec_group.add_argument(
+        "--spec",
+        type=str,
+        dest="spec",
+        required=False,
+        choices=constants.SPEC_NAMES,
+        help="The name of a pre-configured device spec that we are "
+        "going to use.")
 
     AddCommonCreateArgs(create_parser)
     return create_parser
@@ -180,3 +191,10 @@ def VerifyArgs(args):
     if args.local_image and not os.path.exists(args.local_image):
         raise errors.CheckPathError(
             "Specified path doesn't exist: %s" % args.local_image)
+
+    hw_properties = create_common.ParseHWPropertyArgs(args.hw_property)
+    for key in hw_properties:
+        if key not in constants.HW_PROPERTIES:
+            raise errors.InvalidHWPropertyError(
+                "[%s] is an invalid hw property, supported values are:%s. "
+                % (key, constants.HW_PROPERTIES))

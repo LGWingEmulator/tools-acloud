@@ -62,3 +62,15 @@ class GetBuildIDError(CreateError):
 
 class GetBranchFromRepoInfoError(CreateError):
     """Can't get branch information from output of #'repo info'."""
+
+
+class NotSupportedHWPropertyError(CreateError):
+    """An error to wrap a non-supported property issue."""
+
+
+class MalformedDictStringError(CreateError):
+    """Error related to unable to convert string to dict."""
+
+
+class InvalidHWPropertyError(CreateError):
+    """An error to wrap a malformed hw property issue."""

@@ -23,7 +23,7 @@ from acloud.internal import constants
 
 # pylint: disable=invalid-name,protected-access
 class AvdSpecTest(unittest.TestCase):
-    """Test GCP Setup steps."""
+    """Test avd_spec methods."""
 
     def setUp(self):
         """Initialize new avd_spec.AVDSpec."""
@@ -32,6 +32,7 @@ class AvdSpecTest(unittest.TestCase):
         self.args.config_file = ""
         self.AvdSpec = avd_spec.AVDSpec(self.args)
 
+    # pylint: disable=protected-access
     def testProcessLocalImageArgs(self):
         """Test process args.local_image."""
         # Specified local_image with an arg
@@ -85,6 +86,42 @@ class AvdSpecTest(unittest.TestCase):
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
             "aosp_cf_x86_phone-userdebug")
+
+    # pylint: disable=protected-access
+    def testProcessHWPropertyWithInvalidArgs(self):
+        """Test _ProcessHWPropertyArgs with invalid args."""
+        # Checking wrong resolution.
+        args = mock.MagicMock()
+        args.hw_property = "cpu:3,resolution:1280"
+        with self.assertRaises(errors.InvalidHWPropertyError):
+            self.AvdSpec._ProcessHWPropertyArgs(args)
+
+        # Checking property should be int.
+        args = mock.MagicMock()
+        args.hw_property = "cpu:3,dpi:fake"
+        with self.assertRaises(errors.InvalidHWPropertyError):
+            self.AvdSpec._ProcessHWPropertyArgs(args)
+
+        # Checking disk property should be with 'g' suffix.
+        args = mock.MagicMock()
+        args.hw_property = "cpu:3,disk:2"
+        with self.assertRaises(errors.InvalidHWPropertyError):
+            self.AvdSpec._ProcessHWPropertyArgs(args)
+
+        # Checking memory property should be with 'g' suffix.
+        args = mock.MagicMock()
+        args.hw_property = "cpu:3,memory:2"
+        with self.assertRaises(errors.InvalidHWPropertyError):
+            self.AvdSpec._ProcessHWPropertyArgs(args)
+
+    # pylint: disable=protected-access
+    def testParseHWPropertyStr(self):
+        """Test _ParseHWPropertyStr."""
+        expected_dict = {"cpu": "2", "x_res": "1080", "y_res": "1920",
+                         "dpi": "240", "memory": "4096", "disk": "4096"}
+        args_str = "cpu:2,resolution:1080x1920,dpi:240,memory:4g,disk:4g"
+        result_dict = self.AvdSpec._ParseHWPropertyStr(args_str)
+        self.assertTrue(expected_dict == result_dict)
 
 
 if __name__ == "__main__":
