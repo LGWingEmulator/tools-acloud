@@ -81,6 +81,10 @@ class DeviceBootError(DriverError):
     """To catch device boot errors."""
 
 
+class NoSubnetwork(DriverError):
+    """When there is no subnetwork for the GCE."""
+
+
 class DeviceBootTimeoutError(DeviceBootError):
     """Raised when an AVD defice failed to boot within timeout."""
 
