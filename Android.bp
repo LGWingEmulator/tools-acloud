@@ -76,6 +76,8 @@ python_test_host {
         "py-mock",
         "py-oauth2client",
     ],
+    test_config: "acloud_unittest.xml",
+    test_suites: ["general-tests"],
 }
 
 python_library_host {

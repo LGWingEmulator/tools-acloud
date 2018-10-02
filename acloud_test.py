@@ -16,9 +16,24 @@
 """Main entry point for all of acloud's unittest."""
 
 from importlib import import_module
+import logging
 import os
 import sys
 import unittest
+
+# Needed to silence oauth2client.
+# This is a workaround to get rid of below warning message:
+# 'No handlers could be found for logger "oauth2client.contrib.multistore_file'
+# TODO(b/112803893): Remove this code once bug is fixed.
+OAUTH2_LOGGER = logging.getLogger('oauth2client.contrib.multistore_file')
+OAUTH2_LOGGER.setLevel(logging.CRITICAL)
+OAUTH2_LOGGER.addHandler(logging.FileHandler("/dev/null"))
+
+# Setup logging to be silent so unittests can pass through TF.
+ACLOUD_LOGGER = "acloud"
+logger = logging.getLogger(ACLOUD_LOGGER)
+logger.setLevel(logging.CRITICAL)
+logger.addHandler(logging.FileHandler("/dev/null"))
 
 
 def GetTestModules():
