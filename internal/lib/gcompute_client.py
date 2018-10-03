@@ -1240,25 +1240,30 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             zone: A string representing a zone, e.g. "us-central1-f"
 
         Returns:
-            1 if size of the first type is greater than the second type.
-            2 if size of the first type is smaller than the second type.
-            0 if they are equal.
+            -1 if any metric of machine size of the first type is smaller than
+                the second type.
+            0 if all metrics of machine size are equal.
+            1 if at least one metric of machine size of the first type is
+                greater than the second type and all metrics of first type are
+                greater or equal to the second type.
 
         Raises:
             errors.DriverError: For malformed response.
         """
         machine_info_1 = self.GetMachineType(machine_type_1, zone)
         machine_info_2 = self.GetMachineType(machine_type_2, zone)
+        result = 0
         for metric in self.MACHINE_SIZE_METRICS:
             if metric not in machine_info_1 or metric not in machine_info_2:
                 raise errors.DriverError(
                     "Malformed machine size record: Can't find '%s' in %s or %s"
                     % (metric, machine_info_1, machine_info_2))
-            if machine_info_1[metric] - machine_info_2[metric] > 0:
-                return 1
-            elif machine_info_1[metric] - machine_info_2[metric] < 0:
+            cmp_result = machine_info_1[metric] - machine_info_2[metric]
+            if  cmp_result < 0:
                 return -1
-        return 0
+            elif cmp_result > 0:
+                result = 1
+        return result
 
     def GetSerialPortOutput(self, instance, zone, port=1):
         """Get serial port output.

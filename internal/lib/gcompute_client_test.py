@@ -910,7 +910,19 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         machine_info_2 = {"guestCpus": 10, "memoryMb": 200}
         self._CompareMachineSizeTestHelper(machine_info_1, machine_info_2, -1)
 
+    def testCompareMachineSizeSmallSmallerOnSecond(self):
+        """Test CompareMachineSize where the first one is smaller."""
+        machine_info_1 = {"guestCpus": 11, "memoryMb": 100}
+        machine_info_2 = {"guestCpus": 10, "memoryMb": 200}
+        self._CompareMachineSizeTestHelper(machine_info_1, machine_info_2, -1)
+
     def testCompareMachineSizeLarge(self):
+        """Test CompareMachineSize where the first one is larger."""
+        machine_info_1 = {"guestCpus": 11, "memoryMb": 200}
+        machine_info_2 = {"guestCpus": 10, "memoryMb": 100}
+        self._CompareMachineSizeTestHelper(machine_info_1, machine_info_2, 1)
+
+    def testCompareMachineSizeLargeWithEqualElement(self):
         """Test CompareMachineSize where the first one is larger."""
         machine_info_1 = {"guestCpus": 10, "memoryMb": 200}
         machine_info_2 = {"guestCpus": 10, "memoryMb": 100}
