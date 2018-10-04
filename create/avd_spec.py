@@ -70,7 +70,7 @@ class AVDSpec(object):
         self._flavor = None
         self._image_source = None
         self._instance_type = None
-        self._local_image_path = None
+        self._local_image_dir = None
         self._num_of_instances = None
         self._remote_image = None
         self._hw_property = None
@@ -95,8 +95,8 @@ class AVDSpec(object):
         image_summary = None
         image_details = None
         if self._image_source == constants.IMAGE_SRC_LOCAL:
-            image_summary = "local image path"
-            image_details = self._local_image_path
+            image_summary = "local image dir"
+            image_details = self._local_image_dir
         elif self._image_source == constants.IMAGE_SRC_REMOTE:
             image_summary = "remote image details"
             image_details = self._remote_image
@@ -222,15 +222,15 @@ class AVDSpec(object):
             errors.CreateError: Can't get $ANDROID_PRODUCT_OUT.
         """
         if args.local_image:
-            self._local_image_path = args.local_image
+            self._local_image_dir = args.local_image
         else:
             try:
-                self._local_image_path = os.environ[_ENV_ANDROID_PRODUCT_OUT]
+                self._local_image_dir = os.environ[_ENV_ANDROID_PRODUCT_OUT]
             except KeyError as e:
                 raise errors.GetEnvAndroidProductOutError(
                     "Could not get environment: %s"
-                    "\nTry to run '#. build/envsetup.sh && lunch'"
-                    % str(e)
+                    "\nTry to run '#. build/envsetup.sh && lunch'" %
+                    str(e)
                 )
 
     def _ProcessRemoteBuildArgs(self, args):
@@ -316,3 +316,8 @@ class AVDSpec(object):
     def hw_property(self):
         """Return the hw_property."""
         return self._hw_property
+
+    @property
+    def local_image_dir(self):
+        """Return local image dir."""
+        return self._local_image_dir
