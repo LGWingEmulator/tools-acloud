@@ -14,6 +14,7 @@
 """Tests for create_common."""
 
 import unittest
+import mock
 
 from acloud import errors
 from acloud.create import create_common
@@ -44,6 +45,36 @@ class CreateCommonTest(unittest.TestCase):
         result_dict = create_common.ParseHWPropertyArgs(args_str)
         self.assertTrue(expected_dict == result_dict)
 
+    @mock.patch("glob.glob")
+    def testVerifyLocalImageArtifactsExist(self, mock_glob):
+        """Test VerifyArtifactsPath."""
+        #can't find the image
+        mock_glob.return_value = []
+        self.assertRaises(errors.GetLocalImageError,
+                          create_common.VerifyLocalImageArtifactsExist,
+                          "/fake_dirs")
+
+        mock_glob.return_value = [
+            "/fake_dirs/aosp_cf_x86_phone-img-5046769.zip"
+        ]
+        self.assertEqual(
+            create_common.VerifyLocalImageArtifactsExist("/fake_dirs"),
+            "/fake_dirs/aosp_cf_x86_phone-img-5046769.zip")
+
+    @mock.patch("__builtin__.raw_input")
+    def testGetAnswerFromList(self, mock_raw_input):
+        """Test GetAnswerFromList."""
+        answer_list = ["image1.zip", "image2.zip", "image3.zip"]
+        mock_raw_input.return_value = 0
+        with self.assertRaises(SystemExit):
+            create_common.GetAnswerFromList(answer_list)
+        mock_raw_input.side_effect = [1, 2, 3]
+        self.assertEqual(create_common.GetAnswerFromList(answer_list),
+                         "image1.zip")
+        self.assertEqual(create_common.GetAnswerFromList(answer_list),
+                         "image2.zip")
+        self.assertEqual(create_common.GetAnswerFromList(answer_list),
+                         "image3.zip")
 
 if __name__ == "__main__":
     unittest.main()

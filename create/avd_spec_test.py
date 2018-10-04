@@ -38,13 +38,13 @@ class AvdSpecTest(unittest.TestCase):
         # Specified local_image with an arg
         self.args.local_image = "test_path"
         self.AvdSpec._ProcessLocalImageArgs(self.args)
-        self.assertEqual(self.AvdSpec._local_image_path, "test_path")
+        self.assertEqual(self.AvdSpec._local_image_dir, "test_path")
 
         # Specified local_image with no arg
         self.args.local_image = None
         with mock.patch.dict("os.environ", {"ANDROID_PRODUCT_OUT": "test_environ"}):
             self.AvdSpec._ProcessLocalImageArgs(self.args)
-            self.assertEqual(self.AvdSpec._local_image_path, "test_environ")
+            self.assertEqual(self.AvdSpec._local_image_dir, "test_environ")
 
     def testProcessImageArgs(self):
         """Test process image source."""
@@ -52,13 +52,13 @@ class AvdSpecTest(unittest.TestCase):
         self.args.local_image = ""
         self.AvdSpec._ProcessImageArgs(self.args)
         self.assertEqual(self.AvdSpec._image_source, constants.IMAGE_SRC_REMOTE)
-        self.assertEqual(self.AvdSpec._local_image_path, None)
+        self.assertEqual(self.AvdSpec._local_image_dir, None)
 
         # Specified local_image with an arg, image source is from local
         self.args.local_image = "test_path"
         self.AvdSpec._ProcessImageArgs(self.args)
         self.assertEqual(self.AvdSpec._image_source, constants.IMAGE_SRC_LOCAL)
-        self.assertEqual(self.AvdSpec._local_image_path, "test_path")
+        self.assertEqual(self.AvdSpec._local_image_dir, "test_path")
         self.AvdSpec = avd_spec.AVDSpec(self.args)
 
     @mock.patch("subprocess.check_output")

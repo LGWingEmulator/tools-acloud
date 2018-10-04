@@ -74,3 +74,11 @@ class MalformedDictStringError(CreateError):
 
 class InvalidHWPropertyError(CreateError):
     """An error to wrap a malformed hw property issue."""
+
+
+class GetLocalImageError(CreateError):
+    """Can't find the local image."""
+
+
+class GetCvdLocalHostPackageError(CreateError):
+    """Can't find the lost host package."""
