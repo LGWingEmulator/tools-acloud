@@ -89,7 +89,7 @@ from acloud.create import create_args
 from acloud.setup import setup
 from acloud.setup import setup_args
 
-LOGGING_FMT = "%(asctime)s |%(levelname)s| %(name)s:%(lineno)s| %(message)s"
+LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 ACLOUD_LOGGER = "acloud"
 
 # Commands
