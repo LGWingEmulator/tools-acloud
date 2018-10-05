@@ -44,8 +44,8 @@ class CreateError(Exception):
     """Base Create cmd exception."""
 
 
-class GetEnvAndroidProductOutError(CreateError):
-    """Can't get client environment ANDROID_PRODUCT_OUT."""
+class GetAndroidBuildEnvVarError(CreateError):
+    """Can't get Android Build set environment variables."""
 
 
 class CheckPathError(CreateError):
