@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # Install cuttlefish-common will probably not work now.
 # TODO: update this to pull from the proper repo.
-_CUTTLEFISH_REQUIRED_PKGS = ["cuttlefish-common"]
+_AVD_REQUIRED_PKGS = ["cuttlefish-common", "ssvnc"]
 # dict of supported system and their distributions.
 _SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 _LIST_OF_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
@@ -64,13 +64,13 @@ def _IsSupportedPlatform():
     return platform_supported
 
 
-class CuttlefishPkgInstaller(base_task_runner.BaseTaskRunner):
+class AvdPkgInstaller(base_task_runner.BaseTaskRunner):
     """Subtask runner class for installing required packages."""
 
     WELCOME_MESSAGE_TITLE = "Install required package for host setup"
     WELCOME_MESSAGE = (
         "This step will walk you through the required packages installation for "
-        "running Android cuttlefish devices on your host.")
+        "running Android cuttlefish devices and vnc on your host.")
 
     def ShouldRun(self):
         """Check if required packages are all installed.
@@ -83,7 +83,7 @@ class CuttlefishPkgInstaller(base_task_runner.BaseTaskRunner):
 
         # Any required package is not installed or not up-to-date will need to
         # run installation task.
-        for pkg_name in _CUTTLEFISH_REQUIRED_PKGS:
+        for pkg_name in _AVD_REQUIRED_PKGS:
             if not setup_common.PackageInstalled(pkg_name):
                 return True
 
@@ -93,9 +93,9 @@ class CuttlefishPkgInstaller(base_task_runner.BaseTaskRunner):
         """Install Cuttlefish-common package."""
 
         logger.info("Start to install required package: %s ",
-                    _CUTTLEFISH_REQUIRED_PKGS)
+                    _AVD_REQUIRED_PKGS)
 
-        for pkg in _CUTTLEFISH_REQUIRED_PKGS:
+        for pkg in _AVD_REQUIRED_PKGS:
             setup_common.InstallPackage(pkg)
 
         logger.info("All required package are installed now.")
