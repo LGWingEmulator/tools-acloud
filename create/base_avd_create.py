@@ -19,13 +19,13 @@ Parent class that will hold common logic for AVD creation use cases.
 """
 
 from __future__ import print_function
-
 from distutils.spawn import find_executable
 import logging
 import os
 import subprocess
 import sys
 
+from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
@@ -113,3 +113,39 @@ class BaseAVDCreate(object):
         # (local or remote).
         with open(profile_path, "w+") as cfg_file:
             cfg_file.writelines(_VNC_PROFILE % {"port": port})
+
+    def PrintAvdDetails(self, avd_spec):
+        """Display spec information to user.
+
+        Example:
+            Creating remote AVD instance with the following details:
+            Image:
+              aosp/master - aosp_cf_x86_phone-userdebug [1234]
+            hw config:
+              cpu - 2
+              ram - 2GB
+              disk - 10GB
+              display - 1024x862 (224 DPI)
+
+        Args:
+            avd_spec: AVDSpec object that tells us what we're going to create.
+        """
+        print("Creating %s AVD instance with the following details:" % avd_spec.instance_type)
+        if avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
+            print("Image (local):")
+            print("  %s" % avd_spec.local_image_path)
+        elif avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
+            print("Image:")
+            print("  %s - %s [%s]" % (avd_spec.remote_image[constants.BUILD_BRANCH],
+                                      avd_spec.remote_image[constants.BUILD_TARGET],
+                                      avd_spec.remote_image[constants.BUILD_ID]))
+        print("hw config:")
+        print("  cpu - %s" % (avd_spec.hw_property[constants.HW_ALIAS_CPUS]))
+        print("  ram - %dGB" % (
+            int(avd_spec.hw_property[constants.HW_ALIAS_MEMORY]) / 1024))
+        print("  disk - %dGB" % (
+            int(avd_spec.hw_property[constants.HW_ALIAS_DISK]) / 1024))
+        print("  display - %sx%s (%s DPI)" % (avd_spec.hw_property[constants.HW_X_RES],
+                                              avd_spec.hw_property[constants.HW_Y_RES],
+                                              avd_spec.hw_property[constants.HW_ALIAS_DPI]))
+        print("\n")

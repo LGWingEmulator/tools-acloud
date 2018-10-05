@@ -135,6 +135,15 @@ def GetCreateArgParser(subparser):
         required=False,
         help="Name of an existing compute engine image to reuse.")
     create_parser.add_argument(
+        "--kernel_build_id",
+        type=str,
+        dest="kernel_build_id",
+        required=False,
+        help="Android kernel build id, e.g. 4586590. This is to test a new"
+        " kernel build with a particular Android build (--build_id). If not"
+        " specified, the kernel that's bundled with the Android build would"
+        " be used.")
+    create_parser.add_argument(
         "--local_disk_image",
         type=str,
         dest="local_disk_image",

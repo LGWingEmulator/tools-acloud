@@ -28,6 +28,11 @@ SPEC_NAMES = {
 DEFAULT_SERIAL_PORT = 1
 LOGCAT_SERIAL_PORT = 2
 
+# Remote image parameters
+BUILD_TARGET = "build_target"
+BUILD_BRANCH = "build_branch"
+BUILD_ID = "build_id"
+
 # AVD types
 TYPE_GCE = "gce"
 TYPE_CF = "cuttlefish"
@@ -77,5 +82,7 @@ HW_PROPERTIES_CMD_EXAMPLE = (
 )
 HW_PROPERTIES = [HW_ALIAS_CPUS, HW_ALIAS_RESOLUTION, HW_ALIAS_DPI,
                  HW_ALIAS_MEMORY, HW_ALIAS_DISK]
+HW_X_RES = "x_res"
+HW_Y_RES = "y_res"
 
 USER_ANSWER_YES = {"y", "yes", "Y"}

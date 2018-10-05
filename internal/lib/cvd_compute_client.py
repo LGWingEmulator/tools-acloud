@@ -38,10 +38,10 @@ Android build, and start Android within the host instance.
 
 """
 
-
 import getpass
 import logging
 
+from acloud.internal import constants
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 
@@ -56,23 +56,25 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
     # TODO: refactor CreateInstance to take in an object that contains these
     # args, this method differs too and holds way too cf-specific args to put in
     # the parent method.
-    # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ,too-many-locals
     def CreateInstance(self, instance, image_name, image_project, build_target,
                        branch, build_id, kernel_branch=None,
-                       kernel_build_id=None, blank_data_disk_size_gb=None):
+                       kernel_build_id=None, blank_data_disk_size_gb=None,
+                       avd_spec=None):
         """Create a cuttlefish instance given stable host image and build id.
 
         Args:
-          instance: instance name.
-          image_name: A string, the name of the GCE image.
-          image_project: A string, name of the project where the image belongs.
-                         Assume the default project if None.
-          build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
-          branch: Branch name, e.g. "aosp-master"
-          build_id: Build id, a string, e.g. "2263051", "P2804227"
-          kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
-          kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
-          blank_data_disk_size_gb: Size of the blank data disk in GB.
+            instance: instance name.
+            image_name: A string, the name of the GCE image.
+            image_project: A string, name of the project where the image belongs.
+                           Assume the default project if None.
+            build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
+            branch: Branch name, e.g. "aosp-master"
+            build_id: Build id, a string, e.g. "2263051", "P2804227"
+            kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
+            kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
+            blank_data_disk_size_gb: Size of the blank data disk in GB.
+            avd_spec: An AVDSpec instance.
         """
         self._CheckMachineSize()
 
@@ -108,6 +110,15 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             metadata["cvd_01_data_policy"] = self.DATA_POLICY_CREATE_IF_MISSING
             metadata["cvd_01_blank_data_disk_size"] = str(
                 blank_data_disk_size_gb * 1024)
+        metadata["user"] = getpass.getuser()
+        # Update metadata by avd_spec
+        if avd_spec:
+            metadata["avd_type"] = avd_spec.avd_type
+            metadata["flavor"] = avd_spec.flavor
+            metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
+            metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
+            metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
+            metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[constants.HW_ALIAS_DISK]
 
         # Add per-instance ssh key
         if self._ssh_public_key_path:
