@@ -77,8 +77,9 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(gcompute_client.ComputeClient, "CreateInstance")
     @mock.patch.object(cvd_compute_client.CvdComputeClient, "_GetDiskArgs",
                        return_value=[{"fake_arg": "fake_value"}])
-    def testCreateInstance(self, _get_disk_args, mock_create, _get_image,
-                           _compare_machine_size):
+    @mock.patch("getpass.getuser", return_value="fake_user")
+    def testCreateInstance(self, _get_user, _get_disk_args, mock_create,
+                           _get_image, _compare_machine_size):
         """Test CreateInstance."""
         expected_metadata = {
             "cvd_01_dpi": str(self.DPI),
@@ -90,6 +91,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             "cvd_01_launch": "1",
             "cvd_01_x_res": str(self.X_RES),
             "cvd_01_y_res": str(self.Y_RES),
+            "user": "fake_user",
             "cvd_01_data_policy":
                 self.cvd_compute_client.DATA_POLICY_CREATE_IF_MISSING,
             "cvd_01_blank_data_disk_size": str(self.EXTRA_DATA_DISK_SIZE_GB * 1024),

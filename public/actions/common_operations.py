@@ -20,7 +20,9 @@ and Cuttlefish (create_cuttlefish_action) devices. Should not be called
 directly.
 """
 
+from __future__ import print_function
 import logging
+import time
 
 from acloud.public import avd
 from acloud.public import errors
@@ -127,6 +129,10 @@ class DevicePool(object):
 def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
     """Create a set of devices using the given factory.
 
+    Main jobs in create devices.
+        1. Create GCE instance: Launch instance in GCP(Google Cloud Platform).
+        2. Starting up AVD: Wait device boot up.
+
     Args:
         command: The name of the command, used for reporting.
         cfg: An AcloudConfig instance.
@@ -135,15 +141,40 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
 
+    Raises:
+        errors: Create instance fail.
+
     Returns:
         A Report instance.
     """
     reporter = report.Report(command=command)
     try:
+        gce_start_time = time.time()
+        utils.PrintColorString("Creating GCE instance%s..." %
+                               ("s" if num > 1 else ""), end="")
         CreateSshKeyPairIfNecessary(cfg)
         device_pool = DevicePool(device_factory)
-        device_pool.CreateDevices(num)
+        try:
+            device_pool.CreateDevices(num)
+        except:
+            utils.PrintColorString("Fail (%ds)" % (time.time() - gce_start_time),
+                                   utils.TextColors.FAIL)
+            raise
+        utils.PrintColorString("OK (%ds)" % (time.time() - gce_start_time),
+                               utils.TextColors.OKGREEN)
+
+        utils.PrintColorString("Starting up AVD%s..." %
+                               ("s" if num > 1 else ""), end="")
+        start_boot_time = time.time()
         failures = device_pool.WaitForBoot()
+        if failures:
+            reporter.SetStatus(report.Status.BOOT_FAIL)
+            utils.PrintColorString("Fail (%ds)" % (time.time() - start_boot_time),
+                                   utils.TextColors.FAIL)
+        else:
+            reporter.SetStatus(report.Status.SUCCESS)
+            utils.PrintColorString("OK (%ds)" % (time.time() - start_boot_time),
+                                   utils.TextColors.OKGREEN)
         # Write result to report.
         for device in device_pool.devices:
             device_dict = {
@@ -156,10 +187,6 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
                 reporter.AddError(str(failures[device.instance_name]))
             else:
                 reporter.AddData(key="devices", value=device_dict)
-        if failures:
-            reporter.SetStatus(report.Status.BOOT_FAIL)
-        else:
-            reporter.SetStatus(report.Status.SUCCESS)
     except errors.DriverError as e:
         reporter.AddError(str(e))
         reporter.SetStatus(report.Status.FAIL)
