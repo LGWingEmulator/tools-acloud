@@ -149,7 +149,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         launch_cvd_w_args = launch_cvd_path + _CMD_LAUNCH_CVD_ARGS % (
             hw_property["cpu"], hw_property["x_res"], hw_property["y_res"],
             hw_property["dpi"], hw_property["memory"], hw_property["disk"],
-            system_image_dir, constants.VNC_PORT, _CVD_SERIAL_PREFIX+flavor)
+            system_image_dir, constants.DEFAULT_VNC_PORT,
+            _CVD_SERIAL_PREFIX+flavor)
 
         combined_launch_cmd = ""
         host_setup = host_setup_runner.CuttlefishHostSetup()

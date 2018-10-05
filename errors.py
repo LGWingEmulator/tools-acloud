@@ -102,3 +102,7 @@ class UnsupportedCompressionFileType(SetupError):
 
 class LaunchCVDFail(CreateError):
     """Cuttlefish AVD launch failed."""
+
+
+class NoExecuteCmd(CreateError):
+    """Can't find execute bin command."""

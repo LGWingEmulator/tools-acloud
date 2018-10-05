@@ -21,15 +21,20 @@ directly.
 """
 
 from __future__ import print_function
+import getpass
 import logging
 
 from acloud.public import avd
 from acloud.public import errors
 from acloud.public import report
+from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
+#For the cuttlefish remote instances: adb port is 6520 and vnc is 6444.
+_CF_TARGET_ADB_PORT = 6520
+_CF_TARGET_VNC_PORT = 6444
 
 def CreateSshKeyPairIfNecessary(cfg):
     """Create ssh key pair if necessary.
@@ -90,7 +95,6 @@ class DevicePool(object):
         Args:
             num: Number of devices to create.
         """
-
         # Create host instances for cuttlefish/goldfish device.
         # Currently one instance supports only 1 device.
         for _ in range(num):
@@ -126,7 +130,9 @@ class DevicePool(object):
         return self._devices
 
 
-def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
+# pylint: disable=too-many-locals
+def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False,
+                  autoconnect=False):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -159,11 +165,20 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False):
             reporter.SetStatus(report.Status.SUCCESS)
         # Write result to report.
         for device in device_pool.devices:
+            ip = (device.ip.internal if report_internal_ip
+                  else device.ip.external)
             device_dict = {
-                "ip": (device.ip.internal if report_internal_ip
-                       else device.ip.external),
+                "ip": ip,
                 "instance_name": device.instance_name
             }
+            if autoconnect:
+                forwarded_ports = utils.AutoConnect(ip,
+                                                    cfg.ssh_private_key_path,
+                                                    _CF_TARGET_VNC_PORT,
+                                                    _CF_TARGET_ADB_PORT,
+                                                    getpass.getuser())
+                device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
+                device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
                 reporter.AddData(key="devices_failing_boot", value=device_dict)
                 reporter.AddError(str(failures[device.instance_name]))
