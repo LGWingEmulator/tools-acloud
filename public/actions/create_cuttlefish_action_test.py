@@ -96,9 +96,12 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBranch.return_value = self.BRANCH
 
+        # Setup avd_spec as None to use cfg to create devices
+        none_avd_spec = None
+
         # Call CreateDevices
         report = create_cuttlefish_action.CreateDevices(
-            cfg, self.BUILD_TARGET, self.BUILD_ID, self.KERNEL_BUILD_ID)
+            none_avd_spec, cfg, self.BUILD_TARGET, self.BUILD_ID, self.KERNEL_BUILD_ID)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -110,7 +113,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             kernel_branch=self.BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
-            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB)
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            avd_spec=none_avd_spec)
 
         self.assertEquals(report.data, {
             "devices": [

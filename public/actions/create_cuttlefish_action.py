@@ -24,6 +24,7 @@ import logging
 
 from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
+from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
@@ -44,13 +45,15 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         build_target: String,Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
         kernel_build_id: String, Kernel build id.
+        avd_spec: An AVDSpec instance.
 
     """
 
     RELEASE_BRANCH_SUFFIX = "-release"
     RELEASE_BRANCH_PATH_GLOB_PATTERN = "*-%s"
 
-    def __init__(self, cfg, build_target, build_id, kernel_build_id=None):
+    def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
+                 avd_spec=None):
 
         self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
 
@@ -64,6 +67,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._build_id = build_id
         self._kernel_build_id = kernel_build_id
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
+        self._avd_spec = avd_spec
 
         # Configure clients for interaction with GCE/Build servers
         self._build_client = android_build_client.AndroidBuildClient(
@@ -105,12 +109,14 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             build_id=bid,
             kernel_branch=self._kernel_branch,
             kernel_build_id=self._kernel_build_id,
-            blank_data_disk_size_gb=self._blank_data_disk_size_gb)
+            blank_data_disk_size_gb=self._blank_data_disk_size_gb,
+            avd_spec=self._avd_spec)
 
         return instance
 
 
-def CreateDevices(cfg,
+def CreateDevices(avd_spec=None,
+                  cfg=None,
                   build_target=None,
                   build_id=None,
                   kernel_build_id=None,
@@ -122,6 +128,7 @@ def CreateDevices(cfg,
     """Create one or multiple Cuttlefish devices.
 
     Args:
+        avd_spec: An AVDSpec instance.
         cfg: An AcloudConfig instance.
         build_target: String, Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
@@ -140,6 +147,12 @@ def CreateDevices(cfg,
     # TODO: Implement copying files from the instance, including
     # the serial log (kernel log), and logcat log files.
     # TODO: Implement autoconnect.
+    if avd_spec:
+        cfg = avd_spec.cfg
+        build_target = avd_spec.remote_image[constants.BUILD_TARGET]
+        build_id = avd_spec.remote_image[constants.BUILD_ID]
+        kernel_build_id = avd_spec.kernel_build_id
+        num = avd_spec.num
     logger.info(
         "Creating a cuttlefish device in project %s, build_target: %s, "
         "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
@@ -147,6 +160,6 @@ def CreateDevices(cfg,
         build_id, num, serial_log_file, logcat_file, autoconnect,
         report_internal_ip)
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
-                                             kernel_build_id)
+                                             kernel_build_id, avd_spec)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, report_internal_ip)

@@ -378,14 +378,26 @@ class TextColors:
     UNDERLINE = "\033[4m"
 
 
-def PrintColorString(message, colors=TextColors.OKBLUE):
+def PrintColorString(message, colors=TextColors.OKBLUE, **kwargs):
     """A helper function to print out colored text.
+
+    Use print function "print(message, end="")" to show message in one line.
+    Example code:
+        DisplayMessages("Creating GCE instance...", end="")
+        # Job execute 20s
+        DisplayMessages("Done! (20s)")
+    Display:
+        Creating GCE instance...
+        # After job finished, messages update as following:
+        Creating GCE instance...Done! (20s)
 
     Args:
         message: String, the message text.
         colors: String, color code.
+        **kwargs: dictionary of keyword based args to pass to func.
     """
-    print(colors + message + TextColors.ENDC)
+    print(colors + message + TextColors.ENDC, **kwargs)
+    sys.stdout.flush()
 
 
 def InteractWithQuestion(question, colors=TextColors.WARNING):
@@ -399,6 +411,7 @@ def InteractWithQuestion(question, colors=TextColors.WARNING):
         String, input from user.
     """
     return str(raw_input(colors + question + TextColors.ENDC).strip())
+
 
 def GetUserAnswerYes(question):
     """Ask user about acloud setup question.
