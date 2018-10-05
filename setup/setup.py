@@ -42,7 +42,7 @@ def Run(args):
     _PrintWelcomeMessage()
 
     # 2.Init all subtasks in queue and traverse them.
-    host_runner = host_setup_runner.CuttlefishPkgInstaller()
+    host_runner = host_setup_runner.AvdPkgInstaller()
     host_env_runner = host_setup_runner.CuttlefishHostSetup()
     gcp_runner = gcp_setup_runner.GcpTaskRunner(args.config_file)
     task_queue = []
