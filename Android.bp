@@ -70,6 +70,7 @@ python_test_host {
         "acloud_internal",
         "acloud_proto",
         "acloud_public",
+        "acloud_setup",
         "py-apitools",
         "py-dateutil",
         "py-google-api-python-client",
