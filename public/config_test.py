@@ -135,8 +135,9 @@ common_hw_property_map {
                          "disk:10g")
 
     # pylint: disable=protected-access
+    @mock.patch("os.makedirs")
     @mock.patch("os.path.exists")
-    def testLoadUserConfigLogic(self, mock_file_exist):
+    def testLoadUserConfigLogic(self, mock_file_exist, _mock_makedirs):
         """Test load user config logic.
 
         Load user config with some special design.

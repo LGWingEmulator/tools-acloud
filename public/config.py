@@ -62,8 +62,11 @@ logger = logging.getLogger(__name__)
 
 
 def GetDefaultConfigFile():
-    """Get config default path."""
-    config_path = os.path.expanduser("~")
+    """Return path to default config file."""
+    config_path = os.path.join(os.path.expanduser("~"), ".config", "acloud")
+    # Create the default config dir if it doesn't exist.
+    if not os.path.exists(config_path):
+        os.makedirs(config_path)
     return os.path.join(config_path, _DEFAULT_CONFIG_FILE)
 
 
