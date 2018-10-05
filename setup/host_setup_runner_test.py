@@ -21,7 +21,7 @@ import mock
 from acloud.internal.lib import driver_test_lib
 from acloud.setup import setup_common
 from acloud.setup.host_setup_runner import CuttlefishHostSetup
-from acloud.setup.host_setup_runner import CuttlefishPkgInstaller
+from acloud.setup.host_setup_runner import AvdPkgInstaller
 
 
 class CuttlefishHostSetupTest(driver_test_lib.BaseDriverTest):
@@ -97,20 +97,20 @@ lrw                    16384  1 aesni_intel"""
             self.CuttlefishHostSetup._CheckLoadedModules(["module1", "module3"]))
 
 
-class CuttlefishPkgInstallerTest(driver_test_lib.BaseDriverTest):
-    """Test CuttlefishPkgInstaller."""
+class AvdPkgInstallerTest(driver_test_lib.BaseDriverTest):
+    """Test AvdPkgInstallerTest."""
 
     # pylint: disable=invalid-name
     def setUp(self):
         """Set up the test."""
-        super(CuttlefishPkgInstallerTest, self).setUp()
-        self.CuttlefishPkgInstaller = CuttlefishPkgInstaller()
+        super(AvdPkgInstallerTest, self).setUp()
+        self.AvdPkgInstaller = AvdPkgInstaller()
 
     def testShouldNotRun(self):
         """Test ShoudRun should raise error in non-linux os."""
         self.Patch(platform, "system", return_value="Mac")
 
-        self.assertFalse(self.CuttlefishPkgInstaller.ShouldRun())
+        self.assertFalse(self.AvdPkgInstaller.ShouldRun())
 
 
 if __name__ == "__main__":
