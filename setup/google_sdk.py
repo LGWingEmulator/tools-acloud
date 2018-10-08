@@ -33,11 +33,10 @@ import os
 import platform
 import shutil
 import sys
-import tarfile
 import tempfile
 import urllib2
-import zipfile
 
+from acloud.internal.lib import utils
 from acloud.public import errors
 
 SDK_BIN_PATH = os.path.join("google-cloud-sdk", "bin")
@@ -148,10 +147,6 @@ class GoogleSDK(object):
 
         Download the google SDK from the GCP web.
         Reference https://cloud.google.com/sdk/docs/downloads-versioned-archives.
-
-        Raise:
-            UnsupportedGoogleSDKFileType if we download a file type we can't
-            extract.
         """
         self._tmp_path = tempfile.mkdtemp(prefix="gcloud")
         url = GetSdkUrl()
@@ -165,17 +160,7 @@ class GoogleSDK(object):
         logger.info("Downloading google SDK: %s bytes.", file_size)
         with open(file_path, 'wb') as output:
             output.write(url_stream.read())
-        google_sdk = None
-        if filename.endswith(".tar.gz"):
-            google_sdk = tarfile.open(file_path, "r:gz")
-        elif filename.endswith(".zip"):
-            google_sdk = zipfile.ZipFile(file_path, 'r')
-        else:
-            raise errors.UnsupportedGoogleSDKFileType(
-                "Sorry, we could only support compression file type for zip or"
-                "tar.gz.")
-        google_sdk.extractall(self._tmp_path)
-        google_sdk.close()
+        utils.Decompress(file_path, self._tmp_path)
         self._tmp_sdk_path = os.path.join(self._tmp_path, SDK_BIN_PATH)
 
     def CleanUp(self):
