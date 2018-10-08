@@ -25,6 +25,7 @@ from acloud.create import avd_spec
 from acloud.create import local_image_local_instance
 from acloud.create import local_image_remote_instance
 from acloud.create import remote_image_remote_instance
+from acloud.create import remote_image_local_instance
 from acloud.internal import constants
 
 
@@ -50,6 +51,9 @@ def GetAvdCreatorClass(instance_type, image_source):
     if (instance_type == constants.INSTANCE_TYPE_REMOTE and
             image_source == constants.IMAGE_SRC_REMOTE):
         return remote_image_remote_instance.RemoteImageRemoteInstance
+    if (instance_type == constants.INSTANCE_TYPE_LOCAL and
+            image_source == constants.IMAGE_SRC_REMOTE):
+        return remote_image_local_instance.RemoteImageLocalInstance
 
     raise errors.UnsupportedInstanceImageType(
         "unsupported creation of instance type: %s, image source: %s" %

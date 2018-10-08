@@ -30,7 +30,9 @@ import tarfile
 import tempfile
 import time
 import uuid
+import zipfile
 
+from acloud import errors as root_errors
 from acloud.internal import constants
 from acloud.public import errors
 
@@ -363,6 +365,28 @@ def VerifyRsaPubKey(rsa):
         raise errors.DriverError(
             "rsa key is invalid: %s, error: %s" % (rsa, str(e)))
 
+def Decompress(sourcefile, dest=None):
+    """Decompress .zip or .tar.gz.
+
+    Args:
+        sourcefile: A string, a source file path to decompress.
+        dest: A string, a folder path as decompress destination.
+
+    Raises:
+        errors.UnsupportedCompressionFileType: Not supported extension.
+    """
+    logger.info("Start to decompress %s!", sourcefile)
+    dest_path = dest if dest else "."
+    if sourcefile.endswith(".tar.gz"):
+        with tarfile.open(sourcefile, "r:gz") as compressor:
+            compressor.extractall(dest_path)
+    elif sourcefile.endswith(".zip"):
+        with zipfile.ZipFile(sourcefile, 'r') as compressor:
+            compressor.extractall(dest_path)
+    else:
+        raise root_errors.UnsupportedCompressionFileType(
+            "Sorry, we could only support compression file type "
+            "for zip or tar.gz.")
 
 # pylint: disable=old-style-class,no-init
 class TextColors:
