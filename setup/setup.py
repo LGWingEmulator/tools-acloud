@@ -53,7 +53,7 @@ def Run(args):
         task_queue.append(gcp_runner)
 
     for subtask in task_queue:
-        subtask.Run()
+        subtask.Run(force_setup=args.force)
 
     # 3.Print the usage hints.
     _PrintUsage()

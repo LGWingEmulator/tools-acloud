@@ -204,6 +204,18 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         if not cfg.stable_host_image_name:
             UpdateConfigFile(self.config_path, "stable_host_image_name", "")
 
+    def ShouldRun(self):
+        """Check if we actually need to run GCP setup.
+
+        We'll only do the gcp setup if certain fields in the cfg are empty.
+
+        Returns:
+            True if reqired config fields are empty, False otherwise.
+        """
+        return (not self.client_id
+                or not self.client_secret
+                or not self.project)
+
     def _Run(self):
         """Run GCP setup task."""
         self._SetupGcloudInfo()

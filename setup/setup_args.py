@@ -46,4 +46,11 @@ def GetSetupArgParser(subparser):
         required=False,
         help="Setup Google Cloud project name and enable required GCP APIs."
         "Ex: Google Cloud Storage/ Internal Android Build/ Compute Engine")
+    setup_parser.add_argument(
+        "--force",
+        action="store_true",
+        dest="force",
+        required=False,
+        help="Force the setup steps even if it's not required.")
+
     return setup_parser
