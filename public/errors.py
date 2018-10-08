@@ -95,7 +95,3 @@ class OSTypeError(SetupError):
 
 class NoGoogleSDKDetected(SetupError):
     """Can't find the SDK path."""
-
-
-class UnsupportedGoogleSDKFileType(SetupError):
-    """Don't support the compression file type."""
