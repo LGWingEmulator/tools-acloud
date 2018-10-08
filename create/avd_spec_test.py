@@ -79,24 +79,24 @@ class AvdSpecTest(unittest.TestCase):
         with self.assertRaises(errors.GetBranchFromRepoInfoError):
             self.AvdSpec._GetBranchFromRepo()
 
-    @mock.patch.object(avd_spec.AVDSpec, "_GetGitRemote")
-    def testGetBuildTarget(self, mock_gitremote):
+    # pylint: disable=protected-access
+    def testGetBuildTarget(self):
         """Test get build target name."""
-        mock_gitremote.return_value = "aosp"
+        self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "aosp-master"
         self.args.flavor = constants.FLAVOR_IOT
         self.args.avd_type = constants.TYPE_GCE
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
             "aosp_gce_x86_iot-userdebug")
 
-        mock_gitremote.return_value = "aosp"
+        self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "aosp-master"
         self.args.flavor = constants.FLAVOR_PHONE
         self.args.avd_type = constants.TYPE_CF
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
             "aosp_cf_x86_phone-userdebug")
 
-        mock_gitremote.return_value = ""
+        self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "git_branch"
         self.args.flavor = constants.FLAVOR_PHONE
         self.args.avd_type = constants.TYPE_CF
         self.assertEqual(
