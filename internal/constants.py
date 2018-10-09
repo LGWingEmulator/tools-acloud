@@ -90,6 +90,6 @@ USER_ANSWER_YES = {"y", "yes", "Y"}
 # Cuttlefish groups
 LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
 
-VNC_PORT = "6444"
+VNC_PORT = 6444
 
 ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
