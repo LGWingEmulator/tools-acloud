@@ -35,12 +35,12 @@ class LocalImageRemoteInstanceTest(unittest.TestCase):
 
     def testVerifyHostPackageArtifactsExist(self):
         """test verify host package artifacts exist."""
-        #can't find the cvd host package
+        # Can't find the cvd host package
         with mock.patch("os.path.exists") as exists:
             exists.return_value = False
             self.assertRaises(
-                errors.GetCvdLocalHostPackageError, self.
-                local_image_remote_instance.VerifyHostPackageArtifactsExist,
+                errors.GetCvdLocalHostPackageError,
+                self.local_image_remote_instance.VerifyHostPackageArtifactsExist,
                 "/fake_dirs")
 
     @mock.patch("glob.glob")

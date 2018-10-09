@@ -43,7 +43,7 @@ lrw                    16384  1 aesni_intel"""
 
     def testShouldRunFalse(self):
         """Test ShouldRun returns False."""
-        self.Patch(CuttlefishHostSetup, "_CheckUserInGroups", return_value=True)
+        self.Patch(CuttlefishHostSetup, "CheckUserInGroups", return_value=True)
         self.Patch(CuttlefishHostSetup, "_CheckLoadedModules", return_value=True)
         self.assertFalse(self.CuttlefishHostSetup.ShouldRun())
 
@@ -51,19 +51,19 @@ lrw                    16384  1 aesni_intel"""
         """Test ShouldRun returns True."""
         # 1. Checking groups fails.
         self.Patch(
-            CuttlefishHostSetup, "_CheckUserInGroups", return_value=False)
+            CuttlefishHostSetup, "CheckUserInGroups", return_value=False)
         self.Patch(CuttlefishHostSetup, "_CheckLoadedModules", return_value=True)
         self.assertTrue(self.CuttlefishHostSetup.ShouldRun())
 
         # 2. Checking modules fails.
-        self.Patch(CuttlefishHostSetup, "_CheckUserInGroups", return_value=True)
+        self.Patch(CuttlefishHostSetup, "CheckUserInGroups", return_value=True)
         self.Patch(
             CuttlefishHostSetup, "_CheckLoadedModules", return_value=False)
         self.assertTrue(self.CuttlefishHostSetup.ShouldRun())
 
     # pylint: disable=protected-access
     def testCheckUserInGroups(self):
-        """Test _CheckUserInGroups."""
+        """Test CheckUserInGroups."""
         self.Patch(os, "getgroups", return_value=[1, 2, 3])
         gr1 = mock.MagicMock()
         gr1.gr_name = "fake_gr_1"
@@ -75,13 +75,13 @@ lrw                    16384  1 aesni_intel"""
 
         # User in all required groups should return true.
         self.assertTrue(
-            self.CuttlefishHostSetup._CheckUserInGroups(
+            self.CuttlefishHostSetup.CheckUserInGroups(
                 ["fake_gr_1", "fake_gr_2"]))
 
         # User not in all required groups should return False.
         self.Patch(grp, "getgrgid", side_effect=[gr1, gr2, gr3])
         self.assertFalse(
-            self.CuttlefishHostSetup._CheckUserInGroups(
+            self.CuttlefishHostSetup.CheckUserInGroups(
                 ["fake_gr_1", "fake_gr_4"]))
 
     def testCheckLoadedModules(self):
