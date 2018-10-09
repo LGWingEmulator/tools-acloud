@@ -61,21 +61,6 @@ class CreateCommonTest(unittest.TestCase):
             create_common.VerifyLocalImageArtifactsExist("/fake_dirs"),
             "/fake_dirs/aosp_cf_x86_phone-img-5046769.zip")
 
-    @mock.patch("__builtin__.raw_input")
-    def testGetAnswerFromList(self, mock_raw_input):
-        """Test GetAnswerFromList."""
-        answer_list = ["image1.zip", "image2.zip", "image3.zip"]
-        mock_raw_input.return_value = 0
-        with self.assertRaises(SystemExit):
-            create_common.GetAnswerFromList(answer_list)
-        mock_raw_input.side_effect = [1, 2, 3]
-        self.assertEqual(create_common.GetAnswerFromList(answer_list),
-                         "image1.zip")
-        self.assertEqual(create_common.GetAnswerFromList(answer_list),
-                         "image2.zip")
-        self.assertEqual(create_common.GetAnswerFromList(answer_list),
-                         "image3.zip")
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -86,6 +86,8 @@ from acloud.public.actions import create_cuttlefish_action
 from acloud.public.actions import create_goldfish_action
 from acloud.create import create
 from acloud.create import create_args
+from acloud.delete import delete
+from acloud.delete import delete_args
 from acloud.setup import setup
 from acloud.setup import setup_args
 
@@ -114,9 +116,9 @@ def _ParseArgs(args):
         CMD_CLEANUP,
         CMD_CREATE_CUTTLEFISH,
         CMD_CREATE_GOLDFISH,
-        CMD_DELETE,
         CMD_SSHKEY,
         create_args.CMD_CREATE,
+        delete_args.CMD_DELETE,
         setup_args.CMD_SETUP,
     ])
     parser = argparse.ArgumentParser(
@@ -125,9 +127,6 @@ def _ParseArgs(args):
         usage="acloud {" + usage + "} ...")
     subparsers = parser.add_subparsers()
     subparser_list = []
-
-    # Command "create"
-    subparser_list.append(create_args.GetCreateArgParser(subparsers))
 
     # Command "create_cf", create cuttlefish instances
     create_cf_parser = subparsers.add_parser(CMD_CREATE_CUTTLEFISH)
@@ -211,19 +210,6 @@ def _ParseArgs(args):
     create_args.AddCommonCreateArgs(create_gf_parser)
     subparser_list.append(create_gf_parser)
 
-    # Command "Delete"
-    delete_parser = subparsers.add_parser(CMD_DELETE)
-    delete_parser.required = False
-    delete_parser.set_defaults(which=CMD_DELETE)
-    delete_parser.add_argument(
-        "--instance_names",
-        dest="instance_names",
-        nargs="+",
-        required=True,
-        help="The names of the instances that need to delete, "
-        "separated by spaces, e.g. --instance_names instance-1 instance-2")
-    subparser_list.append(delete_parser)
-
     # Command "cleanup"
     cleanup_parser = subparsers.add_parser(CMD_CLEANUP)
     cleanup_parser.required = False
@@ -257,8 +243,14 @@ def _ParseArgs(args):
         "that will be added as project-wide ssh key.")
     subparser_list.append(sshkey_parser)
 
+    # Command "create"
+    subparser_list.append(create_args.GetCreateArgParser(subparsers))
+
     # Command "setup"
     subparser_list.append(setup_args.GetSetupArgParser(subparsers))
+
+    # Command "Delete"
+    subparser_list.append(delete_args.GetDeleteArgParser(subparsers))
 
     # Add common arguments.
     for subparser in subparser_list:
@@ -462,8 +454,7 @@ def main(argv):
             branch=args.branch,
             report_internal_ip=args.report_internal_ip)
     elif args.which == CMD_DELETE:
-        report = device_driver.DeleteAndroidVirtualDevices(
-            cfg, args.instance_names)
+        report = delete.Run(args)
     elif args.which == CMD_CLEANUP:
         report = device_driver.Cleanup(cfg, args.expiration_mins)
     elif args.which == CMD_SSHKEY:
