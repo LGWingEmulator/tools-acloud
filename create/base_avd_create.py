@@ -31,10 +31,11 @@ from acloud.internal.lib import utils
 logger = logging.getLogger(__name__)
 
 _VNC_BIN = "ssvnc"
-_CMD_START_VNC = [_VNC_BIN, "--profile", "acloud_vnc_profile.vnc"]
+_VNC_PROFILE_DIR = ".vnc/profiles"
+_VNC_PROFILE_FILE = "acloud_vnc_profile.vnc"
+_CMD_START_VNC = [_VNC_BIN, "--profile", _VNC_PROFILE_FILE]
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
-_VNC_PROFILE_PATH = ".vnc/profiles/acloud_vnc_profile.vnc"
 
 # In default profile:
 # - SSL protocol(use_ssl=0) is disable by default since ssh tunnel has been
@@ -42,8 +43,8 @@ _VNC_PROFILE_PATH = ".vnc/profiles/acloud_vnc_profile.vnc"
 # - Use ssvnc_scale=auto to adjust vnc display to fit to user's screen.
 _VNC_PROFILE = """
 host=127.0.0.1
-port=%(port)s
-disp=127.0.0.1:%(port)s
+port=%(port)d
+disp=127.0.0.1:%(port)d
 disable_all_encryption=1
 use_ssl=0
 ssvnc_scale=auto
@@ -70,7 +71,7 @@ class BaseAVDCreate(object):
         """Launch ssvnc.
 
         Args:
-            port: String, port number.
+            port: Integer, port number.
         """
         try:
             os.environ[_ENV_DISPLAY]
@@ -108,12 +109,15 @@ class BaseAVDCreate(object):
             port: Integer, the port number for vnc client.
         """
         # Generate profile and the use the specified port.
-        profile_path = os.path.join(os.path.expanduser("~"), _VNC_PROFILE_PATH)
+        profile_path = os.path.join(os.path.expanduser("~"), _VNC_PROFILE_DIR)
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
 
         # We write the profile every time since that's how we pass the port in
         # and it enables us the ability to connect to multiple instances
         # (local or remote).
-        with open(profile_path, "w+") as cfg_file:
+        profile = os.path.join(profile_path, _VNC_PROFILE_FILE)
+        with open(profile, "w+") as cfg_file:
             cfg_file.writelines(_VNC_PROFILE % {"port": port})
 
     def PrintAvdDetails(self, avd_spec):
