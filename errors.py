@@ -98,3 +98,7 @@ class BootImgDoesNotExist(CreateError):
 
 class UnsupportedCompressionFileType(SetupError):
     """Don't support the compression file type."""
+
+
+class LaunchCVDFail(CreateError):
+    """Cuttlefish AVD launch failed."""

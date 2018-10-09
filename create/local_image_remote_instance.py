@@ -25,11 +25,11 @@ import os
 from acloud import errors
 from acloud.create import create_common
 from acloud.create import base_avd_create
+from acloud.internal import constants
 
 logger = logging.getLogger(__name__)
 
-CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
-ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
+_CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 
 
 class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
@@ -66,7 +66,7 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             A string, the path to the host package.
         """
         dist_dir = os.path.join(
-            os.environ.get(ENV_ANDROID_BUILD_TOP, "."), "out", "dist")
+            os.environ.get(constants.ENV_ANDROID_BUILD_TOP, "."), "out", "dist")
         cvd_host_package_artifact = self.GetCvdHostPackage(
             [local_image_dir, dist_dir])
         logger.debug("cvd host package: %s", cvd_host_package_artifact)
@@ -86,11 +86,11 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             errors.GetCvdLocalHostPackageError: Can't find cvd host package.
         """
         for path in paths:
-            cvd_host_package = os.path.join(path, CVD_HOST_PACKAGE)
+            cvd_host_package = os.path.join(path, _CVD_HOST_PACKAGE)
             if os.path.exists(cvd_host_package):
                 return cvd_host_package
         raise errors.GetCvdLocalHostPackageError, (
-            "Can't find the cvd host package: \n%s." %
+            "Can't find the cvd host package: \n%s" %
             '\n'.join(paths))
 
     def Create(self, avd_spec):

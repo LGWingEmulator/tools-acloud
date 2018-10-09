@@ -76,5 +76,6 @@ class CreateCommonTest(unittest.TestCase):
         self.assertEqual(create_common.GetAnswerFromList(answer_list),
                          "image3.zip")
 
+
 if __name__ == "__main__":
     unittest.main()
