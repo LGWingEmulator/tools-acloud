@@ -23,6 +23,7 @@ import os
 import sys
 
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
@@ -132,24 +133,33 @@ def VerifyLocalImageArtifactsExist(local_image_dir):
 
 
 def DisplayJobResult(report):
-    """Get job result from report.
+    """Print the details of the devices created.
 
-    -Display instance name/ip from report.data.
-        report.data example:
-            {'devices':[{'instance_name': 'ins-f6a34397-none-5043363',
-                         'ip': u'35.234.10.162'}]}
+    -Display created device details from the report instance.
+        report example:
+            'data': [{'devices':[{'instance_name': 'ins-f6a397-none-53363',
+                                  'ip': u'35.234.10.162'}]}]
     -Display error message from report.error.
 
     Args:
         report: A Report instance.
     """
-    if report.data.get("devices"):
-        device_data = report.data.get("devices")
-        for device in device_data:
-            utils.PrintColorString("instance name: %s" %
-                                   device.get("instance_name"),
+    for device in report.data.get("devices", []):
+        adb_port = device.get("adb_port")
+        adb_serial = ""
+        if adb_port:
+            adb_serial = constants.LOCALHOST_ADB_SERIAL % adb_port
+        instance_name = device.get("instance_name")
+        instance_ip = device.get("ip")
+        # Print out the adb serial with the instance name, otherwise just
+        # supply the instance name and ip.
+        if adb_serial:
+            utils.PrintColorString("Device serial: %s (%s[%s])" %
+                                   (adb_serial, instance_name, instance_ip),
                                    utils.TextColors.OKGREEN)
-            utils.PrintColorString("device IP: %s" % device.get("ip"),
+        else:
+            utils.PrintColorString("Device details: %s[%s]" %
+                                   (instance_name, instance_ip),
                                    utils.TextColors.OKGREEN)
 
     # TODO(b/117245508): Help user to delete instance if it got created.

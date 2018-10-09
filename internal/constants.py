@@ -91,8 +91,10 @@ USER_ANSWER_YES = {"y", "yes", "Y"}
 LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
 
 DEFAULT_VNC_PORT = 6444
+DEFAULT_ADB_PORT = 6520
+VNC_PORT = "vnc_port"
+ADB_PORT = "adb_port"
 
 ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
 
-VNC_PORT = "vnc_port"
-ADB_PORT = "adb_port"
+LOCALHOST_ADB_SERIAL = "127.0.0.1:%d"
