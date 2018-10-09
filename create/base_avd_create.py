@@ -66,7 +66,7 @@ class BaseAVDCreate(object):
         """
         raise NotImplementedError
 
-    def LaunchVncClient(self, port="6444"):
+    def LaunchVncClient(self, port=constants.VNC_PORT):
         """Launch ssvnc.
 
         Args:
@@ -75,7 +75,9 @@ class BaseAVDCreate(object):
         try:
             os.environ[_ENV_DISPLAY]
         except KeyError:
-            logger.error("Remote terminal can't support VNC.")
+            utils.PrintColorString("Remote terminal can't support VNC. "
+                                   "Skipping VNC startup.",
+                                   utils.TextColors.FAIL)
             return
 
         if not find_executable(_VNC_BIN):
@@ -133,7 +135,7 @@ class BaseAVDCreate(object):
         print("Creating %s AVD instance with the following details:" % avd_spec.instance_type)
         if avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
             print("Image (local):")
-            print("  %s" % avd_spec.local_image_path)
+            print("  %s" % avd_spec.local_image_dir)
         elif avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
             print("Image:")
             print("  %s - %s [%s]" % (avd_spec.remote_image[constants.BUILD_BRANCH],
