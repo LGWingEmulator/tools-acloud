@@ -16,14 +16,18 @@
 """Common Utilities."""
 
 from __future__ import print_function
+
+from distutils.spawn import find_executable
 import base64
 import binascii
+import collections
 import errno
 import getpass
 import logging
 import os
 import shutil
 import struct
+import socket
 import subprocess
 import sys
 import tarfile
@@ -43,6 +47,17 @@ SSH_KEYGEN_PUB_CMD = ["ssh-keygen", "-y"]
 DEFAULT_RETRY_BACKOFF_FACTOR = 1
 DEFAULT_SLEEP_MULTIPLIER = 0
 
+SSH_BIN = "ssh"
+_SSH_TUNNEL_ARGS = ("-i %(rsa_key_file)s -o UserKnownHostsFile=/dev/null "
+                    "-o StrictHostKeyChecking=no "
+                    "-L %(vnc_port)d:127.0.0.1:%(target_vnc_port)d "
+                    "-L %(adb_port)d:127.0.0.1:%(target_adb_port)d "
+                    "-N -f -l %(ssh_user)s %(ip_addr)s")
+ADB_BIN = "adb"
+_ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
+# Store the ports that vnc/adb are forwarded to, both are integers.
+ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
+                                                           constants.ADB_PORT])
 
 class TempDir(object):
     """A context manager that ceates a temporary directory.
@@ -625,3 +640,78 @@ class TimeExecute(object):
                                      TextColors.FAIL)
                 raise
         return DecoratorFunction
+
+
+def PickFreePort():
+    """Helper to pick a free port.
+
+    Returns:
+        Integer, a free port number.
+    """
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind(("", 0))
+    port = tcp_socket.getsockname()[1]
+    tcp_socket.close()
+    return port
+
+
+def _ExecuteCommand(cmd, args):
+    """Execute command.
+
+    Args:
+        cmd: Strings of execute binary name.
+        args: List of args to pass in with cmd.
+
+    Raises:
+        errors.NoExecuteBin: Can't find the execute bin file.
+    """
+    bin_path = find_executable(cmd)
+    if not bin_path:
+        raise root_errors.NoExecuteCmd("unable to locate %s" % cmd)
+    command = [bin_path] + args
+    logger.debug("Running '%s'", ' '.join(command))
+    with open(os.devnull, "w") as dev_null:
+        subprocess.check_call(command, stderr=dev_null, stdout=dev_null)
+
+
+# pylint: disable=too-many-locals
+def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_user):
+    """Autoconnect to an AVD instance.
+
+    Args:
+        ip_addr: String, use to build the adb & vnc tunnel between local
+                 and remote instance.
+        rsa_key_file: String, Private key file path to use when creating
+                      the ssh tunnels.
+        target_vnc_port: Integer of target vnc port number.
+        target_adb_port: Integer of target adb port number.
+        ssh_user: String of user login into the instance.
+
+    Returns:
+        NamedTuple of (vnc_port, adb_port) SSHTUNNEL of the connect, both are
+        integers.
+    """
+    local_free_vnc_port = PickFreePort()
+    local_free_adb_port = PickFreePort()
+    try:
+        ssh_tunnel_args = _SSH_TUNNEL_ARGS % {
+            "rsa_key_file": rsa_key_file,
+            "vnc_port": local_free_vnc_port,
+            "adb_port": local_free_adb_port,
+            "target_vnc_port": target_vnc_port,
+            "target_adb_port": target_adb_port,
+            "ssh_user": ssh_user,
+            "ip_addr": ip_addr}
+        _ExecuteCommand(SSH_BIN, ssh_tunnel_args.split())
+    except subprocess.CalledProcessError:
+        PrintColorString("Failed to create ssh tunnels, retry with '#acloud "
+                         "reconnect'.", TextColors.FAIL)
+    try:
+        adb_connect_args = _ADB_CONNECT_ARGS % {"adb_port": local_free_adb_port}
+        _ExecuteCommand(ADB_BIN, adb_connect_args.split())
+    except subprocess.CalledProcessError:
+        PrintColorString("Failed to adb connect, retry with "
+                         "'#acloud reconnect'", TextColors.FAIL)
+
+    return ForwardedPorts(vnc_port=local_free_vnc_port,
+                          adb_port=local_free_adb_port)

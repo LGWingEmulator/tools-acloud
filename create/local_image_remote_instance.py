@@ -240,8 +240,12 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             avd_spec,
             self.local_image_artifact,
             self.cvd_host_package_artifact)
-        report = common_operations.CreateDevices("create_cf", avd_spec.cfg,
-                                                 device_factory, avd_spec.num,
-                                                 avd_spec.report_internal_ip)
+        report = common_operations.CreateDevices(
+            "create_cf", avd_spec.cfg, device_factory, avd_spec.num,
+            avd_spec.report_internal_ip, autoconnect=avd_spec.autoconnect)
         create_common.DisplayJobResult(report)
+        # Launch vnc client if we're auto-connecting.
+        if avd_spec.autoconnect:
+            for device in report.data.get("devices", []):
+                self.LaunchVncClient(device.get(constants.VNC_PORT))
         return report
