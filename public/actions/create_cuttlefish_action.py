@@ -153,6 +153,7 @@ def CreateDevices(avd_spec=None,
         build_id = avd_spec.remote_image[constants.BUILD_ID]
         kernel_build_id = avd_spec.kernel_build_id
         num = avd_spec.num
+        autoconnect = avd_spec.autoconnect
     logger.info(
         "Creating a cuttlefish device in project %s, build_target: %s, "
         "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
@@ -162,4 +163,4 @@ def CreateDevices(avd_spec=None,
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
                                              kernel_build_id, avd_spec)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
-                                           num, report_internal_ip)
+                                           num, report_internal_ip, autoconnect)
