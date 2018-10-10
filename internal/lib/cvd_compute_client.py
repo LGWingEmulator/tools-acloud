@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """A client that manages Cuttlefish Virtual Device on compute engine.
 
 ** CvdComputeClient **
@@ -44,6 +43,7 @@ import logging
 from acloud.internal import constants
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
+from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +57,11 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
     # args, this method differs too and holds way too cf-specific args to put in
     # the parent method.
     # pylint: disable=arguments-differ,too-many-locals
-    def CreateInstance(self, instance, image_name, image_project, build_target,
-                       branch, build_id, kernel_branch=None,
-                       kernel_build_id=None, blank_data_disk_size_gb=None,
-                       avd_spec=None):
+    @utils.TimeExecute(function_description="Creating GCE instance")
+    def CreateInstance(self, instance, image_name, image_project,
+                       build_target=None, branch=None, build_id=None,
+                       kernel_branch=None, kernel_build_id=None,
+                       blank_data_disk_size_gb=None, avd_spec=None):
         """Create a cuttlefish instance given stable host image and build id.
 
         Args:
@@ -101,7 +102,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_branch and kernel_build_id:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
-        metadata["cvd_01_launch"] = "1"
+        metadata["cvd_01_launch"] = "0" if (
+            avd_spec
+            and avd_spec.image_source == constants.IMAGE_SRC_LOCAL) else "1"
         metadata["cvd_01_x_res"] = resolution[0]
         metadata["cvd_01_y_res"] = resolution[1]
         if blank_data_disk_size_gb > 0:

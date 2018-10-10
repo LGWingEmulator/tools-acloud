@@ -23,6 +23,7 @@ import os
 import sys
 
 from acloud import errors
+from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
@@ -128,3 +129,31 @@ def VerifyLocalImageArtifactsExist(local_image_dir):
         image_path = images[0]
     logger.debug("Local image: %s ", image_path)
     return image_path
+
+
+def DisplayJobResult(report):
+    """Get job result from report.
+
+    -Display instance name/ip from report.data.
+        report.data example:
+            {'devices':[{'instance_name': 'ins-f6a34397-none-5043363',
+                         'ip': u'35.234.10.162'}]}
+    -Display error message from report.error.
+
+    Args:
+        report: A Report instance.
+    """
+    if report.data.get("devices"):
+        device_data = report.data.get("devices")
+        for device in device_data:
+            utils.PrintColorString("instance name: %s" %
+                                   device.get("instance_name"),
+                                   utils.TextColors.OKGREEN)
+            utils.PrintColorString("device IP: %s" % device.get("ip"),
+                                   utils.TextColors.OKGREEN)
+
+    # TODO(b/117245508): Help user to delete instance if it got created.
+    if report.errors:
+        error_msg = "\n".join(report.errors)
+        utils.PrintColorString("Fail in:\n%s\n" % error_msg,
+                               utils.TextColors.FAIL)
