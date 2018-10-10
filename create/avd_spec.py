@@ -77,6 +77,7 @@ class AVDSpec(object):
         # Let's define the private class vars here and then process the user
         # args afterwards.
         self._autoconnect = None
+        self._report_internal_ip = None
         self._avd_type = None
         self._flavor = None
         self._image_source = None
@@ -214,6 +215,7 @@ class AVDSpec(object):
             args: Namespace object from argparse.parse_args.
         """
         self._autoconnect = args.autoconnect
+        self._report_internal_ip = args.report_internal_ip
         self._avd_type = args.avd_type
         self._flavor = args.flavor
         self._instance_type = (constants.INSTANCE_TYPE_LOCAL
@@ -375,6 +377,11 @@ class AVDSpec(object):
     def num(self):
         """Return num of instances."""
         return self._num_of_instances
+
+    @property
+    def report_internal_ip(self):
+        """Return report internal ip."""
+        return self._report_internal_ip
 
     @property
     def kernel_build_id(self):

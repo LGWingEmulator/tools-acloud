@@ -575,3 +575,53 @@ class BatchHttpRequestExecutor(object):
             exception is an instance of DriverError or None if no error.
         """
         return self._final_results
+
+
+class TimeExecute(object):
+    """Count the function execute time."""
+
+    def __init__(self, function_description=None, print_before_call=True, print_status=True):
+        """Initializes the class.
+
+        Args:
+            function_description: String that describes function (e.g."Creating
+                                  Instance...")
+            print_before_call: Boolean, print the function description before
+                               calling the function, default True.
+            print_status: Boolean, print the status of the function after the
+                          function has completed, default True ("OK" or "Fail").
+        """
+        self._function_description = function_description
+        self._print_before_call = print_before_call
+        self._print_status = print_status
+
+    def __call__(self, func):
+        def DecoratorFunction(*args, **kargs):
+            """Decorator function.
+
+            Args:
+                *args: Arguments to pass to the functor.
+                **kwargs: Key-val based arguments to pass to the functor.
+
+            Raises:
+                Exception: The exception that functor(*args, **kwargs) throws.
+            """
+            timestart = time.time()
+            if self._print_before_call:
+                PrintColorString("%s ..."% self._function_description, end="")
+            try:
+                result = func(*args, **kargs)
+                if not self._print_before_call:
+                    PrintColorString("%s (%ds)" % (self._function_description,
+                                                   time.time()-timestart),
+                                     TextColors.OKGREEN)
+                if self._print_status:
+                    PrintColorString("OK! (%ds)" % (time.time()-timestart),
+                                     TextColors.OKGREEN)
+                return result
+            except:
+                if self._print_status:
+                    PrintColorString("Fail! (%ds)" % (time.time()-timestart),
+                                     TextColors.FAIL)
+                raise
+        return DecoratorFunction
