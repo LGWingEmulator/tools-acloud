@@ -67,7 +67,7 @@ class BaseAVDCreate(object):
         """
         raise NotImplementedError
 
-    def LaunchVncClient(self, port=constants.VNC_PORT):
+    def LaunchVncClient(self, port=constants.DEFAULT_VNC_PORT):
         """Launch ssvnc.
 
         Args:
