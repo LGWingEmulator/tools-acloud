@@ -45,8 +45,7 @@ EOF"""
         constants.LIST_CF_USER_GROUPS = ["group1", "group2"]
 
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
-            local_image_local_instance._CMD_LAUNCH_CVD,
-            hw_property, "fake_image_dir", "flavor")
+            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir", "flavor")
 
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD)
 
