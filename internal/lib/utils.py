@@ -715,3 +715,41 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_use
 
     return ForwardedPorts(vnc_port=local_free_vnc_port,
                           adb_port=local_free_adb_port)
+
+
+def GetAnswerFromList(answer_list, enable_choose_all=False):
+    """Get answer from a list.
+
+    Args:
+        answer_list: list of the answers to choose from.
+
+    Return:
+        List holding the answer(s).
+    """
+    print("[0] to exit.")
+    start_index = 1
+    if enable_choose_all:
+        start_index = 2
+        print("[1] for all.")
+    for num, item in enumerate(answer_list, start_index):
+        print("[%d] %s" % (num, item))
+
+    choice = -1
+    max_choice = len(answer_list) + 1
+    while True:
+        try:
+            choice = raw_input("Enter your choice[0-%d]: " % max_choice)
+            choice = int(choice)
+        except ValueError:
+            print("'%s' is not a valid integer.", choice)
+            continue
+        # Filter out choices
+        if choice == 0:
+            print("Exiting acloud.")
+            sys.exit()
+        if enable_choose_all and choice == 1:
+            return answer_list
+        if choice < 0 or choice > max_choice:
+            print("please choose between 0 and %d" % max_choice)
+        else:
+            return [answer_list[choice-start_index]]
