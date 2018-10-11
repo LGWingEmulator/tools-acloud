@@ -81,8 +81,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                utils.TextColors.WARNING)
         # TODO(b/117366819): Should display the correct device serial
         # according to the args --serial_number.
-        utils.PrintColorString("Device serial: %s:%s" %
-                               (constants.LOCALHOST_ADB_SERIAL,
+        utils.PrintColorString("Device serial: %s" %
+                               (constants.LOCALHOST_ADB_SERIAL %
                                 constants.DEFAULT_ADB_PORT),
                                utils.TextColors.WARNING)
         if avd_spec.autoconnect:
