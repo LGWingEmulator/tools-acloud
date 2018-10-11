@@ -3,3 +3,4 @@
 .coverage
 htmlcov/
 .idea/
+setup/pre_setup_sh/google*
