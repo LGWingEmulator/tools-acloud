@@ -198,11 +198,7 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         self.storage_bucket_name = cfg.storage_bucket_name
         self.ssh_private_key_path = cfg.ssh_private_key_path
         self.ssh_public_key_path = cfg.ssh_public_key_path
-
-        # Write default stable_host_image_name with dummy value.
-        # TODO(113091773): An additional step to create the host image.
-        if not cfg.stable_host_image_name:
-            UpdateConfigFile(self.config_path, "stable_host_image_name", "")
+        self.stable_host_image_name = cfg.stable_host_image_name
 
     def ShouldRun(self):
         """Check if we actually need to run GCP setup.
@@ -236,8 +232,17 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
             google_sdk_runner = GoogleSDKBins(google_sdk_init.GetSDKBinPath())
             self._SetupProject(google_sdk_runner)
             self._EnableGcloudServices(google_sdk_runner)
+            self._CreateStableHostImage()
         finally:
             google_sdk_init.CleanUp()
+
+    def _CreateStableHostImage(self):
+        """Create the stable host image."""
+        # Write default stable_host_image_name with dummy value.
+        # TODO(113091773): An additional step to create the host image.
+        if not self.stable_host_image_name:
+            UpdateConfigFile(self.config_path, "stable_host_image_name", "")
+
 
     def _NeedProjectSetup(self):
         """Confirm project setup should run or not.
