@@ -92,7 +92,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         # Create host instances for cuttlefish device. Currently one host instance
         # has one cuttlefish device. In the future, these logics should be modified
         # to support multiple cuttlefish devices per host instance.
-        instance = self._compute_client.GenerateInstanceName(self._build_id)
+        instance = self._compute_client.GenerateInstanceName(
+            build_id=self._build_id, build_target=self._build_target)
 
         # Create an instance from Stable Host Image
         if self.RELEASE_BRANCH_SUFFIX in self._branch:
