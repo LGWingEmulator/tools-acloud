@@ -46,18 +46,18 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self._extract_path = "/tmp/acloud_image_artifacts/cuttlefish/1234"
 
     @mock.patch.object(RemoteImageLocalInstance, "_DownloadAndProcessImageFiles")
-    def testCreate(self, mock_proc):
-        """Test Create."""
+    def testGetImageArtifactsPath(self, mock_proc):
+        """Test get image artifacts path."""
         avd_spec = mock.MagicMock()
         # raise errors.NoCuttlefishCommonInstalled
         self.Patch(setup_common, "PackageInstalled", return_value=False)
         self.assertRaises(errors.NoCuttlefishCommonInstalled,
-                          self.RemoteImageLocalInstance.Create,
+                          self.RemoteImageLocalInstance.GetImageArtifactsPath,
                           avd_spec)
 
         # Valid _DownloadAndProcessImageFiles run.
         self.Patch(setup_common, "PackageInstalled", return_value=True)
-        self.RemoteImageLocalInstance.Create(avd_spec)
+        self.RemoteImageLocalInstance.GetImageArtifactsPath(avd_spec)
         mock_proc.assert_called_once_with(avd_spec)
 
     @mock.patch.object(RemoteImageLocalInstance, "_AclCfImageFiles")
@@ -68,7 +68,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         avd_spec = mock.MagicMock()
         avd_spec.cfg = mock.MagicMock()
         avd_spec.remote_image = self._fake_remote_image
-        self.Patch(os.path, "exists", return_value=True)
+        self.Patch(os.path, "exists", return_value=False)
         self.RemoteImageLocalInstance._DownloadAndProcessImageFiles(avd_spec)
 
         # To make sure each function execute once.
@@ -79,6 +79,8 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
             self._extract_path)
         mock_unpack.assert_called_once_with(self._extract_path)
         mock_acl.assert_called_once_with(self._extract_path)
+        # Clean extarcted folder after test completed.
+        os.rmdir(self._extract_path)
 
     @mock.patch.object(utils, "TempDir")
     @mock.patch.object(utils, "Decompress")

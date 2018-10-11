@@ -25,7 +25,7 @@ import subprocess
 import tempfile
 
 from acloud import errors
-from acloud.create import base_avd_create
+from acloud.create import local_image_local_instance
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
@@ -50,26 +50,36 @@ ALL_SCOPES = [android_build_client.AndroidBuildClient.SCOPE]
 logger = logging.getLogger(__name__)
 
 
-class RemoteImageLocalInstance(base_avd_create.BaseAVDCreate):
-    """Create class for a remote image local instance AVD."""
+class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstance):
+    """Create class for a remote image local instance AVD.
 
-    # pylint: disable=no-self-use
-    def Create(self, avd_spec):
-        """Create the AVD.
+    RemoteImageLocalInstance just defines logic in downloading the remote image
+    artifacts and leverages the existing logic to launch a local instance in
+    LocalImageLocalInstance.
+    """
+
+    @utils.TimeExecute(function_description="Downloading Android Build image")
+    def GetImageArtifactsPath(self, avd_spec):
+        """Download the image artifacts and return the paths to them.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
 
         Raises:
             errors.NoCuttlefishCommonInstalled: cuttlefish-common doesn't install.
+
+        Returns:
+            Tuple of (local image file, launch_cvd package) paths.
         """
-        print("We will create a local instance AVD with a remote image: %s" %
-              avd_spec)
         if not setup_common.PackageInstalled("cuttlefish-common"):
             raise errors.NoCuttlefishCommonInstalled(
                 "Package [cuttlefish-common] is not installed!\n"
                 "Please run 'acloud setup --host' to install.")
-        self._DownloadAndProcessImageFiles(avd_spec)
+
+        image_dir = self._DownloadAndProcessImageFiles(avd_spec)
+        launch_cvd_path = os.path.join(image_dir, "bin", constants.CMD_LAUNCH_CVD)
+
+        return image_dir, launch_cvd_path
 
     def _DownloadAndProcessImageFiles(self, avd_spec):
         """Download the CF image artifacts and process them.
@@ -79,20 +89,24 @@ class RemoteImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+
+        Returns:
+            extract_path: String, path to image folder.
         """
         cfg = avd_spec.cfg
         build_id = avd_spec.remote_image[constants.BUILD_ID]
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
         extract_path = os.path.join(_TEMP_IMAGE_FOLDER, build_id)
         logger.debug("Extract path: %s", extract_path)
+        # TODO(b/117189191): If extract folder exists, check if the files are
+        # already downloaded and skip this step if they are.
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
+            self._DownloadRemoteImage(cfg, build_target, build_id, extract_path)
+            self._UnpackBootImage(extract_path)
+            self._AclCfImageFiles(extract_path)
 
-        # TODO(b/117189191): Check if the files are already downloaded and
-        # skip this step if they are.
-        self._DownloadRemoteImage(cfg, build_target, build_id, extract_path)
-        self._UnpackBootImage(extract_path)
-        self._AclCfImageFiles(extract_path)
+        return extract_path
 
     @staticmethod
     def _DownloadRemoteImage(cfg, build_target, build_id, extract_path):

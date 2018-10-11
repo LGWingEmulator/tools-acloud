@@ -23,6 +23,7 @@ from __future__ import print_function
 import logging
 import os
 import subprocess
+import sys
 import time
 
 from acloud import errors
@@ -35,7 +36,6 @@ from acloud.setup import host_setup_runner
 logger = logging.getLogger(__name__)
 
 _BOOT_COMPLETE = "VIRTUAL_DEVICE_BOOT_COMPLETED"
-_CMD_LAUNCH_CVD = "launch_cvd"
 # TODO(b/117366819): Currently --serial_number is not working.
 _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
                         "--memory_mb %s --blank_data_image_mb %s "
@@ -72,7 +72,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        local_image_path,
                                        avd_spec.flavor)
         try:
-            self.CheckLaunchCVD(cmd)
+            self.CheckLaunchCVD(cmd, os.path.dirname(launch_cvd_path))
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
@@ -117,7 +117,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         # Check if launch_cvd is exist.
         launch_cvd_path = os.path.join(
-            os.environ.get(_ENV_ANDROID_HOST_OUT), "bin", _CMD_LAUNCH_CVD)
+            os.environ.get(_ENV_ANDROID_HOST_OUT), "bin", constants.CMD_LAUNCH_CVD)
         if not os.path.exists(launch_cvd_path):
             raise errors.GetCvdLocalHostPackageError(
                 "No launch_cvd found. Please run \"m launch_cvd\" first")
@@ -177,28 +177,26 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         logger.debug("launch_cvd cmd:\n %s", combined_launch_cmd)
         return combined_launch_cmd
 
-    def CheckLaunchCVD(self, cmd):
+    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
+    def CheckLaunchCVD(self, cmd, host_pack_dir):
         """Execute launch_cvd command and wait for boot up completed.
 
         Args:
             cmd: String, launch_cvd command.
+            host_pack_dir: String of host package directory.
         """
-        start = time.time()
-
         # Cuttlefish support launch single AVD at one time currently.
         if self._IsLaunchCVDInUse():
             logger.info("Cuttlefish AVD is already running.")
             if utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
-                stop_cvd_cmd = os.path.join(os.environ.get(_ENV_ANDROID_HOST_OUT),
-                                            "bin", _CMD_STOP_CVD)
-                subprocess.check_output(stop_cvd_cmd)
-            else:
-                print("Only 1 cuttlefish AVD at a time, "
-                      "please stop the current AVD via #acloud delete")
-                return
+                stop_cvd_cmd = os.path.join(host_pack_dir, _CMD_STOP_CVD)
+                with open(os.devnull, "w") as dev_null:
+                    subprocess.check_call(stop_cvd_cmd, stderr=dev_null,
+                                          stdout=dev_null)
 
-        utils.PrintColorString("Waiting for AVD to boot... ",
-                               utils.TextColors.WARNING, end="")
+            else:
+                print("Exiting out")
+                sys.exit()
 
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
@@ -208,13 +206,10 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             logger.debug(line.strip())
             # cvd is still running and got boot complete.
             if _BOOT_COMPLETE in line:
-                utils.PrintColorString("OK! (%ds)" % (time.time() - start),
-                                       utils.TextColors.OKGREEN)
                 boot_complete = True
                 break
 
         if not boot_complete:
-            utils.PrintColorString("Fail!", utils.TextColors.WARNING)
             raise errors.LaunchCVDFail(
                 "Can't launch cuttlefish AVD. No %s found" % _BOOT_COMPLETE)
 
@@ -226,7 +221,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             Boolean, True if launch_cvd is running. False otherwise.
         """
         try:
-            subprocess.check_output([_CMD_PGREP, _CMD_LAUNCH_CVD])
+            with open(os.devnull, "w") as dev_null:
+                subprocess.check_call([_CMD_PGREP, constants.CMD_LAUNCH_CVD],
+                                      stderr=dev_null, stdout=dev_null)
             return True
         except subprocess.CalledProcessError:
             # launch_cvd process is not in use.
