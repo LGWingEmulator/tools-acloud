@@ -226,6 +226,24 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                 mock.call(16)
             ])
 
+    @mock.patch("__builtin__.raw_input")
+    def testGetAnswerFromList(self, mock_raw_input):
+        """Test GetAnswerFromList."""
+        answer_list = ["image1.zip", "image2.zip", "image3.zip"]
+        mock_raw_input.return_value = 0
+        with self.assertRaises(SystemExit):
+            utils.GetAnswerFromList(answer_list)
+        mock_raw_input.side_effect = [1, 2, 3, 1]
+        self.assertEqual(utils.GetAnswerFromList(answer_list),
+                         ["image1.zip"])
+        self.assertEqual(utils.GetAnswerFromList(answer_list),
+                         ["image2.zip"])
+        self.assertEqual(utils.GetAnswerFromList(answer_list),
+                         ["image3.zip"])
+        self.assertEqual(utils.GetAnswerFromList(answer_list,
+                                                 enable_choose_all=True),
+                         answer_list)
+
 
 if __name__ == "__main__":
     unittest.main()

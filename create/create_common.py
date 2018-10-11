@@ -20,7 +20,6 @@ from __future__ import print_function
 import glob
 import logging
 import os
-import sys
 
 from acloud import errors
 from acloud.internal import constants
@@ -64,41 +63,6 @@ def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
     return hw_dict
 
 
-def GetAnswerFromList(answer_list):
-    """Get answer from a list.
-
-    Args:
-        answer_list: list of the answers to choose from.
-
-    Return:
-        String of the answer.
-
-    Raises:
-        error.ChoiceExit: User choice exit.
-    """
-    print("[0] to exit.")
-    for num, item in enumerate(answer_list, 1):
-        print("[%d] %s" % (num, item))
-
-    choice = -1
-    max_choice = len(answer_list)
-    while True:
-        try:
-            choice = raw_input("Enter your choice[0-%d]: " % max_choice)
-            choice = int(choice)
-        except ValueError:
-            print("'%s' is not a valid integer.", choice)
-            continue
-        # Filter out choices
-        if choice == 0:
-            print("Exiting acloud.")
-            sys.exit()
-        if choice < 0 or choice > max_choice:
-            print("please choose between 0 and %d" % max_choice)
-        else:
-            return answer_list[choice-1]
-
-
 def VerifyLocalImageArtifactsExist(local_image_dir):
     """Verify the specifies local image dir.
 
@@ -125,7 +89,7 @@ def VerifyLocalImageArtifactsExist(local_image_dir):
                                         (image_pattern, local_image_dir))
     if len(images) > 1:
         print("Multiple images found, please choose 1.")
-        image_path = GetAnswerFromList(images)
+        image_path = utils.GetAnswerFromList(images)[0]
     else:
         image_path = images[0]
     logger.debug("Local image: %s ", image_path)
