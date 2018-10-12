@@ -19,11 +19,17 @@ Create class that is responsible for creating a remote instance AVD with a
 local image.
 """
 
+import subprocess
+import time
 import unittest
+
 import mock
 
 from acloud import errors
 from acloud.create import local_image_remote_instance
+from acloud.internal.lib import auth
+from acloud.internal.lib import cvd_compute_client
+from acloud.internal.lib import driver_test_lib
 
 
 class LocalImageRemoteInstanceTest(unittest.TestCase):
@@ -56,6 +62,32 @@ class LocalImageRemoteInstanceTest(unittest.TestCase):
             self.assertEqual(
                 self.local_image_remote_instance.cvd_host_package_artifact,
                 "/fake_dirs/cvd-host_package.tar.gz")
+
+
+class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
+    """Test RemoteInstanceDeviceFactory method."""
+
+    def setUp(self):
+        """Set up the test."""
+        super(RemoteInstanceDeviceFactoryTest, self).setUp()
+        self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
+        self.Patch(cvd_compute_client.CvdComputeClient, "InitResourceHandle")
+
+    # pylint: disable=protected-access
+    def testSSHExecuteWithRetry(self):
+        """test SSHExecuteWithRetry method."""
+        self.Patch(time, "sleep")
+        factory = local_image_remote_instance.RemoteInstanceDeviceFactory
+        self.Patch(subprocess, "check_call",
+                   side_effect=subprocess.CalledProcessError(
+                       None, "ssh command fail."))
+        self.assertRaises(subprocess.CalledProcessError,
+                          factory._ShellCmdWithRetry,
+                          "fake cmd")
+        self.assertEqual(subprocess.check_call.call_count, #pylint: disable=no-member
+                         local_image_remote_instance._SSH_CMD_MAX_RETRY + 1)
+        self.Patch(subprocess, "check_call", return_value=True)
+        self.assertEqual(factory._ShellCmdWithRetry("fake cmd"), True)
 
 
 if __name__ == "__main__":
