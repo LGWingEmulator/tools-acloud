@@ -22,6 +22,9 @@ image artifacts.
 
 from __future__ import print_function
 
+from distutils.spawn import find_executable
+import os
+import subprocess
 import sys
 
 from acloud import errors
@@ -35,6 +38,9 @@ from acloud.internal.lib import utils
 from acloud.setup import setup
 from acloud.setup import gcp_setup_runner
 from acloud.setup import host_setup_runner
+
+_MAKE_CMD = "build/soong/soong_ui.bash"
+_MAKE_ARG = "--make-mode"
 
 
 def GetAvdCreatorClass(instance_type, image_source):
@@ -68,7 +74,53 @@ def GetAvdCreatorClass(instance_type, image_source):
         (instance_type, image_source))
 
 
-def PreRunCheck(args):
+def _CheckForAutoconnect(args):
+    """Check that we have all prerequisites for autoconnect.
+
+    Autoconnect requires adb and ssh, we'll just check for adb for now and
+    assume ssh is everywhere. If adb isn't around, ask the user if they want us
+    to build it, if not we'll disable autoconnect.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+    """
+    if not args.autoconnect or find_executable(constants.ADB_BIN):
+        return
+
+    disable_autoconnect = False
+    answer = utils.InteractWithQuestion(
+        "adb is required for autoconnect, without it autoconnect will be "
+        "disabled, would you like acloud to build it[y]? ")
+    if answer in constants.USER_ANSWER_YES:
+        utils.PrintColorString("Building adb ... ", end="")
+        android_build_top = os.environ.get(
+            constants.ENV_ANDROID_BUILD_TOP)
+        if not android_build_top:
+            utils.PrintColorString("Fail! (Not in a lunch'd env)",
+                                   utils.TextColors.FAIL)
+            disable_autoconnect = True
+        else:
+            make_cmd = os.path.join(android_build_top, _MAKE_CMD)
+            build_adb_cmd = [make_cmd, _MAKE_ARG, "adb"]
+            try:
+                with open(os.devnull, "w") as dev_null:
+                    subprocess.check_call(build_adb_cmd, stderr=dev_null,
+                                          stdout=dev_null)
+                    utils.PrintColorString("OK!", utils.TextColors.OKGREEN)
+            except subprocess.CalledProcessError:
+                utils.PrintColorString("Fail! (build failed)",
+                                       utils.TextColors.FAIL)
+                disable_autoconnect = True
+    else:
+        disable_autoconnect = True
+
+    if disable_autoconnect:
+        utils.PrintColorString("Disabling autoconnect",
+                               utils.TextColors.WARNING)
+        args.autoconnect = False
+
+
+def _CheckForSetup(args):
     """Check that host is setup to run the create commands.
 
     We'll check we have the necessary bits setup to do what the user wants, and
@@ -106,6 +158,16 @@ def PreRunCheck(args):
         else:
             print("Please run '#acloud setup' so we can get your host setup")
             sys.exit()
+
+
+def PreRunCheck(args):
+    """Do some pre-run checks to ensure a smooth create experience.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+    """
+    _CheckForSetup(args)
+    _CheckForAutoconnect(args)
 
 
 def Run(args):
