@@ -46,9 +46,9 @@ _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
 _CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
 _CMD_STOP_CVD = "stop_cvd"
-_CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \nPress 'y' to "
-                     "terminate current instance and launch new instance \nor "
-                     "anything else to exit out.")
+_CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
+                     "Enter [y] to terminate current instance and launch a new "
+                     "instance, enter anything else to exit out: ")
 _CVD_SERIAL_PREFIX = "acloudCF"
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 
@@ -125,19 +125,53 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return avd_spec.local_image_dir, launch_cvd_path
 
     @staticmethod
-    def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, system_image_dir,
-                            flavor):
-        """Prepare launch_cvd command.
+    def _AddUserGroupsToCmd(cmd):
+        """Add the user groups to the command if necessary.
 
-        Combine whole launch_cvd cmd including the hw property options and login
-        as the required groups if need. The reason using here-doc instead of
-        ampersand sign is all operations need to be ran in ths same pid.
-        The example of cmd:
+        As part of local host setup to enable local instance support,
+        the user is added to certain groups. For those settings to
+        take effect systemwide requires the user to log out and
+        log back in. In the scenario where the user has run setup and
+        hasn't logged out, we still want them to be able to launch a
+        local instance so add the user to the groups as part of the
+        command to ensure success.
+
+        The reason using here-doc instead of '&' is all operations need to be
+        ran in ths same pid.  Here's an example cmd:
         $ sg kvm  << EOF
         sg libvirt
         sg cvdnetwork
         launch_cvd --cpus 2 --x_res 1280 --y_res 720 --dpi 160 --memory_mb 4096
         EOF
+
+        Args:
+            cmd: String of the command to prepend the user groups to.
+
+        Returns:
+            String of the command with the user groups prepended to it if
+            necessary, otherwise the same existing command.
+        """
+        user_group_cmd = ""
+        host_setup = host_setup_runner.CuttlefishHostSetup()
+        if not host_setup.CheckUserInGroups(constants.LIST_CF_USER_GROUPS):
+            logger.debug("Need to add user groups to the command")
+            for idx, group in enumerate(constants.LIST_CF_USER_GROUPS):
+                user_group_cmd += _CMD_SG + group
+                if idx == 0:
+                    user_group_cmd += " <<EOF\n"
+                else:
+                    user_group_cmd += "\n"
+            cmd += "\nEOF"
+        user_group_cmd += cmd
+        logger.debug("user group cmd: %s", user_group_cmd)
+        return user_group_cmd
+
+    def PrepareLaunchCVDCmd(self, launch_cvd_path, hw_property,
+                            system_image_dir, flavor):
+        """Prepare launch_cvd command.
+
+        Create the launch_cvd commands with all the required args and add
+        in the user groups to it if necessary.
 
         Args:
             launch_cvd_path: String of launch_cvd path.
@@ -154,28 +188,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             system_image_dir, constants.DEFAULT_VNC_PORT,
             _CVD_SERIAL_PREFIX+flavor)
 
-        combined_launch_cmd = ""
-        host_setup = host_setup_runner.CuttlefishHostSetup()
-        if not host_setup.CheckUserInGroups(constants.LIST_CF_USER_GROUPS):
-            # As part of local host setup to enable local instance support,
-            # the user is added to certain groups. For those settings to
-            # take effect systemwide requires the user to log out and
-            # log back in. In the scenario where the user has run setup and
-            # hasn't logged out, we still want them to be able to launch a
-            # local instance so add the user to the groups as part of the
-            # command to ensure success.
-            logger.debug("User group is not ready for cuttlefish")
-            for idx, group in enumerate(constants.LIST_CF_USER_GROUPS):
-                combined_launch_cmd += _CMD_SG + group
-                if idx == 0:
-                    combined_launch_cmd += " <<EOF\n"
-                else:
-                    combined_launch_cmd += "\n"
-            launch_cvd_w_args += "\nEOF"
-
-        combined_launch_cmd += launch_cvd_w_args
-        logger.debug("launch_cvd cmd:\n %s", combined_launch_cmd)
-        return combined_launch_cmd
+        launch_cmd = self._AddUserGroupsToCmd(launch_cvd_w_args)
+        logger.debug("launch_cvd cmd:\n %s", launch_cmd)
+        return launch_cmd
 
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
     def CheckLaunchCVD(self, cmd, host_pack_dir):
@@ -191,9 +206,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             if utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
                 stop_cvd_cmd = os.path.join(host_pack_dir, _CMD_STOP_CVD)
                 with open(os.devnull, "w") as dev_null:
-                    subprocess.check_call(stop_cvd_cmd, stderr=dev_null,
-                                          stdout=dev_null)
-
+                    subprocess.check_call(
+                        self._AddUserGroupsToCmd(stop_cvd_cmd),
+                        stderr=dev_null, stdout=dev_null, shell=True)
             else:
                 print("Exiting out")
                 sys.exit()

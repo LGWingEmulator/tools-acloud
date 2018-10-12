@@ -142,11 +142,15 @@ def _CheckForSetup(args):
             args.gcp_init = True
             run_setup = True
 
-    # Local instance requires host to be setup.
+    # Local instance requires host to be setup. We'll assume that if the
+    # packages were installed, then the user was added into the groups. This
+    # avoids the scenario where a user runs setup and creates a local instance.
+    # The following local instance create will trigger this if statment and go
+    # through the whole setup again even though it's already done because the
+    # user groups aren't set until the user logs out and back in.
     if args.local_instance:
         host_pkg_setup = host_setup_runner.AvdPkgInstaller()
-        host_env_setup = host_setup_runner.CuttlefishHostSetup()
-        if host_pkg_setup.ShouldRun() or host_env_setup.ShouldRun():
+        if host_pkg_setup.ShouldRun():
             args.host = True
             run_setup = True
 
