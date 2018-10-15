@@ -23,7 +23,6 @@ function remove_cuttlefish_usergroups() {
     do
         sudo gpasswd -d $USER $g
     done
-    su - $USER
 }
 
 function remove_configs() {
