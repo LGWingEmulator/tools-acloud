@@ -31,24 +31,11 @@ from acloud.internal.lib import utils
 logger = logging.getLogger(__name__)
 
 _VNC_BIN = "ssvnc"
-_VNC_PROFILE_DIR = ".vnc/profiles"
-_VNC_PROFILE_FILE = "acloud_vnc_profile.vnc"
-_CMD_START_VNC = [_VNC_BIN, "--profile", _VNC_PROFILE_FILE]
+_CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
+_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN":"1", "SSVNC_SCALE":"auto"}
 
-# In default profile:
-# - SSL protocol(use_ssl=0) is disable by default since ssh tunnel has been
-# leveraged for launching VNC client for remote instance case.
-# - Use ssvnc_scale=auto to adjust vnc display to fit to user's screen.
-_VNC_PROFILE = """
-host=127.0.0.1
-port=%(port)d
-disp=127.0.0.1:%(port)d
-disable_all_encryption=1
-use_ssl=0
-ssvnc_scale=auto
-"""
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssnvc). \nWould you like acloud to "
                      "install it for you? (%s) \nPress 'y' to continue or "
@@ -94,31 +81,10 @@ class BaseAVDCreate(object):
                     return
             else:
                 return
-
-        self._GenerateVNCProfile(port)
-        subprocess.Popen(_CMD_START_VNC)
-
-    @staticmethod
-    def _GenerateVNCProfile(port):
-        """Generate default vnc profile.
-
-        We generate a vnc profile because some options are not available to
-        pass in a cli args.
-
-        Args:
-            port: Integer, the port number for vnc client.
-        """
-        # Generate profile and the use the specified port.
-        profile_path = os.path.join(os.path.expanduser("~"), _VNC_PROFILE_DIR)
-        if not os.path.exists(profile_path):
-            os.makedirs(profile_path)
-
-        # We write the profile every time since that's how we pass the port in
-        # and it enables us the ability to connect to multiple instances
-        # (local or remote).
-        profile = os.path.join(profile_path, _VNC_PROFILE_FILE)
-        with open(profile, "w+") as cfg_file:
-            cfg_file.writelines(_VNC_PROFILE % {"port": port})
+        ssvnc_env = os.environ.copy()
+        ssvnc_env.update(_SSVNC_ENV_VARS)
+        ssvnc_args = _CMD_START_VNC % {"bin":find_executable(_VNC_BIN), "port":port}
+        subprocess.Popen(ssvnc_args.split(), env=ssvnc_env)
 
     def PrintAvdDetails(self, avd_spec):
         """Display spec information to user.
