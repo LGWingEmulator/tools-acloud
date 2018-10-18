@@ -24,13 +24,13 @@ import logging
 import os
 import subprocess
 import sys
-import time
 
 from acloud import errors
 from acloud.create import base_avd_create
 from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import utils
+from acloud.public import report
 from acloud.setup import host_setup_runner
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ _CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
 _CMD_STOP_CVD = "stop_cvd"
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
-                     "Enter [y] to terminate current instance and launch a new "
-                     "instance, enter anything else to exit out: ")
+                     "Enter 'y' to terminate current instance and launch a new "
+                     "instance, enter anything else to exit out [y]: ")
 _CVD_SERIAL_PREFIX = "acloudCF"
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 
@@ -56,15 +56,14 @@ _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
     """Create class for a local image local instance AVD."""
 
-    def Create(self, avd_spec):
+    @utils.TimeExecute(function_description="Total time: ",
+                       print_before_call=False, print_status=False)
+    def _CreateAVD(self, avd_spec):
         """Create the AVD.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
         """
-        self.PrintAvdDetails(avd_spec)
-        start = time.time()
-
         local_image_path, launch_cvd_path = self.GetImageArtifactsPath(avd_spec)
 
         cmd = self.PrepareLaunchCVDCmd(launch_cvd_path,
@@ -76,18 +75,16 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
-        utils.PrintColorString("\n")
-        utils.PrintColorString("Total time: %ds" % (time.time() - start),
-                               utils.TextColors.WARNING)
-        # TODO(b/117366819): Should display the correct device serial
-        # according to the args --serial_number.
-        utils.PrintColorString("Device serial: %s" %
-                               (constants.LOCALHOST_ADB_SERIAL %
-                                constants.DEFAULT_ADB_PORT),
-                               utils.TextColors.WARNING)
         if avd_spec.autoconnect:
-            self.LaunchVncClient()
+            utils.LaunchVncClient()
 
+        # TODO(b/117366819): Should return the correct device serial according
+        # to --serial_number.
+        result_report = report.Report("local")
+        result_report.SetStatus(report.Status.SUCCESS)
+        result_report.AddData(key="devices",
+                              value={"adb_port": constants.DEFAULT_ADB_PORT})
+        return result_report
 
     @staticmethod
     def GetImageArtifactsPath(avd_spec):

@@ -19,10 +19,7 @@ Create class that is responsible for creating a remote instance AVD with a
 remote image.
 """
 
-import time
-
 from acloud.create import base_avd_create
-from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public.actions import create_cuttlefish_action
@@ -33,7 +30,7 @@ class RemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
 
     @utils.TimeExecute(function_description="Total time: ",
                        print_before_call=False, print_status=False)
-    def Create(self, avd_spec):
+    def _CreateAVD(self, avd_spec):
         """Create the AVD.
 
         Args:
@@ -42,11 +39,9 @@ class RemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Returns:
             A Report instance.
         """
-        self.PrintAvdDetails(avd_spec)
         report = create_cuttlefish_action.CreateDevices(avd_spec=avd_spec)
-        create_common.DisplayJobResult(report)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             for device in report.data.get("devices", []):
-                self.LaunchVncClient(device.get(constants.VNC_PORT))
+                utils.LaunchVncClient(device.get(constants.VNC_PORT))
         return report
