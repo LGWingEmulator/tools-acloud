@@ -43,14 +43,14 @@ def AddCommonCreateArgs(parser):
         default=1,
         help="Number of instances to create.")
     parser.add_argument(
-        "--serial_log_file",
+        "--serial-log-file",
         type=str,
         dest="serial_log_file",
         required=False,
         help="Path to a *tar.gz file where serial logs will be saved "
              "when a device fails on boot.")
     parser.add_argument(
-        "--logcat_file",
+        "--logcat-file",
         type=str,
         dest="logcat_file",
         required=False,
@@ -71,7 +71,7 @@ def AddCommonCreateArgs(parser):
         required=False)
     parser.set_defaults(autoconnect=True)
     parser.add_argument(
-        "--report_internal_ip",
+        "--report-internal-ip",
         action="store_true",
         dest="report_internal_ip",
         required=False,
@@ -93,13 +93,13 @@ def GetCreateArgParser(subparser):
     create_parser.required = False
     create_parser.set_defaults(which=CMD_CREATE)
     create_parser.add_argument(
-        "--local_instance",
+        "--local-instance",
         action="store_true",
         dest="local_instance",
         required=False,
         help="Create a local instance of the AVD.")
     create_parser.add_argument(
-        "--avd_type",
+        "--avd-type",
         type=str,
         dest="avd_type",
         default=constants.TYPE_CF,
@@ -113,7 +113,7 @@ def GetCreateArgParser(subparser):
         choices=constants.ALL_FLAVORS,
         help="The device flavor of the AVD (default %s)." % constants.FLAVOR_PHONE)
     create_parser.add_argument(
-        "--build_target",
+        "--build-target",
         type=str,
         dest="build_target",
         help="Android build target, e.g. aosp_cf_x86_phone-userdebug, "
@@ -124,18 +124,18 @@ def GetCreateArgParser(subparser):
         dest="branch",
         help="Android branch, e.g. mnc-dev or git_mnc-dev")
     create_parser.add_argument(
-        "--build_id",
+        "--build-id",
         type=str,
         dest="build_id",
         help="Android build id, e.g. 2145099, P2804227")
     create_parser.add_argument(
-        "--gce_image",
+        "--gce-image",
         type=str,
         dest="gce_image",
         required=False,
         help="Name of an existing compute engine image to reuse.")
     create_parser.add_argument(
-        "--kernel_build_id",
+        "--kernel-build-id",
         type=str,
         dest="kernel_build_id",
         required=False,
@@ -144,14 +144,14 @@ def GetCreateArgParser(subparser):
         " specified, the kernel that's bundled with the Android build would"
         " be used.")
     create_parser.add_argument(
-        "--local_disk_image",
+        "--local-disk-image",
         type=str,
         dest="local_disk_image",
         required=False,
         help="Path to a local disk image to use, "
              "e.g /tmp/avd-system.tar.gz")
     create_parser.add_argument(
-        "--local_image",
+        "--local-image",
         type=str,
         dest="local_image",
         nargs="?",
@@ -160,7 +160,7 @@ def GetCreateArgParser(subparser):
         help="Path to a local disk image folder to use, "
         "e.g /tmp/acloud/out/target/product/vsoc_x86_64")
     create_parser.add_argument(
-        "--no_cleanup",
+        "--no-cleanup",
         dest="no_cleanup",
         default=False,
         action="store_true",
@@ -169,7 +169,7 @@ def GetCreateArgParser(subparser):
     # User should not specify --spec and --hw_property at the same time.
     hw_spec_group = create_parser.add_mutually_exclusive_group()
     hw_spec_group.add_argument(
-        "--hw_property",
+        "--hw-property",
         type=str,
         dest="hw_property",
         required=False,
