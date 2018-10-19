@@ -113,18 +113,18 @@ def _ParseArgs(args):
         Parsed args.
     """
     usage = ",".join([
-        CMD_CLEANUP,
+        setup_args.CMD_SETUP,
+        create_args.CMD_CREATE,
         CMD_CREATE_CUTTLEFISH,
         CMD_CREATE_GOLDFISH,
-        CMD_SSHKEY,
-        create_args.CMD_CREATE,
         delete_args.CMD_DELETE,
-        setup_args.CMD_SETUP,
     ])
+    usage_msg = ("acloud { %s } ..."
+                 "\nTry 'acloud --help' for more information.") % usage
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        usage="acloud {" + usage + "} ...")
+        usage=usage_msg)
     subparsers = parser.add_subparsers()
     subparser_list = []
 
