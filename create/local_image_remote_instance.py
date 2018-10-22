@@ -245,6 +245,5 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             autoconnect=avd_spec.autoconnect)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
-            for device in report.data.get("devices", []):
-                utils.LaunchVncClient(device.get(constants.VNC_PORT))
+            utils.LaunchVNCFromReport(report, avd_spec)
         return report
