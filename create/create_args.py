@@ -129,12 +129,6 @@ def GetCreateArgParser(subparser):
         dest="build_id",
         help="Android build id, e.g. 2145099, P2804227")
     create_parser.add_argument(
-        "--gce-image",
-        type=str,
-        dest="gce_image",
-        required=False,
-        help="Name of an existing compute engine image to reuse.")
-    create_parser.add_argument(
         "--kernel-build-id",
         type=str,
         dest="kernel_build_id",
@@ -144,28 +138,14 @@ def GetCreateArgParser(subparser):
         " specified, the kernel that's bundled with the Android build would"
         " be used.")
     create_parser.add_argument(
-        "--local-disk-image",
-        type=str,
-        dest="local_disk_image",
-        required=False,
-        help="Path to a local disk image to use, "
-             "e.g /tmp/avd-system.tar.gz")
-    create_parser.add_argument(
         "--local-image",
         type=str,
         dest="local_image",
         nargs="?",
         default="",
         required=False,
-        help="Path to a local disk image folder to use, "
-        "e.g /tmp/acloud/out/target/product/vsoc_x86_64")
-    create_parser.add_argument(
-        "--no-cleanup",
-        dest="no_cleanup",
-        default=False,
-        action="store_true",
-        help="Do not clean up temporary disk image and compute engine image. "
-             "For debugging purposes.")
+        help="Use the locally built image for the AVD. Look for the image "
+        "artifact in $ANDROID_TARGET_OUT unless a path is specified.")
     # User should not specify --spec and --hw_property at the same time.
     hw_spec_group = create_parser.add_mutually_exclusive_group()
     hw_spec_group.add_argument(
