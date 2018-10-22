@@ -82,7 +82,6 @@ def _PrintUsage():
     """Print cmd usage hints when acloud setup been finished."""
     utils.PrintColorString("")
     utils.PrintColorString("Setup process finished")
-    utils.PrintColorString("To get started creating AVDs, run '#acloud create'")
 
 
 def _RunPreSetup():
