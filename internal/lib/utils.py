@@ -56,6 +56,17 @@ _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 # Store the ports that vnc/adb are forwarded to, both are integers.
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
                                                            constants.ADB_PORT])
+_VNC_BIN = "ssvnc"
+_CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
+_CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
+_ENV_DISPLAY = "DISPLAY"
+_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN":"1", "SSVNC_SCALE":"auto"}
+
+_CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
+                     "install a vnc client (ssnvc). \nWould you like acloud to "
+                     "install it for you? (%s) \nPress 'y' to continue or "
+                     "anything else to abort it:[y] ") % _CMD_INSTALL_SSVNC
+
 
 class TempDir(object):
     """A context manager that ceates a temporary directory.
@@ -751,3 +762,68 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
             print("please choose between 0 and %d" % max_choice)
         else:
             return [answer_list[choice-start_index]]
+
+
+def LaunchVncClient(port=constants.DEFAULT_VNC_PORT):
+    """Launch ssvnc.
+
+    Args:
+        port: Integer, port number.
+    """
+    try:
+        os.environ[_ENV_DISPLAY]
+    except KeyError:
+        PrintColorString("Remote terminal can't support VNC. "
+                         "Skipping VNC startup.", TextColors.FAIL)
+        return
+
+    if not find_executable(_VNC_BIN):
+        if GetUserAnswerYes(_CONFIRM_CONTINUE):
+            try:
+                PrintColorString("Installing ssvnc vnc client... ", end="")
+                sys.stdout.flush()
+                subprocess.check_output(_CMD_INSTALL_SSVNC, shell=True)
+                PrintColorString("Done", TextColors.OKGREEN)
+            except subprocess.CalledProcessError as cpe:
+                PrintColorString("Failed to install ssvnc: %s" %
+                                 cpe.output, TextColors.FAIL)
+                return
+        else:
+            return
+    ssvnc_env = os.environ.copy()
+    ssvnc_env.update(_SSVNC_ENV_VARS)
+    ssvnc_args = _CMD_START_VNC % {"bin":find_executable(_VNC_BIN),
+                                   "port":port}
+    subprocess.Popen(ssvnc_args.split(), env=ssvnc_env)
+
+
+def PrintDeviceSummary(report):
+    """Display summary of devices created.
+
+    -Display created device details from the report instance.
+        report example:
+            'data': [{'devices':[{'instance_name': 'ins-f6a397-none-53363',
+                                  'ip': u'35.234.10.162'}]}]
+    -Display error message from report.error.
+
+    Args:
+        report: A Report instance.
+    """
+    PrintColorString("\n")
+    PrintColorString("Device(s) created:")
+    for device in report.data.get("devices", []):
+        adb_serial = "(None)"
+        adb_port = device.get("adb_port")
+        if adb_port:
+            adb_serial = constants.LOCALHOST_ADB_SERIAL % adb_port
+        instance_name = device.get("instance_name")
+        instance_ip = device.get("ip")
+        instance_details = "" if not instance_name else "(%s[%s])" % (
+            instance_name, instance_ip)
+        PrintColorString(" - device serial: %s %s" % (adb_serial,
+                                                      instance_details))
+
+    # TODO(b/117245508): Help user to delete instance if it got created.
+    if report.errors:
+        error_msg = "\n".join(report.errors)
+        PrintColorString("Fail in:\n%s\n" % error_msg, TextColors.FAIL)
