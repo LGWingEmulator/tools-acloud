@@ -155,6 +155,7 @@ def CreateDevices(avd_spec=None,
         kernel_build_id = avd_spec.kernel_build_id
         num = avd_spec.num
         autoconnect = avd_spec.autoconnect
+        report_internal_ip = avd_spec.report_internal_ip
     logger.info(
         "Creating a cuttlefish device in project %s, build_target: %s, "
         "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
