@@ -998,17 +998,19 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         api = self.service.regions().list(project=self._project)
         return self.Execute(api)
 
-    def _GetNetworkArgs(self, network):
+    def _GetNetworkArgs(self, network, zone):
         """Helper to generate network args that is used to create an instance.
 
         Args:
             network: A string, e.g. "default".
+            zone: String, representing zone name, e.g. "us-central1-f"
 
         Returns:
             A dictionary representing network args.
         """
         return {
             "network": self.GetNetworkUrl(network),
+            "subnetwork": self.GetSubnetworkUrl(network, zone),
             "accessConfigs": [{
                 "name": "External NAT",
                 "type": "ONE_TO_ONE_NAT"
@@ -1103,7 +1105,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         body = {
             "machineType": self.GetMachineType(machine_type, zone)["selfLink"],
             "name": instance,
-            "networkInterfaces": [self._GetNetworkArgs(network)],
+            "networkInterfaces": [self._GetNetworkArgs(network, zone)],
             "disks": disk_args,
             "serviceAccounts": [{
                 "email": "default",
@@ -1230,6 +1232,36 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             project=self._project, network=network)
         result = self.Execute(api)
         return result["selfLink"]
+
+    def GetSubnetworkUrl(self, network, zone):
+        """Get URL for a given network and zone.
+
+        Return the subnetwork for the network in the specified region that the
+        specified zone resides in. If there is no subnetwork for the specified
+        zone, raise an exception.
+
+        Args:
+            network: A string, representing network name, e.g "default"
+            zone: String, representing zone name, e.g. "us-central1-f"
+
+        Returns:
+            A URL that points to the network resource, e.g.
+            https://www.googleapis.com/compute/v1/projects/<project id>/
+            global/networks/default
+
+        Raises:
+            errors.NoSubnetwork: When no subnetwork exists for the zone
+            specified.
+        """
+        api = self.service.networks().get(
+            project=self._project, network=network)
+        result = self.Execute(api)
+        region = zone.rsplit("-", 1)[0]
+        for subnetwork in result["subnetworks"]:
+            if region in subnetwork:
+                return subnetwork
+        raise errors.NoSubnetwork("No subnetwork for network %s in region %s" %
+                                  (network, region))
 
     def CompareMachineSize(self, machine_type_1, machine_type_2, zone):
         """Compare the size of two machine types.

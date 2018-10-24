@@ -241,7 +241,8 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             self.cvd_host_package_artifact)
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, avd_spec.num,
-            avd_spec.report_internal_ip, autoconnect=avd_spec.autoconnect)
+            report_internal_ip=avd_spec.report_internal_ip,
+            autoconnect=avd_spec.autoconnect)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             for device in report.data.get("devices", []):
