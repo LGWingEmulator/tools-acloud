@@ -41,9 +41,10 @@ python_binary_host {
     libs: [
         "acloud_create",
         "acloud_delete",
-        "acloud_public",
         "acloud_internal",
+	"acloud_metrics",
         "acloud_proto",
+        "acloud_public",
         "acloud_setup",
         "py-apitools",
         "py-dateutil",
@@ -144,5 +145,16 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "delete/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_metrics",
+    defaults: ["acloud_default"],
+    srcs: [
+         "metrics/*.py",
+    ],
+    libs: [
+         "asuite_metrics",
     ],
 }
