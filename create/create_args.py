@@ -76,7 +76,7 @@ def AddCommonCreateArgs(parser):
         dest="report_internal_ip",
         required=False,
         help="Report internal ip of the created instance instead of external "
-             "ip. Using the internal ip is valid when connecting from another "
+             "ip. Using the internal ip is used when connecting from another "
              "GCE instance.")
 
 
