@@ -238,30 +238,6 @@ def _ParseArgs(args):
     return parser.parse_args(args)
 
 
-# TODO(b/112803893): Delete this method once the new create method has been completed.
-def _TranslateAlias(parsed_args):
-    """Translate alias to Launch Control compatible values.
-
-    This method translates alias to Launch Control compatible values.
-     - branch: "git_" prefix will be added if branch name doesn't have it.
-     - build_target: For example, "phone" will be translated to full target
-                          name "git_x86_phone-userdebug",
-
-    Args:
-        parsed_args: Parsed args.
-
-    Returns:
-        Parsed args with its values being translated.
-    """
-    if parsed_args.which == create_args.CMD_CREATE:
-        if (parsed_args.branch and
-                not parsed_args.branch.startswith(constants.BRANCH_PREFIX)):
-            parsed_args.branch = constants.BRANCH_PREFIX + parsed_args.branch
-        parsed_args.build_target = constants.BUILD_TARGET_MAPPING.get(
-            parsed_args.build_target, parsed_args.build_target)
-    return parsed_args
-
-
 # pylint: disable=too-many-branches
 def _VerifyArgs(parsed_args):
     """Verify args.
@@ -382,8 +358,6 @@ def main(argv):
     """
     args = _ParseArgs(argv)
     _SetupLogging(args.log_file, args.verbose)
-    # Translation of the branch will happen in AvdSpec(), skip it for now.
-    #args = _TranslateAlias(args)
     _VerifyArgs(args)
 
     cfg = config.GetAcloudConfig(args)
