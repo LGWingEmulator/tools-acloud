@@ -285,7 +285,7 @@ class AVDSpec(object):
             remote: String, git remote (e.g. "aosp").
         """
         try:
-            android_build_top = os.environ[_ENV_ANDROID_BUILD_TOP]
+            android_build_top = os.environ[constants.ENV_ANDROID_BUILD_TOP]
         except KeyError:
             raise errors.GetAndroidBuildEnvVarError(
                 "Could not get environment var: %s\n"
