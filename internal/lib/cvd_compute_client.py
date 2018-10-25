@@ -94,8 +94,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         # TODO(b/77626419): Remove these metadata once the
         # cuttlefish-google.service is turned off on the host instance.
         metadata = self._metadata.copy()
-        resolution = self._resolution.split("x")
-        metadata["cvd_01_dpi"] = resolution[3]
         metadata["cvd_01_fetch_android_build_target"] = build_target
         metadata["cvd_01_fetch_android_bid"] = "{branch}/{build_id}".format(
             branch=branch, build_id=build_id)
@@ -105,8 +103,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         metadata["cvd_01_launch"] = "0" if (
             avd_spec
             and avd_spec.image_source == constants.IMAGE_SRC_LOCAL) else "1"
-        metadata["cvd_01_x_res"] = resolution[0]
-        metadata["cvd_01_y_res"] = resolution[1]
+
         if blank_data_disk_size_gb > 0:
             # Policy 'create_if_missing' would create a blank userdata disk if
             # missing. If already exist, reuse the disk.
@@ -115,6 +112,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                 blank_data_disk_size_gb * 1024)
         metadata["user"] = getpass.getuser()
         # Update metadata by avd_spec
+        # for legacy create_cf cmd, we will keep using resolution.
+        # And always use avd_spec for acloud create cmd.
+        # TODO(b/118406018): deprecate resolution config and use hw_proprty for
+        # all create cmds.
         if avd_spec:
             metadata["avd_type"] = avd_spec.avd_type
             metadata["flavor"] = avd_spec.flavor
@@ -122,6 +123,11 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
             metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
             metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[constants.HW_ALIAS_DISK]
+        else:
+            resolution = self._resolution.split("x")
+            metadata["cvd_01_dpi"] = resolution[3]
+            metadata["cvd_01_x_res"] = resolution[0]
+            metadata["cvd_01_y_res"] = resolution[1]
 
         # Add per-instance ssh key
         if self._ssh_public_key_path:
