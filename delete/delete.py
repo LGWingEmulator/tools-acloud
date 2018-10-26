@@ -32,8 +32,6 @@ from acloud.public import device_driver
 
 logger = logging.getLogger(__name__)
 
-_COMPUTE_SCOPE = "https://www.googleapis.com/auth/compute",
-
 
 def _FilterInstancesByUser(instances, user):
     """Look through the instance data and filter them.
@@ -65,7 +63,7 @@ def _FindRemoteInstances(cfg, user):
     Returns:
         List of strings that are instance names.
     """
-    credentials = auth.CreateCredentials(cfg, _COMPUTE_SCOPE)
+    credentials = auth.CreateCredentials(cfg)
     compute_client = gcompute_client.ComputeClient(cfg, credentials)
     all_instances = compute_client.ListInstances(cfg.zone)
     return _FilterInstancesByUser(all_instances, user)
