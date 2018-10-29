@@ -78,6 +78,12 @@ def AddCommonCreateArgs(parser):
         help="Report internal ip of the created instance instead of external "
              "ip. Using the internal ip is used when connecting from another "
              "GCE instance.")
+    parser.add_argument(
+        "--network",
+        type=str,
+        dest="network",
+        required=False,
+        help="Set the network the GCE instance will utilize.")
 
 
 def GetCreateArgParser(subparser):
