@@ -216,6 +216,9 @@ class AcloudConfig(object):
         if parsed_args.which == create_args.CMD_CREATE and not self.hw_property:
             self.hw_property = self.common_hw_property_map.get(
                 parsed_args.flavor, "")
+        if parsed_args.which in [create_args.CMD_CREATE, "create_cf"]:
+            if parsed_args.network:
+                self.network = parsed_args.network
 
     def Verify(self):
         """Verify configuration fields."""
