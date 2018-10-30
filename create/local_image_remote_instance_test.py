@@ -18,6 +18,7 @@ r"""LocalImageRemoteInstance class.
 Create class that is responsible for creating a remote instance AVD with a
 local image.
 """
+import uuid
 
 import subprocess
 import time
@@ -26,6 +27,7 @@ import unittest
 import mock
 
 from acloud import errors
+from acloud.create import avd_spec
 from acloud.create import local_image_remote_instance
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
@@ -89,6 +91,35 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.Patch(subprocess, "check_call", return_value=True)
         self.assertEqual(factory._ShellCmdWithRetry("fake cmd"), True)
 
+    # pylint: disable=protected-access
+    def testCreateGceInstanceName(self):
+        """test create gce instance."""
+        # Mock uuid
+        args = mock.MagicMock()
+        args.local_image = "/tmp/path"
+        args.config_file = ""
+        args.avd_type = "cf"
+        args.flavor = "phone"
+        fake_avd_spec = avd_spec.AVDSpec(args)
+
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+        self.Patch(cvd_compute_client.CvdComputeClient, "CreateInstance")
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+
+        factory = local_image_remote_instance.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-aosp-cf-x86-phone")
+
+        fake_image_name = "/fake/aosp_cf_x86_phone.username.zip"
+        factory = local_image_remote_instance.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-phone")
 
 if __name__ == "__main__":
     unittest.main()
