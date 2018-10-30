@@ -36,15 +36,19 @@ _GOOGLE_APIS = [
     _COMPUTE_ENGINE_SERVICE
 ]
 _BUILD_SERVICE_ACCOUNT = "android-build-prod@system.gserviceaccount.com"
-_BUCKET_HEADER = "gs://"
-_DEFAULT_BUCKET_HEADER = "acloud"
-_DEFAULT_BUCKET_REGION = "US"
 _DEFAULT_SSH_FOLDER = os.path.expanduser("~/.ssh")
 _DEFAULT_SSH_KEY = "acloud_rsa"
 _DEFAULT_SSH_PRIVATE_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                         _DEFAULT_SSH_KEY)
 _DEFAULT_SSH_PUBLIC_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                        _DEFAULT_SSH_KEY + ".pub")
+# Bucket naming parameters
+_BUCKET_HEADER = "gs://"
+_BUCKET_LENGTH_LIMIT = 63
+_DEFAULT_BUCKET_HEADER = "acloud"
+_DEFAULT_BUCKET_REGION = "US"
+_INVALID_BUCKET_NAME_END_CHARS = "_-"
+_PROJECT_SEPARATOR = ":"
 # Regular expression to get project/zone/bucket information.
 _BUCKET_RE = re.compile(r"^gs://(?P<bucket>.+)/")
 _BUCKET_REGION_RE = re.compile(r"^Location constraint:(?P<region>.+)")
@@ -421,12 +425,49 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         Returns:
             String: string of bucket name.
         """
-        bucket_name = "%s-%s" % (_DEFAULT_BUCKET_HEADER, self.project)
+        bucket_name = self._GenerateBucketName(self.project)
         if (self._BucketExists(bucket_name, gcloud_runner) and
                 not self._BucketInDefaultRegion(bucket_name, gcloud_runner)):
             bucket_name += ("-" + _DEFAULT_BUCKET_REGION.lower())
         if not self._BucketExists(bucket_name, gcloud_runner):
             self._CreateBucket(bucket_name, gcloud_runner)
+        return bucket_name
+
+    @staticmethod
+    def _GenerateBucketName(project_name):
+        """Generate GCS bucket name that meets the naming guidelines.
+
+        Naming guidelines: https://cloud.google.com/storage/docs/naming
+        1. Filter out organization name.
+        2. Filter out illegal characters.
+        3. Length limit.
+        4. Name must end with a number or letter.
+
+        Args:
+            project_name: String, name of project.
+
+        Returns:
+            String: GCS bucket name compliant with naming guidelines.
+        """
+        # Sanitize the project name by filtering out the org name (e.g.
+        # AOSP:fake_project -> fake_project)
+        if _PROJECT_SEPARATOR in project_name:
+            _, project_name = project_name.split(_PROJECT_SEPARATOR)
+
+        bucket_name = "%s-%s" % (_DEFAULT_BUCKET_HEADER, project_name)
+
+        # Rule 1: A bucket name can contain lowercase alphanumeric characters,
+        # hyphens, and underscores.
+        bucket_name = re.sub("[^a-zA-Z_/-]+", "", bucket_name).lower()
+
+        # Rule 2: Bucket names must limit to 63 characters.
+        if len(bucket_name) > _BUCKET_LENGTH_LIMIT:
+            bucket_name = bucket_name[:_BUCKET_LENGTH_LIMIT]
+
+        # Rule 3: Bucket names must end with a letter, strip out any ending
+        # "-" or "_" at the end of the name.
+        bucket_name = bucket_name.rstrip(_INVALID_BUCKET_NAME_END_CHARS)
+
         return bucket_name
 
     @staticmethod
