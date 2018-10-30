@@ -128,6 +128,29 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.assertEqual(self.gcp_env_runner.client_id, "new_id")
         self.assertEqual(self.gcp_env_runner.client_secret, "new_secret")
 
+    def testGenerateBucketName(self):
+        """Test generate default bucket name."""
+        # Filter out organization name for project name.
+        bucket_name = self.gcp_env_runner._GenerateBucketName(
+            "AOSP.com:fake_project")
+        self.assertEqual(bucket_name, "acloud-fake_project")
+
+        # A bucket name can contain lowercase alphanumeric characters,
+        # hyphens and underscores.
+        bucket_name = self.gcp_env_runner._GenerateBucketName(
+            "@.fake_*Project.#")
+        self.assertEqual(bucket_name, "acloud-fake_project")
+
+        # Bucket names must limit to 63 characters.
+        bucket_name = self.gcp_env_runner._GenerateBucketName(
+            "fake_project-fake_project-fake_project-fake_project-fake_project")
+        self.assertEqual(bucket_name,
+                         "acloud-fake_project-fake_project-fake_project-fake_project-fake")
+
+        # Rule 3: Bucket names must end with a number or letter.
+        bucket_name = self.gcp_env_runner._GenerateBucketName("fake_project__--")
+        self.assertEqual(bucket_name, "acloud-fake_project")
+
     @mock.patch.object(gcp_setup_runner.GoogleSDKBins, "RunGsutil")
     def testBucketExists(self, mock_bucket_name):
         """Test bucket name exist or not."""
