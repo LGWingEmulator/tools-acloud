@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for host_setup_runner."""
+"""Tests for instance class."""
 import collections
 import subprocess
 
@@ -87,22 +87,22 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
             "GetAdbVncPortFromSSHTunnel",
             return_value=forwarded_ports(vnc_port=fake_vnc, adb_port=fake_adb))
 
-        # test is_ssh_tunnel_connected will be true if ssh tunnel connection is found
+        # test ssh_tunnel_is_connected will be true if ssh tunnel connection is found
         instance_info = instance.RemoteInstance(gce_instance)
-        self.assertTrue(instance_info.is_ssh_tunnel_connected)
+        self.assertTrue(instance_info.ssh_tunnel_is_connected)
         self.assertEqual(instance_info.forwarding_adb_port, fake_adb)
         self.assertEqual(instance_info.forwarding_vnc_port, fake_vnc)
         expected_full_name = "device serial: 127.0.0.1:%s (%s)" % (fake_adb,
                                                                    instance_info.name)
         self.assertEqual(expected_full_name, instance_info.fullname)
 
-        # test is_ssh_tunnel_connected will be false if ssh tunnel connection is not found
+        # test ssh_tunnel_is_connected will be false if ssh tunnel connection is not found
         self.Patch(
             instance.RemoteInstance,
             "GetAdbVncPortFromSSHTunnel",
             return_value=forwarded_ports(vnc_port=None, adb_port=None))
         instance_info = instance.RemoteInstance(gce_instance)
-        self.assertFalse(instance_info.is_ssh_tunnel_connected)
+        self.assertFalse(instance_info.ssh_tunnel_is_connected)
         expected_full_name = ("device serial: not connected (%s)" %
                               instance_info.name)
         self.assertEqual(expected_full_name, instance_info.fullname)
