@@ -31,11 +31,6 @@ from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
-ALL_SCOPES = " ".join([
-    android_build_client.AndroidBuildClient.SCOPE,
-    goldfish_compute_client.GoldfishComputeClient.SCOPE
-])
-
 _EMULATOR_INFO_FILENAME = "emulator-info.txt"
 _EMULATOR_VERSION_PATTERN = "version-emulator"
 _SYSIMAGE_INFO_FILENAME = "android-info.txt"
@@ -77,7 +72,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
         """
 
-        self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        self.credentials = auth.CreateCredentials(cfg)
 
         compute_client = goldfish_compute_client.GoldfishComputeClient(
             cfg, self.credentials)
@@ -168,7 +163,7 @@ def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
         A build id or None
     """
     build_client = android_build_client.AndroidBuildClient(
-        auth.CreateCredentials(cfg, ALL_SCOPES))
+        auth.CreateCredentials(cfg))
 
     with utils.TempDir() as tempdir:
         temp_filename = os.path.join(tempdir, filename)

@@ -37,7 +37,6 @@ from acloud.public.actions import common_operations
 
 logger = logging.getLogger(__name__)
 
-_ALL_SCOPES = [cvd_compute_client.CvdComputeClient.SCOPE]
 _CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 _CVD_USER = getpass.getuser()
 _CMD_LAUNCH_CVD_ARGS = (" -cpus %s -x_res %s -y_res %s -dpi %s "
@@ -69,7 +68,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._local_image_artifact = local_image_artifact
         self._cvd_host_package_artifact = cvd_host_package_artifact
         self._report_internal_ip = avd_spec.report_internal_ip
-        self.credentials = auth.CreateCredentials(avd_spec.cfg, _ALL_SCOPES)
+        self.credentials = auth.CreateCredentials(avd_spec.cfg)
         compute_client = cvd_compute_client.CvdComputeClient(
             avd_spec.cfg, self.credentials)
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
