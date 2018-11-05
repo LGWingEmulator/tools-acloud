@@ -20,7 +20,6 @@ remote image.
 """
 
 from acloud.create import base_avd_create
-from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public.actions import create_cuttlefish_action
 
@@ -42,6 +41,6 @@ class RemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
         report = create_cuttlefish_action.CreateDevices(avd_spec=avd_spec)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
-            for device in report.data.get("devices", []):
-                utils.LaunchVncClient(device.get(constants.VNC_PORT))
+            utils.LaunchVNCFromReport(report, avd_spec)
+
         return report
