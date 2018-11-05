@@ -31,11 +31,6 @@ from acloud.internal.lib import cvd_compute_client
 
 logger = logging.getLogger(__name__)
 
-ALL_SCOPES = " ".join([
-    android_build_client.AndroidBuildClient.SCOPE,
-    cvd_compute_client.CvdComputeClient.SCOPE
-])
-
 
 class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
     """A class that can produce a cuttlefish device.
@@ -55,7 +50,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
     def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
                  avd_spec=None):
 
-        self.credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        self.credentials = auth.CreateCredentials(cfg)
 
         compute_client = cvd_compute_client.CvdComputeClient(
             cfg, self.credentials)

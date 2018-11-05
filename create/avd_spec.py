@@ -60,8 +60,6 @@ _DEFAULT_BRANCH_PREFIX = "git_"
 # aosp, cf and phone -> aosp_cf_x86_phone.
 _BRANCH_TARGET_PREFIX = {"aosp": "aosp_"}
 
-ALL_SCOPES = [android_build_client.AndroidBuildClient.SCOPE]
-
 logger = logging.getLogger(__name__)
 
 
@@ -268,7 +266,7 @@ class AVDSpec(object):
 
         self._remote_image[_BUILD_ID] = args.build_id
         if not self._remote_image[_BUILD_ID]:
-            credentials = auth.CreateCredentials(self._cfg, ALL_SCOPES)
+            credentials = auth.CreateCredentials(self._cfg)
             build_client = android_build_client.AndroidBuildClient(credentials)
             self._remote_image[constants.BUILD_ID] = build_client.GetLKGB(
                 self._remote_image[constants.BUILD_TARGET],

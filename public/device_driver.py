@@ -49,10 +49,6 @@ from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
-ALL_SCOPES = " ".join([android_build_client.AndroidBuildClient.SCOPE,
-                       gstorage_client.StorageClient.SCOPE,
-                       android_compute_client.AndroidComputeClient.SCOPE])
-
 MAX_BATCH_CLEANUP_COUNT = 100
 
 #For gce_x86_phones remote instances: adb port is 5555 and vnc is 6444.
@@ -68,7 +64,7 @@ class AndroidVirtualDevicePool(object):
     def __init__(self, cfg, devices=None):
         self._devices = devices or []
         self._cfg = cfg
-        credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        credentials = auth.CreateCredentials(cfg)
         self._build_client = android_build_client.AndroidBuildClient(
             credentials)
         self._storage_client = gstorage_client.StorageClient(credentials)
@@ -370,7 +366,7 @@ def CreateAndroidVirtualDevices(cfg,
         A Report instance.
     """
     r = report.Report(command="create")
-    credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+    credentials = auth.CreateCredentials(cfg)
     compute_client = android_compute_client.AndroidComputeClient(cfg,
                                                                  credentials)
     try:
@@ -443,7 +439,7 @@ def DeleteAndroidVirtualDevices(cfg, instance_names):
         A Report instance.
     """
     r = report.Report(command="delete")
-    credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+    credentials = auth.CreateCredentials(cfg)
     compute_client = android_compute_client.AndroidComputeClient(cfg,
                                                                  credentials)
     try:
@@ -500,7 +496,7 @@ def Cleanup(cfg, expiration_mins):
         logger.info(
             "Cleaning up any gce images/instances and cached build artifacts."
             "in google storage that are older than %s", cut_time)
-        credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        credentials = auth.CreateCredentials(cfg)
         compute_client = android_compute_client.AndroidComputeClient(
             cfg, credentials)
         storage_client = gstorage_client.StorageClient(credentials)
@@ -584,7 +580,7 @@ def AddSshRsa(cfg, user, ssh_rsa_path):
     """
     r = report.Report(command="sshkey")
     try:
-        credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        credentials = auth.CreateCredentials(cfg)
         compute_client = android_compute_client.AndroidComputeClient(
             cfg, credentials)
         compute_client.AddSshRsa(user, ssh_rsa_path)
@@ -601,7 +597,7 @@ def CheckAccess(cfg):
     Args:
          cfg: An AcloudConfig instance.
     """
-    credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+    credentials = auth.CreateCredentials(cfg)
     compute_client = android_compute_client.AndroidComputeClient(
         cfg, credentials)
     logger.info("Checking if user has access to project %s", cfg.project)
