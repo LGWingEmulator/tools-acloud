@@ -51,6 +51,14 @@ from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 HOME_FOLDER = os.path.expanduser("~")
+# If there is no specific scope use case, we will always use this default full
+# scopes to run CreateCredentials func and user will only go oauth2 flow once
+# after login with this full scopes credentials.
+_ALL_SCOPES = " ".join(["https://www.googleapis.com/auth/compute",
+                        "https://www.googleapis.com/auth/logging.write",
+                        "https://www.googleapis.com/auth/androidbuild.internal",
+                        "https://www.googleapis.com/auth/devstorage.read_write",
+                        "https://www.googleapis.com/auth/userinfo.email"])
 
 
 def _CreateOauthServiceAccountCreds(email, private_key_path, scopes):
@@ -77,7 +85,7 @@ def _CreateOauthServiceAccountCreds(email, private_key_path, scopes):
             " error message: %s" % (private_key_path, str(e)))
     return credentials
 
-
+# pylint: disable=invalid-name
 def _CreateOauthServiceAccountCredsWithJsonKey(json_private_key_path, scopes):
     """Create credentials with a normal service account from json key file.
 
@@ -173,8 +181,12 @@ def _CreateOauthUserCreds(creds_cache_file, client_id, client_secret,
     return _RunAuthFlow(storage, client_id, client_secret, user_agent, scopes)
 
 
-def CreateCredentials(acloud_config, scopes):
+def CreateCredentials(acloud_config, scopes=_ALL_SCOPES):
     """Create credentials.
+
+    If no specific scope provided, we create a full scopes credentials for
+    authenticating and user will only go oauth2 flow once after login with
+    full scopes credentials.
 
     Args:
         acloud_config: An AcloudConfig object.

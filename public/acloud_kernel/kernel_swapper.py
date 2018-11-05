@@ -21,17 +21,9 @@ import subprocess
 
 from acloud.public import errors
 from acloud.public import report
-from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth
-from acloud.internal.lib import gstorage_client
 from acloud.internal.lib import utils
-
-ALL_SCOPES = ' '.join([
-    android_build_client.AndroidBuildClient.SCOPE,
-    gstorage_client.StorageClient.SCOPE,
-    android_compute_client.AndroidComputeClient.SCOPE
-])
 
 # ssh flags used to communicate with the Cloud Android instance.
 SSH_FLAGS = [
@@ -62,7 +54,7 @@ class KernelSwapper(object):
             cfg: AcloudConfig object, used to create credentials.
             instance_name: string, instance name.
         """
-        credentials = auth.CreateCredentials(cfg, ALL_SCOPES)
+        credentials = auth.CreateCredentials(cfg)
         self._compute_client = android_compute_client.AndroidComputeClient(
             cfg, credentials)
         # Name of the Cloud Android instance.
@@ -149,8 +141,7 @@ class KernelSwapper(object):
                                            host_cmd.
         """
         utils.Retry(
-            retry_checker=
-                lambda e: isinstance(e, subprocess.CalledProcessError),
+            retry_checker=lambda e: isinstance(e, subprocess.CalledProcessError),
             max_retries=2,
             functor=lambda cmd: subprocess.check_call(cmd, shell=True),
             sleep_multiplier=0,

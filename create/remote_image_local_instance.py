@@ -45,8 +45,6 @@ UNPACK_BOOTIMG_CMD = "%s -boot_img %s" % (
     "%s -dest %s")
 ACL_CMD = "setfacl -m g:libvirt-qemu:rw %s"
 
-ALL_SCOPES = [android_build_client.AndroidBuildClient.SCOPE]
-
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +121,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
         artifacts = [_CVD_HOST_PACKAGE, remote_image]
 
         build_client = android_build_client.AndroidBuildClient(
-            auth.CreateCredentials(cfg, ALL_SCOPES))
+            auth.CreateCredentials(cfg))
         for artifact in artifacts:
             with utils.TempDir() as tempdir:
                 temp_filename = os.path.join(tempdir, artifact)
