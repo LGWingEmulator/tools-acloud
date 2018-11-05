@@ -75,15 +75,16 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
-        if avd_spec.autoconnect:
-            utils.LaunchVncClient()
-
         # TODO(b/117366819): Should return the correct device serial according
         # to --serial_number.
         result_report = report.Report("local")
         result_report.SetStatus(report.Status.SUCCESS)
         result_report.AddData(key="devices",
-                              value={"adb_port": constants.DEFAULT_ADB_PORT})
+                              value={"adb_port": constants.DEFAULT_ADB_PORT,
+                                     constants.VNC_PORT: constants.DEFAULT_VNC_PORT})
+        # Launch vnc client if we're auto-connecting.
+        if avd_spec.autoconnect:
+            utils.LaunchVNCFromReport(result_report, avd_spec)
         return result_report
 
     @staticmethod
