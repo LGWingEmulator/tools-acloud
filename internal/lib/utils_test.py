@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import Tkinter
 
 import unittest
 import mock
@@ -243,6 +244,40 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(utils.GetAnswerFromList(answer_list,
                                                  enable_choose_all=True),
                          answer_list)
+
+    @mock.patch.object(Tkinter.Tk, "winfo_screenwidth")
+    @mock.patch.object(Tkinter.Tk, "winfo_screenheight")
+    def testCalculateVNCScreenRatio(self, mock_screenheight, mock_screenwidth):
+        """Test Calculating the scale ratio of VNC display."""
+
+        # Get scale-down ratio if screen height is smaller than AVD height.
+        mock_screenheight.return_value = 800
+        mock_screenwidth.return_value = 1200
+        avd_h = 1920
+        avd_w = 1080
+        self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.4)
+
+        # Get scale-down ratio if screen width is smaller than AVD width.
+        mock_screenheight.return_value = 800
+        mock_screenwidth.return_value = 1200
+        avd_h = 900
+        avd_w = 1920
+        self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.6)
+
+        # Scale ratio = 1 if screen is larger than AVD.
+        mock_screenheight.return_value = 1080
+        mock_screenwidth.return_value = 1920
+        avd_h = 800
+        avd_w = 1280
+        self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 1)
+
+        # Get the scale if ratio of width is smaller than the
+        # ratio of height.
+        mock_screenheight.return_value = 1200
+        mock_screenwidth.return_value = 800
+        avd_h = 1920
+        avd_w = 1080
+        self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.6)
 
 
 if __name__ == "__main__":

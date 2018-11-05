@@ -33,6 +33,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import Tkinter
 import uuid
 import zipfile
 
@@ -60,7 +61,7 @@ _VNC_BIN = "ssvnc"
 _CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
-_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN":"1", "SSVNC_SCALE":"auto"}
+_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto"}
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssnvc). \nWould you like acloud to "
@@ -764,11 +765,27 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
             return [answer_list[choice-start_index]]
 
 
-def LaunchVncClient(port=constants.DEFAULT_VNC_PORT):
+def LaunchVNCFromReport(report, avd_spec):
+    """Launch vnc client according to the instances report.
+
+    Args:
+        report: Report object, that stores and generates report.
+        avd_spec: AVDSpec object that tells us what we're going to create.
+    """
+    for device in report.data.get("devices", []):
+        _LaunchVncClient(device.get(constants.VNC_PORT),
+                         avd_width=avd_spec.hw_property["x_res"],
+                         avd_height=avd_spec.hw_property["y_res"])
+
+
+def _LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
+                     avd_height=None):
     """Launch ssvnc.
 
     Args:
         port: Integer, port number.
+        avd_width: String, the width of avd.
+        avd_height: String, the height of avd.
     """
     try:
         os.environ[_ENV_DISPLAY]
@@ -792,8 +809,14 @@ def LaunchVncClient(port=constants.DEFAULT_VNC_PORT):
             return
     ssvnc_env = os.environ.copy()
     ssvnc_env.update(_SSVNC_ENV_VARS)
-    ssvnc_args = _CMD_START_VNC % {"bin":find_executable(_VNC_BIN),
-                                   "port":port}
+    # Override SSVNC_SCALE
+    if avd_width or avd_height:
+        scale_ratio = CalculateVNCScreenRatio(avd_width, avd_height)
+        ssvnc_env["SSVNC_SCALE"] = str(scale_ratio)
+        logger.debug("SSVNC_SCALE:%s", scale_ratio)
+
+    ssvnc_args = _CMD_START_VNC % {"bin": find_executable(_VNC_BIN),
+                                   "port": port}
     subprocess.Popen(ssvnc_args.split(), env=ssvnc_env)
 
 
@@ -827,3 +850,34 @@ def PrintDeviceSummary(report):
     if report.errors:
         error_msg = "\n".join(report.errors)
         PrintColorString("Fail in:\n%s\n" % error_msg, TextColors.FAIL)
+
+
+def CalculateVNCScreenRatio(avd_width, avd_height):
+    """calculate the vnc screen scale ratio to fit into user's monitor.
+
+    Args:
+        avd_width: String, the width of avd.
+        avd_height: String, the height of avd.
+    Return:
+        Float, scale ratio for vnc client.
+    """
+    root = Tkinter.Tk()
+    margin = 100 # leave some space on user's monitor.
+    screen_height = root.winfo_screenheight() - margin
+    screen_width = root.winfo_screenwidth() - margin
+
+    scale_h = 1
+    scale_w = 1
+    if float(screen_height) < float(avd_height):
+        scale_h = round(float(screen_height) / float(avd_height), 1)
+
+    if float(screen_width) < float(avd_width):
+        scale_w = round(float(screen_width) / float(avd_width), 1)
+
+    logger.debug("scale_h: %s (screen_h: %s/avd_h: %s),"
+                 " scale_w: %s (screen_w: %s/avd_w: %s)",
+                 scale_h, screen_height, avd_height,
+                 scale_w, screen_width, avd_width)
+
+    # Return the larger scale-down ratio.
+    return scale_h if scale_h < scale_w else scale_w
