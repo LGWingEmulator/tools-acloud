@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright 2018 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,17 +18,29 @@ of an Android Virtual Device.
 """
 
 from __future__ import print_function
+from distutils.spawn import find_executable
 import getpass
 import logging
+import os
+import re
+import subprocess
 import time
 
+from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 from acloud.public import config
 from acloud.public import device_driver
+from acloud.public import report
 
 logger = logging.getLogger(__name__)
+
+_COMMAND_GET_PROCESS_ID = ["pgrep", "launch_cvd"]
+_COMMAND_GET_PROCESS_COMMAND = ["ps", "-o", "command", "-p"]
+_LOCAL_INS_NAME = "local-instance"
+_RE_LAUNCH_CVD = re.compile(r"^(?P<launch_cvd>.+launch_cvd)(.*--daemon ).+")
 
 
 def _FilterInstancesByUser(instances, user):
@@ -69,54 +79,159 @@ def _FindRemoteInstances(cfg, user):
     return _FilterInstancesByUser(all_instances, user)
 
 
-def _DeleteRemoteInstances(args, del_all_instances=False):
-    """Look for remote instances and delete them.
+def _FindLocalInstances():
+    """Get local instance name.
 
-    We're going to query the GCP project for all instances that have the user
-    mentioned in the metadata. If we find just one instance, print out the
-    details of it and delete it. If we find more than 1, ask the user which one
-    they'd like to delete unless del_all_instances is True, then just delete
-    them all.
+    If launch_cvd process exists, then return local instance name.
+
+    Returns:
+        List of instances names (strings)
+    """
+    if utils.IsCommandRunning(constants.CMD_LAUNCH_CVD):
+        return [_LOCAL_INS_NAME]
+    return []
+
+
+def _GetStopCvd():
+    """Get stop_cvd path.
+
+    "stop_cvd" and "launch_cvd" are in the same folder(host package folder).
+    Try to get directory of "launch_cvd" by "ps -o command -p <pid>." command.
+    For example: "/tmp/bin/launch_cvd --daemon --cpus 2 ..."
+
+    Raises:
+        errors.NoExecuteCmd: Can't find stop_cvd.
+
+    Returns:
+        String of stop_cvd file path.
+    """
+    process_id = subprocess.check_output(_COMMAND_GET_PROCESS_ID)
+    process_info = subprocess.check_output(
+        _COMMAND_GET_PROCESS_COMMAND + process_id.splitlines())
+    for process in process_info.splitlines():
+        match = _RE_LAUNCH_CVD.match(process)
+        if match:
+            launch_cvd_path = match.group("launch_cvd")
+            stop_cvd_cmd = os.path.join(os.path.dirname(launch_cvd_path),
+                                        constants.CMD_STOP_CVD)
+            if os.path.exists(stop_cvd_cmd):
+                logger.debug("stop_cvd command: %s", stop_cvd_cmd)
+                return stop_cvd_cmd
+
+    default_stop_cvd = find_executable(constants.CMD_STOP_CVD)
+    if default_stop_cvd:
+        return default_stop_cvd
+
+    raise errors.NoExecuteCmd("stop_cvd(%s) file doesn't exist." %
+                              stop_cvd_cmd)
+
+
+def _GetInstancesToDelete(cfg, del_all_instances=False):
+    """Look for remote/local instances.
+
+    We're going to query the GCP project and grep local instance for all
+    instances that have the user mentioned in the metadata. If we find just
+    one instance, print out the details of it and delete it. If we find more
+    than 1, ask the user which one they'd like to delete unless
+    del_all_instances is True, then just delete them all.
 
     Args:
-        args: Namespace object from argparse.parse_args.
+        cfg: AcloudConfig object.
         del_all_instances: Boolean, when more than 1 instance is found,
                            delete them all if True, otherwise prompt user.
+
+    Returns:
+        List of instances names (strings).
     """
-    cfg = config.GetAcloudConfig(args)
-    instances_to_delete = args.instance_names
-    if instances_to_delete is None:
-        instances_to_delete = _FindRemoteInstances(cfg, getpass.getuser())
+
+    instances_to_delete = _FindRemoteInstances(cfg, getpass.getuser())
+    instances_to_delete += _FindLocalInstances()
     if instances_to_delete:
-        # If the user didn't specify any instances and we find more than 1, ask
-        # them what they want to do (unless they specified --all).
-        if (args.instance_names is None
-                and len(instances_to_delete) > 1
-                and not del_all_instances):
+        # If we find more than 1 instance, ask user what they want to do unless
+        # they specified --all.
+        if (len(instances_to_delete) > 1 and not del_all_instances):
             print("Multiple instance detected, choose 1 to delete:")
             instances_to_delete = utils.GetAnswerFromList(
                 instances_to_delete, enable_choose_all=True)
-        # TODO(b/117474343): We should do a couple extra things here:
-        #                    - adb disconnect
-        #                    - kill ssh tunnel and ssvnc
-        #                    - give details of each instance
-        #                    - Give better messaging about delete.
-        start = time.time()
-        utils.PrintColorString("Deleting %s ..." %
-                               ", ".join(instances_to_delete),
-                               utils.TextColors.WARNING, end="")
-        report = device_driver.DeleteAndroidVirtualDevices(cfg,
-                                                           instances_to_delete)
-        if report.errors:
-            utils.PrintColorString("Fail! (%ds)" % (time.time() - start),
-                                   utils.TextColors.FAIL)
-            logger.debug("Delete failed: %s", report.errors)
-        else:
-            utils.PrintColorString("OK! (%ds)" % (time.time() - start),
-                                   utils.TextColors.OKGREEN)
-        return report
-    print("No instances to delete")
-    return None
+    return instances_to_delete
+
+
+def DeleteInstances(cfg, instances_to_delete):
+    """Delete instances according to instances_to_delete.
+
+    1. Delete local instance.
+    2. Delete remote instance.
+
+    Args:
+        cfg: AcloudConfig object.
+        instances_to_delete: List of instances names (strings).
+
+    Returns:
+        Report instance if there are instances to delete, None otherwise.
+    """
+    # TODO(b/117474343): We should do a couple extra things here:
+    #                    - adb disconnect
+    #                    - kill ssh tunnel and ssvnc
+    #                    - give details of each instance
+    #                    - Give better messaging about delete.
+    if not instances_to_delete:
+        print("No instances to delete")
+        return None
+
+    start = time.time()
+    utils.PrintColorString("Deleting %s ..." % ", ".join(instances_to_delete),
+                           utils.TextColors.WARNING, end="")
+    delete_report = None
+    if _LOCAL_INS_NAME in instances_to_delete:
+        # Stop local instances
+        delete_report = DeleteLocalInstance()
+        instances_to_delete.remove(_LOCAL_INS_NAME)
+
+    if instances_to_delete:
+        # TODO(119283708): We should move DeleteAndroidVirtualDevices into
+        # delete.py after gce is deprecated.
+        # Stop remote instances.
+        delete_report = device_driver.DeleteAndroidVirtualDevices(
+            cfg, instances_to_delete, delete_report)
+
+    if delete_report.errors:
+        utils.PrintColorString("Fail! (%ds)" % (time.time() - start),
+                               utils.TextColors.FAIL)
+        logger.debug("Delete failed: %s", delete_report.errors)
+    else:
+        utils.PrintColorString("OK! (%ds)" % (time.time() - start),
+                               utils.TextColors.OKGREEN)
+    return delete_report
+
+
+def DeleteLocalInstance():
+    """Delete local instance.
+
+    Delete local instance with stop_cvd command and write delete instance
+    information to report.
+
+    Args:
+        delete_report: A Report instance to record local instance deleted.
+
+    Returns:
+        A Report instance.
+    """
+    delete_report = report.Report(command="delete")
+    try:
+        with open(os.devnull, "w") as dev_null:
+            subprocess.check_call(
+                utils.AddUserGroupsToCmd(_GetStopCvd(),
+                                         constants.LIST_CF_USER_GROUPS),
+                stderr=dev_null, stdout=dev_null, shell=True)
+            delete_report.SetStatus(report.Status.SUCCESS)
+            device_driver.AddDeletionResultToReport(
+                delete_report, [_LOCAL_INS_NAME], failed=[], error_msgs=[],
+                resource_name="instance")
+    except subprocess.CalledProcessError as e:
+        delete_report.AddError(str(e))
+        delete_report.SetStatus(report.Status.FAIL)
+
+    return delete_report
 
 
 def Run(args):
@@ -125,6 +240,8 @@ def Run(args):
     Args:
         args: Namespace object from argparse.parse_args.
     """
-    report = _DeleteRemoteInstances(args, args.all)
-    # TODO(b/117474343): Delete local instances.
-    return report
+    cfg = config.GetAcloudConfig(args)
+    instances_to_delete = args.instance_names
+    if not instances_to_delete:
+        instances_to_delete = _GetInstancesToDelete(cfg, args.all)
+    return DeleteInstances(cfg, instances_to_delete)
