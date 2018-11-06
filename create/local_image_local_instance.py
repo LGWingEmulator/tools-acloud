@@ -36,20 +36,17 @@ from acloud.setup import host_setup_runner
 logger = logging.getLogger(__name__)
 
 _BOOT_COMPLETE = "VIRTUAL_DEVICE_BOOT_COMPLETED"
-# TODO(b/117366819): Currently --serial_number is not working.
 _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
                         "--memory_mb %s --blank_data_image_mb %s "
                         "--data_policy always_create "
                         "--system_image_dir %s "
-                        "--vnc_server_port %s "
-                        "--serial_number %s")
+                        "--vnc_server_port %s")
 _CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
 _CMD_STOP_CVD = "stop_cvd"
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out [y]: ")
-_CVD_SERIAL_PREFIX = "acloudCF"
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 
 
@@ -68,15 +65,12 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         cmd = self.PrepareLaunchCVDCmd(launch_cvd_path,
                                        avd_spec.hw_property,
-                                       local_image_path,
-                                       avd_spec.flavor)
+                                       local_image_path)
         try:
             self.CheckLaunchCVD(cmd, os.path.dirname(launch_cvd_path))
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
-        # TODO(b/117366819): Should return the correct device serial according
-        # to --serial_number.
         result_report = report.Report("local")
         result_report.SetStatus(report.Status.SUCCESS)
         result_report.AddData(key="devices",
@@ -165,7 +159,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return user_group_cmd
 
     def PrepareLaunchCVDCmd(self, launch_cvd_path, hw_property,
-                            system_image_dir, flavor):
+                            system_image_dir):
         """Prepare launch_cvd command.
 
         Create the launch_cvd commands with all the required args and add
@@ -175,7 +169,6 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             launch_cvd_path: String of launch_cvd path.
             hw_property: dict object of hw property.
             system_image_dir: String of local images path.
-            flavor: String of flavor type.
 
         Returns:
             String, launch_cvd cmd.
@@ -183,8 +176,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         launch_cvd_w_args = launch_cvd_path + _CMD_LAUNCH_CVD_ARGS % (
             hw_property["cpu"], hw_property["x_res"], hw_property["y_res"],
             hw_property["dpi"], hw_property["memory"], hw_property["disk"],
-            system_image_dir, constants.DEFAULT_VNC_PORT,
-            _CVD_SERIAL_PREFIX+flavor)
+            system_image_dir, constants.DEFAULT_VNC_PORT)
 
         launch_cmd = self._AddUserGroupsToCmd(launch_cvd_w_args)
         logger.debug("launch_cvd cmd:\n %s", launch_cmd)
