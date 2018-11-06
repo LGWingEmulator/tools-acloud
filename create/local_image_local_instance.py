@@ -203,20 +203,15 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                 print("Exiting out")
                 sys.exit()
 
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-
-        boot_complete = False
-        for line in iter(process.stdout.readline, b''):
-            logger.debug(line.strip())
-            # cvd is still running and got boot complete.
-            if _BOOT_COMPLETE in line:
-                boot_complete = True
-                break
-
-        if not boot_complete:
+        try:
+            # Check the result of launch_cvd command.
+            # An exit code of 0 is equivalent to VIRTUAL_DEVICE_BOOT_COMPLETED
+            logger.debug(subprocess.check_output(cmd, shell=True,
+                                                 stderr=subprocess.STDOUT))
+        except subprocess.CalledProcessError as error:
             raise errors.LaunchCVDFail(
-                "Can't launch cuttlefish AVD. No %s found" % _BOOT_COMPLETE)
+                "Can't launch cuttlefish AVD.%s. \nFor more detail: "
+                "~/cuttlefish_runtime/launcher.log" % error.message)
 
     @staticmethod
     def _IsLaunchCVDInUse():
