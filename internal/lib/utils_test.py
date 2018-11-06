@@ -249,6 +249,10 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(Tkinter.Tk, "winfo_screenheight")
     def testCalculateVNCScreenRatio(self, mock_screenheight, mock_screenwidth):
         """Test Calculating the scale ratio of VNC display."""
+        # Tkinter.Tk requires $DISPLAY to be set if the screenName is None so
+        # set screenName to avoid TclError when running this test in a term that
+        # doesn't have $DISPLAY set.
+        mock.patch.object(Tkinter, "Tk", new=Tkinter.Tk(screenName=":0"))
 
         # Get scale-down ratio if screen height is smaller than AVD height.
         mock_screenheight.return_value = 800
