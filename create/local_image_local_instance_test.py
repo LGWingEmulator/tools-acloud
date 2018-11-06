@@ -28,7 +28,7 @@ class LocalImageLocalInstanceTest(unittest.TestCase):
 
     LAUNCH_CVD_CMD = """sg group1 <<EOF
 sg group2
-launch_cvd --daemon --cpus fake --x_res fake --y_res fake --dpi fake --memory_mb fake --blank_data_image_mb fake --data_policy always_create --system_image_dir fake_image_dir --vnc_server_port 6444 --serial_number acloudCFflavor
+launch_cvd --daemon --cpus fake --x_res fake --y_res fake --dpi fake --memory_mb fake --blank_data_image_mb fake --data_policy always_create --system_image_dir fake_image_dir --vnc_server_port 6444
 EOF"""
 
     def setUp(self):
@@ -45,7 +45,7 @@ EOF"""
         constants.LIST_CF_USER_GROUPS = ["group1", "group2"]
 
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
-            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir", "flavor")
+            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir")
 
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD)
 
