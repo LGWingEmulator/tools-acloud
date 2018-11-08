@@ -19,7 +19,6 @@ import subprocess
 
 from acloud.internal import constants
 # pylint: disable=import-error
-from asuite import asuite_metrics
 
 _METRICS_URL = 'http://asuite-218222.appspot.com/acloud/metrics'
 _VALID_DOMAINS = ["google.com", "android.com"]
@@ -30,8 +29,13 @@ logger = logging.getLogger(__name__)
 
 def LogUsage():
     """Log acloud run."""
-    asuite_metrics.log_event(_METRICS_URL, dummy_key_fallback=False,
-                             ldap=_GetLdap())
+    try:
+        from asuite import asuite_metrics
+        asuite_metrics.log_event(_METRICS_URL, dummy_key_fallback=False,
+                                 ldap=_GetLdap())
+    except ImportError:
+        logger.debug("No metrics recorder available, not sending metrics.")
+
 
 
 def _GetLdap():
