@@ -42,7 +42,8 @@ python_binary_host {
         "acloud_create",
         "acloud_delete",
         "acloud_internal",
-	"acloud_metrics",
+        "acloud_list",
+        "acloud_metrics",
         "acloud_proto",
         "acloud_public",
         "acloud_setup",
@@ -71,6 +72,7 @@ python_test_host {
         "acloud_create",
         "acloud_delete",
         "acloud_internal",
+        "acloud_list",
         "acloud_proto",
         "acloud_public",
         "acloud_setup",
@@ -145,6 +147,14 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "delete/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_list",
+    defaults: ["acloud_default"],
+    srcs: [
+         "list/*.py",
     ],
 }
 
