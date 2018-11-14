@@ -30,6 +30,23 @@ import mock
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 
+class FakeTkinter(object):
+    """Fake implementation of Tkinter.Tk()"""
+
+    def __init__(self, width=None, height=None):
+        self.width = width
+        self.height = height
+
+    # pylint: disable=invalid-name
+    def winfo_screenheight(self):
+        """Return the screen height."""
+        return self.height
+
+    # pylint: disable=invalid-name
+    def winfo_screenwidth(self):
+        """Return the screen width."""
+        return self.width
+
 
 class UtilsTest(driver_test_lib.BaseDriverTest):
     """Test Utils."""
@@ -245,40 +262,30 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                                                  enable_choose_all=True),
                          answer_list)
 
-    @mock.patch.object(Tkinter.Tk, "winfo_screenwidth")
-    @mock.patch.object(Tkinter.Tk, "winfo_screenheight")
-    def testCalculateVNCScreenRatio(self, mock_screenheight, mock_screenwidth):
+    @mock.patch.object(Tkinter, "Tk")
+    def testCalculateVNCScreenRatio(self, mock_tk):
         """Test Calculating the scale ratio of VNC display."""
-        # Tkinter.Tk requires $DISPLAY to be set if the screenName is None so
-        # set screenName to avoid TclError when running this test in a term that
-        # doesn't have $DISPLAY set.
-        mock.patch.object(Tkinter, "Tk", new=Tkinter.Tk(screenName=":0"))
-
         # Get scale-down ratio if screen height is smaller than AVD height.
-        mock_screenheight.return_value = 800
-        mock_screenwidth.return_value = 1200
+        mock_tk.return_value = FakeTkinter(height=800, width=1200)
         avd_h = 1920
         avd_w = 1080
         self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.4)
 
         # Get scale-down ratio if screen width is smaller than AVD width.
-        mock_screenheight.return_value = 800
-        mock_screenwidth.return_value = 1200
+        mock_tk.return_value = FakeTkinter(height=800, width=1200)
         avd_h = 900
         avd_w = 1920
         self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.6)
 
         # Scale ratio = 1 if screen is larger than AVD.
-        mock_screenheight.return_value = 1080
-        mock_screenwidth.return_value = 1920
+        mock_tk.return_value = FakeTkinter(height=1080, width=1920)
         avd_h = 800
         avd_w = 1280
         self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 1)
 
         # Get the scale if ratio of width is smaller than the
         # ratio of height.
-        mock_screenheight.return_value = 1200
-        mock_screenwidth.return_value = 800
+        mock_tk.return_value = FakeTkinter(height=1200, width=800)
         avd_h = 1920
         avd_w = 1080
         self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.6)
