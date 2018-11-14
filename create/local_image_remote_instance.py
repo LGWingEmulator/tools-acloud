@@ -51,6 +51,7 @@ _SSH_CMD = (" -i %(rsa_key_file)s "
             "-l %(login_user)s %(ip_addr)s ")
 _SSH_CMD_MAX_RETRY = 2
 _SSH_CMD_RETRY_SLEEP = 3
+_USER_BUILD = "userbuild"
 
 class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
     """A class that can produce a cuttlefish device.
@@ -127,13 +128,19 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         """Create a single configured cuttlefish device.
 
         Override method from parent class.
+        build_target: The format is like "aosp_cf_x86_phone". We only get info
+                      from the user build image file name. If the file name is
+                      not custom format (no "-"), We will use the original
+                      flavor as our build_target.
 
         Returns:
             A string, representing instance name.
         """
-        #TODO(117487673): Grab the build target name from the image name.
+        image_name = os.path.basename(self._local_image_artifact)
+        build_target = self._avd_spec.flavor if "-" not in image_name else image_name.split(
+            "-")[0]
         instance = self._compute_client.GenerateInstanceName(
-            build_target=self._avd_spec.flavor, build_id="local")
+            build_target=build_target, build_id=_USER_BUILD)
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
