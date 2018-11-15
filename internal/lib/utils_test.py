@@ -17,6 +17,7 @@
 
 import errno
 import getpass
+import grp
 import os
 import shutil
 import subprocess
@@ -289,6 +290,46 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         avd_h = 1920
         avd_w = 1080
         self.assertEqual(utils.CalculateVNCScreenRatio(avd_w, avd_h), 0.6)
+
+    # pylint: disable=protected-access
+    def testCheckUserInGroups(self):
+        """Test CheckUserInGroups."""
+        self.Patch(os, "getgroups", return_value=[1, 2, 3])
+        gr1 = mock.MagicMock()
+        gr1.gr_name = "fake_gr_1"
+        gr2 = mock.MagicMock()
+        gr2.gr_name = "fake_gr_2"
+        gr3 = mock.MagicMock()
+        gr3.gr_name = "fake_gr_3"
+        self.Patch(grp, "getgrgid", side_effect=[gr1, gr2, gr3])
+
+        # User in all required groups should return true.
+        self.assertTrue(
+            utils.CheckUserInGroups(
+                ["fake_gr_1", "fake_gr_2"]))
+
+        # User not in all required groups should return False.
+        self.Patch(grp, "getgrgid", side_effect=[gr1, gr2, gr3])
+        self.assertFalse(
+            utils.CheckUserInGroups(
+                ["fake_gr_1", "fake_gr_4"]))
+
+    @mock.patch.object(utils, "CheckUserInGroups")
+    def testAddUserGroupsToCmd(self, mock_user_group):
+        """Test AddUserGroupsToCmd."""
+        command = "test_command"
+        groups = ["group1", "group2"]
+        # Don't add user group in command
+        mock_user_group.return_value = True
+        expected_value = "test_command"
+        self.assertEqual(expected_value, utils.AddUserGroupsToCmd(command,
+                                                                  groups))
+
+        # Add user group in command
+        mock_user_group.return_value = False
+        expected_value = "sg group1 <<EOF\nsg group2\ntest_command\nEOF"
+        self.assertEqual(expected_value, utils.AddUserGroupsToCmd(command,
+                                                                  groups))
 
 
 if __name__ == "__main__":

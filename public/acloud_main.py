@@ -419,7 +419,7 @@ def main(argv):
         sys.stderr.write("Invalid command %s" % args.which)
         return 2
 
-    if report:
+    if report and args.report_file:
         report.Dump(args.report_file)
         if report.errors:
             msg = "\n".join(report.errors)

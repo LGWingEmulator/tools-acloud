@@ -31,7 +31,6 @@ from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public import report
-from acloud.setup import host_setup_runner
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +40,6 @@ _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
                         "--data_policy always_create "
                         "--system_image_dir %s "
                         "--vnc_server_port %s")
-_CMD_PGREP = "pgrep"
-_CMD_SG = "sg "
-_CMD_STOP_CVD = "stop_cvd"
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out [y]: ")
@@ -117,49 +113,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return avd_spec.local_image_dir, launch_cvd_path
 
     @staticmethod
-    def _AddUserGroupsToCmd(cmd):
-        """Add the user groups to the command if necessary.
-
-        As part of local host setup to enable local instance support,
-        the user is added to certain groups. For those settings to
-        take effect systemwide requires the user to log out and
-        log back in. In the scenario where the user has run setup and
-        hasn't logged out, we still want them to be able to launch a
-        local instance so add the user to the groups as part of the
-        command to ensure success.
-
-        The reason using here-doc instead of '&' is all operations need to be
-        ran in ths same pid.  Here's an example cmd:
-        $ sg kvm  << EOF
-        sg libvirt
-        sg cvdnetwork
-        launch_cvd --cpus 2 --x_res 1280 --y_res 720 --dpi 160 --memory_mb 4096
-        EOF
-
-        Args:
-            cmd: String of the command to prepend the user groups to.
-
-        Returns:
-            String of the command with the user groups prepended to it if
-            necessary, otherwise the same existing command.
-        """
-        user_group_cmd = ""
-        host_setup = host_setup_runner.CuttlefishHostSetup()
-        if not host_setup.CheckUserInGroups(constants.LIST_CF_USER_GROUPS):
-            logger.debug("Need to add user groups to the command")
-            for idx, group in enumerate(constants.LIST_CF_USER_GROUPS):
-                user_group_cmd += _CMD_SG + group
-                if idx == 0:
-                    user_group_cmd += " <<EOF\n"
-                else:
-                    user_group_cmd += "\n"
-            cmd += "\nEOF"
-        user_group_cmd += cmd
-        logger.debug("user group cmd: %s", user_group_cmd)
-        return user_group_cmd
-
-    def PrepareLaunchCVDCmd(self, launch_cvd_path, hw_property,
-                            system_image_dir):
+    def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, system_image_dir):
         """Prepare launch_cvd command.
 
         Create the launch_cvd commands with all the required args and add
@@ -178,12 +132,14 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             hw_property["dpi"], hw_property["memory"], hw_property["disk"],
             system_image_dir, constants.DEFAULT_VNC_PORT)
 
-        launch_cmd = self._AddUserGroupsToCmd(launch_cvd_w_args)
+        launch_cmd = utils.AddUserGroupsToCmd(launch_cvd_w_args,
+                                              constants.LIST_CF_USER_GROUPS)
         logger.debug("launch_cvd cmd:\n %s", launch_cmd)
         return launch_cmd
 
+    @staticmethod
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
-    def CheckLaunchCVD(self, cmd, host_pack_dir):
+    def CheckLaunchCVD(cmd, host_pack_dir):
         """Execute launch_cvd command and wait for boot up completed.
 
         Args:
@@ -191,13 +147,15 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             host_pack_dir: String of host package directory.
         """
         # Cuttlefish support launch single AVD at one time currently.
-        if self._IsLaunchCVDInUse():
+        if utils.IsCommandRunning(constants.CMD_LAUNCH_CVD):
             logger.info("Cuttlefish AVD is already running.")
             if utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
-                stop_cvd_cmd = os.path.join(host_pack_dir, _CMD_STOP_CVD)
+                stop_cvd_cmd = os.path.join(host_pack_dir,
+                                            constants.CMD_STOP_CVD)
                 with open(os.devnull, "w") as dev_null:
                     subprocess.check_call(
-                        self._AddUserGroupsToCmd(stop_cvd_cmd),
+                        utils.AddUserGroupsToCmd(
+                            stop_cvd_cmd, constants.LIST_CF_USER_GROUPS),
                         stderr=dev_null, stdout=dev_null, shell=True)
             else:
                 print("Exiting out")
@@ -212,19 +170,3 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             raise errors.LaunchCVDFail(
                 "Can't launch cuttlefish AVD.%s. \nFor more detail: "
                 "~/cuttlefish_runtime/launcher.log" % error.message)
-
-    @staticmethod
-    def _IsLaunchCVDInUse():
-        """Check if launch_cvd is running.
-
-        Returns:
-            Boolean, True if launch_cvd is running. False otherwise.
-        """
-        try:
-            with open(os.devnull, "w") as dev_null:
-                subprocess.check_call([_CMD_PGREP, constants.CMD_LAUNCH_CVD],
-                                      stderr=dev_null, stdout=dev_null)
-            return True
-        except subprocess.CalledProcessError:
-            # launch_cvd process is not in use.
-            return False
