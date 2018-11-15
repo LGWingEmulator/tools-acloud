@@ -23,6 +23,7 @@ import binascii
 import collections
 import errno
 import getpass
+import grp
 import logging
 import os
 import shutil
@@ -58,6 +59,8 @@ _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
                                                            constants.ADB_PORT])
 _VNC_BIN = "ssvnc"
+_CMD_PGREP = "pgrep"
+_CMD_SG = "sg "
 _CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
@@ -881,3 +884,80 @@ def CalculateVNCScreenRatio(avd_width, avd_height):
 
     # Return the larger scale-down ratio.
     return scale_h if scale_h < scale_w else scale_w
+
+
+def IsCommandRunning(command):
+    """Check if command is running.
+
+    Args:
+        command: String of command name.
+
+    Returns:
+        Boolean, True if command is running. False otherwise.
+    """
+    try:
+        with open(os.devnull, "w") as dev_null:
+            subprocess.check_call([_CMD_PGREP, command],
+                                  stderr=dev_null, stdout=dev_null)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
+def AddUserGroupsToCmd(cmd, user_groups):
+    """Add the user groups to the command if necessary.
+
+    As part of local host setup to enable local instance support, the user is
+    added to certain groups. For those settings to take effect systemwide
+    requires the user to log out and log back in. In the scenario where the
+    user has run setup and hasn't logged out, we still want them to be able to
+    launch a local instance so add the user to the groups as part of the
+    command to ensure success.
+
+    The reason using here-doc instead of '&' is all operations need to be ran in
+    ths same pid.  Here's an example cmd:
+    $ sg kvm  << EOF
+    sg libvirt
+    sg cvdnetwork
+    launch_cvd --cpus 2 --x_res 1280 --y_res 720 --dpi 160 --memory_mb 4096
+    EOF
+
+    Args:
+        cmd: String of the command to prepend the user groups to.
+        user_groups: List of user groups name.(String)
+
+    Returns:
+        String of the command with the user groups prepended to it if necessary,
+        otherwise the same existing command.
+    """
+    user_group_cmd = ""
+    if not CheckUserInGroups(user_groups):
+        logger.debug("Need to add user groups to the command")
+        for idx, group in enumerate(user_groups):
+            user_group_cmd += _CMD_SG + group
+            if idx == 0:
+                user_group_cmd += " <<EOF\n"
+            else:
+                user_group_cmd += "\n"
+        cmd += "\nEOF"
+    user_group_cmd += cmd
+    logger.debug("user group cmd: %s", user_group_cmd)
+    return user_group_cmd
+
+
+def CheckUserInGroups(group_name_list):
+    """Check if the current user is in the group.
+
+    Args:
+        group_name_list: The list of group name.
+    Returns:
+        True if current user is in all the groups.
+    """
+    logger.info("Checking if user is in following groups: %s", group_name_list)
+    current_groups = [grp.getgrgid(g).gr_name for g in os.getgroups()]
+    all_groups_present = True
+    for group in group_name_list:
+        if group not in current_groups:
+            all_groups_present = False
+            logger.info("missing group: %s", group)
+    return all_groups_present

@@ -20,7 +20,7 @@ import mock
 
 from acloud.create import local_image_local_instance
 from acloud.internal import constants
-from acloud.setup import host_setup_runner
+from acloud.internal.lib import utils
 
 
 class LocalImageLocalInstanceTest(unittest.TestCase):
@@ -36,7 +36,7 @@ EOF"""
         self.local_image_local_instance = local_image_local_instance.LocalImageLocalInstance()
 
     # pylint: disable=protected-access
-    @mock.patch.object(host_setup_runner.CuttlefishHostSetup, "CheckUserInGroups")
+    @mock.patch.object(utils, "CheckUserInGroups")
     def testPrepareLaunchCVDCmd(self, mock_usergroups):
         """test PrepareLaunchCVDCmd."""
         mock_usergroups.return_value = False
