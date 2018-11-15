@@ -22,9 +22,7 @@ instance.
 from __future__ import print_function
 
 import getpass
-import grp
 import logging
-import os
 import platform
 
 from acloud.internal import constants
@@ -127,26 +125,8 @@ class CuttlefishHostSetup(base_task_runner.BaseTaskRunner):
         if not _IsSupportedPlatform():
             return False
 
-        return not (self.CheckUserInGroups(constants.LIST_CF_USER_GROUPS)
+        return not (utils.CheckUserInGroups(constants.LIST_CF_USER_GROUPS)
                     and self._CheckLoadedModules(_LIST_OF_MODULES))
-
-    @staticmethod
-    def CheckUserInGroups(group_name_list):
-        """Check if the current user is in the group.
-
-        Args:
-            group_name_list: The list of group name.
-        Returns:
-            True if current user is in all the groups.
-        """
-        logger.info("Checking if user is in following groups: %s", group_name_list)
-        current_groups = [grp.getgrgid(g).gr_name for g in os.getgroups()]
-        all_groups_present = True
-        for group in group_name_list:
-            if group not in current_groups:
-                all_groups_present = False
-                logger.info("missing group: %s", group)
-        return all_groups_present
 
     @staticmethod
     def _CheckLoadedModules(module_list):
