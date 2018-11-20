@@ -67,7 +67,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
-        result_report = report.Report("local")
+        result_report = report.Report(constants.LOCAL_INS_NAME)
         result_report.SetStatus(report.Status.SUCCESS)
         result_report.AddData(key="devices",
                               value={"adb_port": constants.DEFAULT_ADB_PORT,

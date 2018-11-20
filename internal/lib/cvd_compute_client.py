@@ -117,12 +117,20 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         # TODO(b/118406018): deprecate resolution config and use hw_proprty for
         # all create cmds.
         if avd_spec:
-            metadata["avd_type"] = avd_spec.avd_type
-            metadata["flavor"] = avd_spec.flavor
+            metadata[constants.INS_KEY_AVD_TYPE] = avd_spec.avd_type
+            metadata[constants.INS_KEY_AVD_FLAVOR] = avd_spec.flavor
             metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
             metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
             metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
-            metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[constants.HW_ALIAS_DISK]
+            metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[
+                constants.HW_ALIAS_DISK]
+            # Use another METADATA_DISPLAY to record resolution which will be
+            # retrieved in acloud list cmd. We try not to use cvd_01_x_res
+            # since cvd_01_xxx metadata is going to deprecated by cuttlefish.
+            metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+                avd_spec.hw_property[constants.HW_X_RES],
+                avd_spec.hw_property[constants.HW_Y_RES],
+                avd_spec.hw_property[constants.HW_ALIAS_DPI]))
         else:
             resolution = self._resolution.split("x")
             metadata["cvd_01_dpi"] = resolution[3]
@@ -141,6 +149,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                 "ssh_public_key_path is not specified in config, "
                 "only project-wide key will be effective.")
 
+        # Add labels for giving the instances ability to be filter for
+        # acloud list/delete cmds.
+        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
+
         gcompute_client.ComputeClient.CreateInstance(
             self,
             instance=instance,
@@ -150,4 +162,5 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             metadata=metadata,
             machine_type=self._machine_type,
             network=self._network,
-            zone=self._zone)
+            zone=self._zone,
+            labels=labels)
