@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common Utilities."""
-
+# pylint: disable=too-many-lines
 from __future__ import print_function
 
 from distutils.spawn import find_executable
@@ -70,7 +70,8 @@ _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssnvc). \nWould you like acloud to "
                      "install it for you? (%s) \nPress 'y' to continue or "
                      "anything else to abort it:[y] ") % _CMD_INSTALL_SSVNC
-
+_EvaluatedResult = collections.namedtuple("EvaluatedResult",
+                                          ["is_result_ok", "result_message"])
 
 class TempDir(object):
     """A context manager that ceates a temporary directory.
@@ -605,10 +606,33 @@ class BatchHttpRequestExecutor(object):
         return self._final_results
 
 
+def DefaultEvaluator(result):
+    """Default Evaluator always return result is ok.
+
+    Args:
+        result:the return value of the target function.
+    """
+    return _EvaluatedResult(is_result_ok=True, result_message=result)
+
+
+def ReportEvaluator(report):
+    """Evalute the the acloud operation by the report.
+
+    Args:
+        report:acloud.public.report() object.
+    """
+    if report is None or report.errors:
+        return _EvaluatedResult(is_result_ok=False, result_message=report.errors)
+
+    return _EvaluatedResult(is_result_ok=True, result_message=None)
+
+
 class TimeExecute(object):
     """Count the function execute time."""
 
-    def __init__(self, function_description=None, print_before_call=True, print_status=True):
+    def __init__(self, function_description=None, print_before_call=True,
+                 print_status=True, result_evaluator=DefaultEvaluator,
+                 display_waiting_dots=True):
         """Initializes the class.
 
         Args:
@@ -618,10 +642,18 @@ class TimeExecute(object):
                                calling the function, default True.
             print_status: Boolean, print the status of the function after the
                           function has completed, default True ("OK" or "Fail").
+            result_evaluator: Func object. Pass func to evaluate result.
+                              Default evaluator always report result is ok and
+                              failed result will be identified only in exception
+                              case.
+            display_waiting_dots: Boolean, if true print the function_description
+                                  followed by waiting dot.
         """
         self._function_description = function_description
         self._print_before_call = print_before_call
         self._print_status = print_status
+        self._result_evaluator = result_evaluator
+        self._display_waiting_dots = display_waiting_dots
 
     def __call__(self, func):
         def DecoratorFunction(*args, **kargs):
@@ -636,16 +668,27 @@ class TimeExecute(object):
             """
             timestart = time.time()
             if self._print_before_call:
-                PrintColorString("%s ..."% self._function_description, end="")
+                waiting_dots = "..." if self._display_waiting_dots else ""
+                PrintColorString("%s %s"% (self._function_description,
+                                           waiting_dots), end="")
             try:
                 result = func(*args, **kargs)
+                result_time = time.time() - timestart
                 if not self._print_before_call:
                     PrintColorString("%s (%ds)" % (self._function_description,
-                                                   time.time()-timestart),
+                                                   result_time),
                                      TextColors.OKGREEN)
                 if self._print_status:
-                    PrintColorString("OK! (%ds)" % (time.time()-timestart),
-                                     TextColors.OKGREEN)
+                    evaluated_result = self._result_evaluator(result)
+                    if evaluated_result.is_result_ok:
+                        PrintColorString("OK! (%ds)" % (result_time),
+                                         TextColors.OKGREEN)
+                    else:
+                        PrintColorString("Fail! (%ds)" % (result_time),
+                                         TextColors.FAIL)
+                        PrintColorString("Error: %s" %
+                                         evaluated_result.result_message,
+                                         TextColors.FAIL)
                 return result
             except:
                 if self._print_status:
