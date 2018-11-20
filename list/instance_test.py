@@ -60,7 +60,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
     def testGetAdbVncPortFromSSHTunnel(self):
         """"Test Get forwarding adb and vnc port from ssh tunnel."""
         self.Patch(subprocess, "check_output", return_value=self.PS_SSH_TUNNEL)
-        forwarded_ports = instance.RemoteInstance._GetAdbVncPortFromSSHTunnel("fake_ip")
+        forwarded_ports = instance.RemoteInstance.GetAdbVncPortFromSSHTunnel("fake_ip")
         self.assertEqual(54321, forwarded_ports.adb_port)
         self.assertEqual(12345, forwarded_ports.vnc_port)
 
@@ -84,25 +84,25 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                                                   constants.ADB_PORT])
         self.Patch(
             instance.RemoteInstance,
-            "_GetAdbVncPortFromSSHTunnel",
+            "GetAdbVncPortFromSSHTunnel",
             return_value=forwarded_ports(vnc_port=fake_vnc, adb_port=fake_adb))
 
-        # test is_connected will be true if ssh tunnel connection is found
+        # test is_ssh_tunnel_connected will be true if ssh tunnel connection is found
         instance_info = instance.RemoteInstance(gce_instance)
-        self.assertTrue(instance_info.is_connected)
+        self.assertTrue(instance_info.is_ssh_tunnel_connected)
         self.assertEqual(instance_info.forwarding_adb_port, fake_adb)
         self.assertEqual(instance_info.forwarding_vnc_port, fake_vnc)
         expected_full_name = "device serial: 127.0.0.1:%s (%s)" % (fake_adb,
                                                                    instance_info.name)
         self.assertEqual(expected_full_name, instance_info.fullname)
 
-        # test is_connected will be false if ssh tunnel connection is not found
+        # test is_ssh_tunnel_connected will be false if ssh tunnel connection is not found
         self.Patch(
             instance.RemoteInstance,
-            "_GetAdbVncPortFromSSHTunnel",
+            "GetAdbVncPortFromSSHTunnel",
             return_value=forwarded_ports(vnc_port=None, adb_port=None))
         instance_info = instance.RemoteInstance(gce_instance)
-        self.assertFalse(instance_info.is_connected)
+        self.assertFalse(instance_info.is_ssh_tunnel_connected)
         expected_full_name = ("device serial: not connected (%s)" %
                               instance_info.name)
         self.assertEqual(expected_full_name, instance_info.fullname)
