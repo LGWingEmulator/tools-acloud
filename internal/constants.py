@@ -105,8 +105,6 @@ SSH_BIN = "ssh"
 ADB_BIN = "adb"
 
 LABEL_CREATE_BY = "created_by"
-LABEL_FLAVOR = "flavor"
-LABEL_TYPE = "avd_type"
 
 # for list and delete cmd
 INS_KEY_NAME = "name"
@@ -117,8 +115,8 @@ INS_KEY_IP = "ip"
 INS_KEY_ADB = "adb"
 INS_KEY_VNC = "vnc"
 INS_KEY_CREATETIME = "creationTimestamp"
-INS_KEY_AVD_TYPE = LABEL_TYPE
-INS_KEY_AVD_FLAVOR = LABEL_FLAVOR
+INS_KEY_AVD_TYPE = "avd_type"
+INS_KEY_AVD_FLAVOR = "flavor"
 INS_KEY_IS_LOCAL = "remote"
 INS_STATUS_RUNNING = "RUNNING"
 LOCAL_INS_NAME = "local-instance"

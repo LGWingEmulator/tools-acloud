@@ -65,33 +65,33 @@ class Instance(object):
         self._ip = None
         self._adb_port = None  # adb port which is forwarding to remote
         self._vnc_port = None  # vnc port which is forwarding to remote
-        self._is_connected = None  # True if ssh tunnel is still connected
+        self._is_ssh_tunnel_connected = None  # True if ssh tunnel is still connected
         self._createtime = None
         self._avd_type = None
         self._avd_flavor = None
         self._is_local = None  # True if this is a local instance
 
     def __repr__(self):
+        """Return full name property for print."""
+        return self._fullname
+
+    def Summary(self):
         """Let's make it easy to see what this class is holding."""
         indent = " " * 3
         representation = []
         representation.append(" name: %s" % self._name)
         representation.append("%s IP: %s" % (indent, self._ip))
-        representation.append("%s create time: %s" %
-                              (indent, self._createtime))
-        representation.append("%s status: %s" %
-                              (indent, self._status))
+        representation.append("%s create time: %s" % (indent, self._createtime))
+        representation.append("%s status: %s" % (indent, self._status))
+        representation.append("%s avd type: %s" % (indent, self._avd_type))
+        representation.append("%s display: %s" % (indent, self._display))
+        representation.append("%s vnc: 127.0.0.1:%s" % (indent, self._vnc_port))
 
         if self._adb_port:
             representation.append("%s adb serial: 127.0.0.1:%s" %
                                   (indent, self._adb_port))
         else:
             representation.append("%s adb serial: disconnected" % indent)
-
-            representation.append("%s avd type: %s" %
-                                  (indent, self._avd_type))
-            representation.append("%s display: %s" %
-                                  (indent, self._display))
 
         return "\n".join(representation)
 
@@ -131,9 +131,9 @@ class Instance(object):
         return self._vnc_port
 
     @property
-    def is_connected(self):
+    def is_ssh_tunnel_connected(self):
         """Return the connect status."""
-        return self._is_connected
+        return self._is_ssh_tunnel_connected
 
     @property
     def createtime(self):
@@ -190,6 +190,7 @@ class LocalInstance(Instance):
                 local_instance._vnc_port = constants.DEFAULT_VNC_PORT
                 local_instance._display = ("%sx%s (%s)" % (x_res, y_res, dpi))
                 local_instance._is_local = True
+                local_instance._is_ssh_tunnel_connected = True
                 return local_instance
         return None
 
@@ -233,34 +234,34 @@ class RemoteInstance(Instance):
 
         # Find ssl tunnel info.
         if ip:
-            forwarded_ports = self._GetAdbVncPortFromSSHTunnel(ip)
+            forwarded_ports = self.GetAdbVncPortFromSSHTunnel(ip)
             self._ip = ip
             self._adb_port = forwarded_ports.adb_port
             self._vnc_port = forwarded_ports.vnc_port
             if self._adb_port:
-                self._is_connected = True
+                self._is_ssh_tunnel_connected = True
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "127.0.0.1:%d" % self._adb_port,
                                    "instance_name": self._name})
             else:
-                self._is_connected = False
+                self._is_ssh_tunnel_connected = False
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "not connected",
                                    "instance_name": self._name})
 
-        # Find avd type from labels
-        labels = gce_instance.get("labels")
-        self._avd_type = labels[constants.LABEL_TYPE]
-        self._avd_flavor = labels[constants.LABEL_FLAVOR]
-
-        # Get display information.
+        # Get metadata
         for metadata in gce_instance.get("metadata", {}).get("items", []):
-            if metadata["key"] == constants.INS_KEY_DISPLAY:
-                self._display = metadata["value"]
-                break
+            key = metadata["key"]
+            value = metadata["value"]
+            if key == constants.INS_KEY_DISPLAY:
+                self._display = value
+            elif key == constants.INS_KEY_AVD_TYPE:
+                self._avd_type = value
+            elif key == constants.INS_KEY_AVD_FLAVOR:
+                self._avd_flavor = value
 
     @staticmethod
-    def _GetAdbVncPortFromSSHTunnel(ip):
+    def GetAdbVncPortFromSSHTunnel(ip):
         """Get forwarding adb and vnc port from ssh tunnel.
 
         Args:

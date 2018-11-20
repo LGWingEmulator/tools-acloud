@@ -115,7 +115,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata=expected_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
-            zone=self.ZONE)
+            zone=self.ZONE,
+            labels={constants.LABEL_CREATE_BY: "fake_user"})
 
         #test use local image in the remote instance.
         args = mock.MagicMock()
@@ -132,11 +133,16 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         expected_metadata["cvd_01_launch"] = "0"
         expected_metadata["avd_type"] = "cf"
         expected_metadata["flavor"] = "phone"
+        expected_metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+            fake_avd_spec.hw_property[constants.HW_X_RES],
+            fake_avd_spec.hw_property[constants.HW_Y_RES],
+            fake_avd_spec.hw_property[constants.HW_ALIAS_DPI]))
         self.cvd_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
             self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
             self.EXTRA_DATA_DISK_SIZE_GB, fake_avd_spec)
 
+        expected_labels = {constants.LABEL_CREATE_BY: "fake_user"}
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
@@ -146,6 +152,9 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata=expected_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
-            zone=self.ZONE)
+            zone=self.ZONE,
+            labels=expected_labels)
+
+
 if __name__ == "__main__":
     unittest.main()
