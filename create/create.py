@@ -29,6 +29,8 @@ import sys
 
 from acloud import errors
 from acloud.create import avd_spec
+from acloud.create import gce_local_image_remote_instance
+from acloud.create import gce_remote_image_remote_instance
 from acloud.create import local_image_local_instance
 from acloud.create import local_image_remote_instance
 from acloud.create import remote_image_remote_instance
@@ -42,37 +44,49 @@ from acloud.setup import host_setup_runner
 _MAKE_CMD = "build/soong/soong_ui.bash"
 _MAKE_ARG = "--make-mode"
 
+_CREATOR_CLASS_DICT = {
+    # GCE types
+    (constants.TYPE_GCE, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_REMOTE):
+        gce_local_image_remote_instance.GceLocalImageRemoteInstance,
+    (constants.TYPE_GCE, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
+        gce_remote_image_remote_instance.GceRemoteImageRemoteInstance,
+    # CF types
+    (constants.TYPE_CF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_LOCAL):
+        local_image_local_instance.LocalImageLocalInstance,
+    (constants.TYPE_CF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_REMOTE):
+        local_image_remote_instance.LocalImageRemoteInstance,
+    (constants.TYPE_CF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
+        remote_image_remote_instance.RemoteImageRemoteInstance,
+    (constants.TYPE_CF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_LOCAL):
+        remote_image_local_instance.RemoteImageLocalInstance,
+}
 
-def GetAvdCreatorClass(instance_type, image_source):
+
+def GetAvdCreatorClass(avd_type, instance_type, image_source):
     """Return the creator class for the specified spec.
 
     Based on the image source and the instance type, return the proper
     creator class.
 
     Args:
+        avd_type: String, the AVD type(cuttlefish, gce).
         instance_type: String, the AVD instance type (local or remote).
         image_source: String, the source of the image (local or remote).
 
     Returns:
         An AVD creator class (e.g. LocalImageRemoteInstance).
+
+    Raises:
+        UnsupportedInstanceImageType if argments didn't match _CREATOR_CLASS_DICT.
     """
-    if (instance_type == constants.INSTANCE_TYPE_REMOTE and
-            image_source == constants.IMAGE_SRC_LOCAL):
-        return local_image_remote_instance.LocalImageRemoteInstance
-    if (instance_type == constants.INSTANCE_TYPE_LOCAL and
-            image_source == constants.IMAGE_SRC_LOCAL):
-        return local_image_local_instance.LocalImageLocalInstance
-    if (instance_type == constants.INSTANCE_TYPE_REMOTE and
-            image_source == constants.IMAGE_SRC_REMOTE):
-        return remote_image_remote_instance.RemoteImageRemoteInstance
-    if (instance_type == constants.INSTANCE_TYPE_LOCAL and
-            image_source == constants.IMAGE_SRC_REMOTE):
-        return remote_image_local_instance.RemoteImageLocalInstance
+    creator_class = _CREATOR_CLASS_DICT.get(
+        (avd_type, image_source, instance_type))
 
-    raise errors.UnsupportedInstanceImageType(
-        "unsupported creation of instance type: %s, image source: %s" %
-        (instance_type, image_source))
-
+    if not creator_class:
+        raise errors.UnsupportedInstanceImageType(
+            "unsupported creation of avd type: %s, instance type: %s, "
+            "image source: %s" % (avd_type, instance_type, image_source))
+    return creator_class
 
 def _CheckForAutoconnect(args):
     """Check that we have all prerequisites for autoconnect.
@@ -182,7 +196,8 @@ def Run(args):
     """
     PreRunCheck(args)
     spec = avd_spec.AVDSpec(args)
-    avd_creator_class = GetAvdCreatorClass(spec.instance_type,
+    avd_creator_class = GetAvdCreatorClass(spec.avd_type,
+                                           spec.instance_type,
                                            spec.image_source)
     avd_creator = avd_creator_class()
     report = avd_creator.Create(spec)

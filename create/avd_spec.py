@@ -144,7 +144,7 @@ class AVDSpec(object):
         Args:
             args: Namespace object from argparse.parse_args.
         """
-        # If user didn't specify --local_image, infer remote image args
+        # If user didn't specify --local-image, infer remote image args
         if args.local_image == "":
             self._image_source = constants.IMAGE_SRC_REMOTE
             self._ProcessRemoteBuildArgs(args)
@@ -313,6 +313,13 @@ class AVDSpec(object):
         self._remote_image[_BUILD_TARGET] = args.build_target
         if not self._remote_image[_BUILD_TARGET]:
             self._remote_image[_BUILD_TARGET] = self._GetBuildTarget(args)
+        else:
+            # infer avd_type from build_target.
+            for avd_type, avd_type_abbr in constants.AVD_TYPES_MAPPING.items():
+                if re.match(r"(.*_)?%s_" % avd_type_abbr,
+                            self._remote_image[_BUILD_TARGET]):
+                    self._avd_type = avd_type
+                    break
 
         self._remote_image[_BUILD_ID] = args.build_id
         if not self._remote_image[_BUILD_ID]:

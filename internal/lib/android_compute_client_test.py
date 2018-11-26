@@ -15,6 +15,7 @@
 # limitations under the License.
 """Tests for android_compute_client."""
 import unittest
+import getpass
 import mock
 
 from acloud import errors
@@ -44,6 +45,9 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
     INSTANCE = "fake-instance"
     BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
     BOOT_STARTED_MSG = "VIRTUAL_DEVICE_BOOT_STARTED"
+    DPI = 160
+    X_RES = 720
+    Y_RES = 1280
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -109,19 +113,31 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
             self.METADATA[0]: self.METADATA[1],
             "cfg_sta_display_resolution": self.DEVICE_RESOLUTION,
             "t_force_orientation": self.ORIENTATION,
+            "avd_type": "gce",
+            "display": "720x1280 (160)"
         }
 
         expected_disk_args = [{
             "fake_arg": "fake_value"
         }]
 
+        labels = {'created_by': getpass.getuser()}
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.avd_type = "gce"
+        fake_avd_spec.hw_property = {
+            "x_res" : str(self.X_RES),
+            "y_res" : str(self.Y_RES),
+            "dpi" : str(self.DPI)}
+
         self.android_compute_client.CreateInstance(instance_name, self.IMAGE,
-                                                   extra_disk_name=extra_disk_name)
+                                                   extra_disk_name=extra_disk_name,
+                                                   avd_spec=fake_avd_spec)
         super(android_compute_client.AndroidComputeClient,
               self.android_compute_client).CreateInstance.assert_called_with(
                   instance_name, self.IMAGE, self.MACHINE_TYPE,
                   expected_metadata, self.NETWORK, self.ZONE,
-                  expected_disk_args, image_project, gpu, extra_disk_name)
+                  expected_disk_args, image_project, gpu, extra_disk_name,
+                  labels=labels)
 
     # pylint: disable=invalid-name
     def testCheckMachineSizeMeetsRequirement(self):
