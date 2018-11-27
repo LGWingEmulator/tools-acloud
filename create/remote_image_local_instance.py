@@ -22,7 +22,7 @@ from __future__ import print_function
 import logging
 import os
 import subprocess
-import tempfile
+import sys
 
 from acloud import errors
 from acloud.create import local_image_local_instance
@@ -35,8 +35,17 @@ from acloud.setup import setup_common
 # Download remote image variables.
 _CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 _CUTTLEFISH_COMMON_BIN_PATH = "/usr/lib/cuttlefish-common/bin/"
-_TEMP_IMAGE_FOLDER = os.path.join(tempfile.gettempdir(),
-                                  "acloud_image_artifacts", "cuttlefish")
+_CONFIRM_DOWNLOAD_DIR = ("Download dir %(download_dir)s does not have enough "
+                         "space (available space %(available_space)sGB, "
+                         "require %(required_space)sGB).\nPlease enter "
+                         "alternate path or 'q' to exit: ")
+# The downloaded image artifacts will take up ~8G:
+#   $du -lh --time $ANDROID_PRODUCT_OUT/aosp_cf_x86_phone-img-eng.XXX.zip
+#   422M
+# And decompressed becomes 7.2G (as of 11/2018).
+# Let's add an extra buffer (~2G) to make sure user has enough disk space
+# for the downloaded image artifacts.
+_REQUIRED_SPACE = 10
 _CF_IMAGES = ["cache.img", "cmdline", "kernel", "ramdisk.img", "system.img",
               "userdata.img", "vendor.img"]
 _BOOT_IMAGE = "boot.img"
@@ -56,7 +65,6 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
     LocalImageLocalInstance.
     """
 
-    @utils.TimeExecute(function_description="Downloading Android Build image")
     def GetImageArtifactsPath(self, avd_spec):
         """Download the image artifacts and return the paths to them.
 
@@ -74,11 +82,15 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                 "Package [cuttlefish-common] is not installed!\n"
                 "Please run 'acloud setup --host' to install.")
 
+        avd_spec.image_download_dir = self._ConfirmDownloadRemoteImageDir(
+            avd_spec.image_download_dir)
+
         image_dir = self._DownloadAndProcessImageFiles(avd_spec)
         launch_cvd_path = os.path.join(image_dir, "bin", constants.CMD_LAUNCH_CVD)
 
         return image_dir, launch_cvd_path
 
+    @utils.TimeExecute(function_description="Downloading Android Build image")
     def _DownloadAndProcessImageFiles(self, avd_spec):
         """Download the CF image artifacts and process them.
 
@@ -94,7 +106,12 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
         cfg = avd_spec.cfg
         build_id = avd_spec.remote_image[constants.BUILD_ID]
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
-        extract_path = os.path.join(_TEMP_IMAGE_FOLDER, build_id)
+
+        extract_path = os.path.join(
+            avd_spec.image_download_dir,
+            "acloud_image_artifacts",
+            build_id)
+
         logger.debug("Extract path: %s", extract_path)
         # TODO(b/117189191): If extract folder exists, check if the files are
         # already downloaded and skip this step if they are.
@@ -123,14 +140,18 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
         build_client = android_build_client.AndroidBuildClient(
             auth.CreateCredentials(cfg))
         for artifact in artifacts:
-            with utils.TempDir() as tempdir:
-                temp_filename = os.path.join(tempdir, artifact)
-                build_client.DownloadArtifact(
-                    build_target,
-                    build_id,
-                    artifact,
-                    temp_filename)
-                utils.Decompress(temp_filename, extract_path)
+            temp_filename = os.path.join(extract_path, artifact)
+            build_client.DownloadArtifact(
+                build_target,
+                build_id,
+                artifact,
+                temp_filename)
+            utils.Decompress(temp_filename, extract_path)
+            try:
+                os.remove(temp_filename)
+                logger.debug("Deleted temporary file %s", temp_filename)
+            except OSError as e:
+                logger.error("Failed to delete temporary file: %s", str(e))
 
     @staticmethod
     def _UnpackBootImage(extract_path):
@@ -179,3 +200,42 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                     "Specified file doesn't exist: %s" % image_path)
             subprocess.check_call(ACL_CMD % image_path, shell=True)
         logger.info("ACL files completed!")
+
+    @staticmethod
+    def _ConfirmDownloadRemoteImageDir(download_dir):
+        """Confirm download remote image directory.
+
+        If available space of download_dir is less than _REQUIRED_SPACE, ask
+        the user to choose a different d/l dir or to exit out since acloud will
+        fail to download the artifacts due to insufficient disk space.
+
+        Args:
+            download_dir: String, a directory for download and decompress.
+
+        Returns:
+            String, Specific download directory when user confirm to change.
+        """
+        while True:
+            download_dir = os.path.expanduser(download_dir)
+            if not os.path.exists(download_dir):
+                answer = utils.InteractWithQuestion(
+                    "No such directory %s.\nEnter 'y' to create it, enter "
+                    "anything else to exit out [y]: " % download_dir)
+                if answer.lower() == "y":
+                    os.makedirs(download_dir)
+                else:
+                    print("Exiting acloud!")
+                    sys.exit()
+
+            stat = os.statvfs(download_dir)
+            available_space = stat.f_bavail*stat.f_bsize/(1024)**3
+            if available_space < _REQUIRED_SPACE:
+                download_dir = utils.InteractWithQuestion(
+                    _CONFIRM_DOWNLOAD_DIR % {"download_dir":download_dir,
+                                             "available_space":available_space,
+                                             "required_space":_REQUIRED_SPACE})
+                if download_dir.lower() == "q":
+                    print("Exiting acloud!")
+                    sys.exit()
+            else:
+                return download_dir
