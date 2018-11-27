@@ -169,6 +169,12 @@ def GetCreateArgParser(subparser):
         required=False,
         help="Use the locally built image for the AVD. Look for the image "
         "artifact in $ANDROID_TARGET_OUT unless a path is specified.")
+    create_parser.add_argument(
+        "--image-download-dir",
+        type=str,
+        dest="image_download_dir",
+        required=False,
+        help="Define remote image download directory, e.g. /usr/local/dl.")
     # User should not specify --spec and --hw_property at the same time.
     hw_spec_group = create_parser.add_mutually_exclusive_group()
     hw_spec_group.add_argument(
