@@ -57,6 +57,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
         """
+        self.PrintDisclaimer()
         local_image_path, launch_cvd_path = self.GetImageArtifactsPath(avd_spec)
 
         cmd = self.PrepareLaunchCVDCmd(launch_cvd_path,
@@ -170,3 +171,11 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             raise errors.LaunchCVDFail(
                 "Can't launch cuttlefish AVD.%s. \nFor more detail: "
                 "~/cuttlefish_runtime/launcher.log" % error.message)
+
+    @staticmethod
+    def PrintDisclaimer():
+        """Print Disclaimer."""
+        utils.PrintColorString(
+            "(Disclaimer: Local cuttlefish instance is not a fully supported\n"
+            "runtime configuration, fixing breakages is on a best effort SLO.)\n",
+            utils.TextColors.WARNING)
