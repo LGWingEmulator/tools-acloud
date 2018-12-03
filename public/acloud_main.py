@@ -352,7 +352,7 @@ def _SetupLogging(log_file, verbose):
         logger.addHandler(fhandler)
 
 
-def main(argv):
+def main(argv=None):
     """Main entry.
 
     Args:
@@ -361,6 +361,9 @@ def main(argv):
     Returns:
         0 if success. None-zero if fails.
     """
+    if argv is None:
+        argv = sys.argv[1:]
+
     args = _ParseArgs(argv)
     _SetupLogging(args.log_file, args.verbose)
     _VerifyArgs(args)
