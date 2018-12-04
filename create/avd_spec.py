@@ -43,6 +43,7 @@ _DEFAULT_BUILD_BITNESS = "x86"
 _DEFAULT_BUILD_TYPE = "userdebug"
 _ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
 _ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
+_RE_FLAVOR = re.compile(r"^.+_(?P<flavor>.+)-img.+")
 _RE_GBSIZE = re.compile(r"^(?P<gb_size>\d+)g$", re.IGNORECASE)
 _RE_INT = re.compile(r"^\d+$")
 _RE_RES = re.compile(r"^(?P<x_res>\d+)x(?P<y_res>\d+)$")
@@ -83,6 +84,7 @@ class AVDSpec(object):
         self._instance_type = None
         self._kernel_build_id = None
         self._local_image_dir = None
+        self._local_image_artifact = None
         self._image_download_dir = None
         self._num_of_instances = None
         self._remote_image = None
@@ -225,7 +227,7 @@ class AVDSpec(object):
         self._autoconnect = args.autoconnect
         self._report_internal_ip = args.report_internal_ip
         self._avd_type = args.avd_type
-        self._flavor = args.flavor
+        self._flavor = args.flavor or constants.FLAVOR_PHONE
         self._instance_type = (constants.INSTANCE_TYPE_LOCAL
                                if args.local_instance else
                                constants.INSTANCE_TYPE_REMOTE)
@@ -233,6 +235,33 @@ class AVDSpec(object):
         self._kernel_build_id = args.kernel_build_id
         self._serial_log_file = args.serial_log_file
         self._logcat_file = args.logcat_file
+
+    @staticmethod
+    def _GetFlavorFromLocalImage(image_path):
+        """Get flavor name from local image file name.
+
+        If the user didn't specify a flavor, we can infer it from the image
+        name, e.g. cf_x86_tv-img-eng.zip should be created with a flavor of tv.
+
+        Args:
+            image_path: String of image path.
+
+        Returns:
+            String of flavor name, None if flavor can't be determined.
+        """
+        local_image_name = os.path.basename(image_path)
+        match = _RE_FLAVOR.match(local_image_name)
+        if match:
+            image_flavor = match.group("flavor")
+            if image_flavor in constants.ALL_FLAVORS:
+                logger.debug("Get flavor[%s] from local image name(%s).",
+                             image_flavor, local_image_name)
+                return image_flavor
+            else:
+                logger.debug("Flavor[%s] from image name is not supported.",
+                             image_flavor)
+
+        return None
 
     def _ProcessLocalImageArgs(self, args):
         """Get local image path.
@@ -257,6 +286,15 @@ class AVDSpec(object):
                     "Try to run '#source build/envsetup.sh && lunch <target>'"
                     % _ENV_ANDROID_PRODUCT_OUT
                 )
+
+        self._local_image_artifact = create_common.VerifyLocalImageArtifactsExist(
+            self.local_image_dir)
+        # Overwrite flavor by local image name
+        local_image_flavor = self._GetFlavorFromLocalImage(
+            self._local_image_artifact)
+        if local_image_flavor and not args.flavor:
+            self._flavor = local_image_flavor
+            self._cfg.OverrideHwPropertyWithFlavor(local_image_flavor)
 
     def _ProcessRemoteBuildArgs(self, args):
         """Get the remote build args.
@@ -367,6 +405,11 @@ class AVDSpec(object):
     def local_image_dir(self):
         """Return local image dir."""
         return self._local_image_dir
+
+    @property
+    def local_image_artifact(self):
+        """Return local image artifact."""
+        return self._local_image_artifact
 
     @property
     def avd_type(self):

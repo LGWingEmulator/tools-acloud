@@ -139,6 +139,10 @@ class UnsupportedInstanceImageType(CreateError):
     """Unsupported create action for given instance/image type."""
 
 
+class UnsupportedFlavor(CreateError):
+    """Unsupported create action for given flavor name."""
+
+
 class GetBuildIDError(CreateError):
     """Can't get build id from Android Build."""
 
