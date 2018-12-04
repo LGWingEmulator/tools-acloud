@@ -32,6 +32,7 @@ import re
 import subprocess
 
 from acloud.internal import constants
+from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +168,10 @@ class LocalInstance(Instance):
         returns:
             Instance object if launch_cvd process is found otherwise return None.
         """
+        # Running instances on local is not supported on all OS.
+        if not utils.IsSupportedPlatform():
+            return None
+
         process_output = subprocess.check_output(_COMMAND_PS_LAUNCH_CVD)
         for line in process_output.splitlines():
             match = _RE_LAUNCH_CVD.match(line)
