@@ -23,13 +23,18 @@ import shutil
 import subprocess
 import tempfile
 import time
-import Tkinter
 
 import unittest
 import mock
 
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
+
+# Tkinter may not be supported so mock it out.
+try:
+    import Tkinter
+except ImportError:
+    Tkinter = mock.Mock()
 
 class FakeTkinter(object):
     """Fake implementation of Tkinter.Tk()"""
@@ -263,6 +268,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                                                  enable_choose_all=True),
                          answer_list)
 
+    @unittest.skipIf(isinstance(Tkinter, mock.Mock), "Tkinter mocked out, test case not needed.")
     @mock.patch.object(Tkinter, "Tk")
     def testCalculateVNCScreenRatio(self, mock_tk):
         """Test Calculating the scale ratio of VNC display."""
