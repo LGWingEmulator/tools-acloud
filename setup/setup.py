@@ -22,7 +22,9 @@ or remote instance of an Android Virtual Device.
 from __future__ import print_function
 import os
 import subprocess
+import sys
 
+from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.setup import host_setup_runner
 from acloud.setup import gcp_setup_runner
@@ -91,10 +93,17 @@ def _RunPreSetup():
     results. Pre-setup scripts will do any special setup before actual
     setup occurs (e.g. copying configs).
     """
-    build_top = os.environ.get("ANDROID_BUILD_TOP")
-    if build_top is None:
-        return
-    pre_setup_sh = os.path.join(build_top, "tools", "acloud", "setup",
-                                "pre_setup_sh", "acloud_pre_setup.sh")
+    if constants.ENV_ANDROID_BUILD_TOP not in os.environ:
+        print("Can't find $%s." % constants.ENV_ANDROID_BUILD_TOP)
+        print("Please run '#source build/envsetup.sh && lunch <target>' first.")
+        sys.exit(1)
+
+    pre_setup_sh = os.path.join(os.environ.get(constants.ENV_ANDROID_BUILD_TOP),
+                                "tools",
+                                "acloud",
+                                "setup",
+                                "pre_setup_sh",
+                                "acloud_pre_setup.sh")
+
     if os.path.exists(pre_setup_sh):
         subprocess.call([pre_setup_sh])
