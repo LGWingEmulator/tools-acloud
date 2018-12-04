@@ -34,7 +34,6 @@ import sys
 import tarfile
 import tempfile
 import time
-import Tkinter
 import uuid
 import zipfile
 
@@ -65,6 +64,7 @@ _CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
 _SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto"}
+_DEFAULT_DISPLAY_SCALE = 1.0
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssnvc). \nWould you like acloud to "
@@ -864,13 +864,18 @@ def CalculateVNCScreenRatio(avd_width, avd_height):
     Return:
         Float, scale ratio for vnc client.
     """
+    try:
+        import Tkinter
+    # Some python interpreters may not be configured for Tk, just return default scale ratio.
+    except ImportError:
+        return _DEFAULT_DISPLAY_SCALE
     root = Tkinter.Tk()
     margin = 100 # leave some space on user's monitor.
     screen_height = root.winfo_screenheight() - margin
     screen_width = root.winfo_screenwidth() - margin
 
-    scale_h = 1
-    scale_w = 1
+    scale_h = _DEFAULT_DISPLAY_SCALE
+    scale_w = _DEFAULT_DISPLAY_SCALE
     if float(screen_height) < float(avd_height):
         scale_h = round(float(screen_height) / float(avd_height), 1)
 
