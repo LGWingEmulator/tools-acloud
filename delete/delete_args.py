@@ -17,6 +17,7 @@ r"""Delete args.
 
 Defines the delete arg parser that holds delete specific args.
 """
+import argparse
 
 CMD_DELETE = "delete"
 
@@ -34,17 +35,26 @@ def GetDeleteArgParser(subparser):
     delete_parser.required = False
     delete_parser.set_defaults(which=CMD_DELETE)
     delete_parser.add_argument(
-        "--instance_names",
+        "--instance-names",
         dest="instance_names",
         nargs="+",
         required=False,
-        help="The names of the instances that need to delete, "
-        "separated by spaces, e.g. --instance_names instance-1 instance-2")
+        help="The names of the remote instances that need to delete, "
+        "separated by spaces, e.g. --instance-names instance-1 instance-2")
     delete_parser.add_argument(
         "--all",
         action="store_true",
         dest="all",
         required=False,
         help="If more than 1 AVD instance is found, delete them all.")
+
+    # TODO(b/118439885): Old arg formats to support transition, delete when
+    # transistion is done.
+    delete_parser.add_argument(
+        "--instance_names",
+        dest="instance_names",
+        nargs="+",
+        required=False,
+        help=argparse.SUPPRESS)
 
     return delete_parser
