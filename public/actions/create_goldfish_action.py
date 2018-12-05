@@ -52,6 +52,10 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         _branch: String, android branch name, e.g. git_master
         _emulator_branch: String, emulator branch name, e.g. "aosp-emu-master-dev"
     """
+    LOG_FILES = ["/home/vsoc-01/emulator.log",
+                 "/home/vsoc-01/log/logcat.log",
+                 "/home/vsoc-01/log/adb.log",
+                 "/var/log/daemon.log"]
 
     def __init__(self,
                  cfg,
@@ -228,9 +232,6 @@ def CreateDevices(cfg,
     if build_id is None:
         raise errors.CommandArgError("Emulator system image build id not found "
                                      "in %s" % _SYSIMAGE_INFO_FILENAME)
-    # TODO: Implement copying files from the instance, including
-    # the serial log (kernel log), and logcat log files.
-    # TODO: Implement autoconnect.
     logger.info(
         "Creating a goldfish device in project %s, build_target: %s, "
         "build_id: %s, emulator_bid: %s, GPU: %s, num: %s, "
@@ -243,4 +244,5 @@ def CreateDevices(cfg,
                                            emulator_build_id, gpu)
 
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
-                                           num, report_internal_ip)
+                                           num, report_internal_ip,
+                                           serial_log_file, logcat_file)
