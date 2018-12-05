@@ -125,6 +125,30 @@ def GetInstances(cfg):
     return instances_list
 
 
+def ChooseInstances(cfg, select_all_instances=False):
+    """Get instances.
+
+    Get remote and local instances and ask user to choose them to use.
+    (delete or reconnect)
+
+    Args:
+        cfg: AcloudConfig object.
+        select_all_instances: True if select all instances by default and no
+                              need to ask user to choose.
+
+    Returns:
+        List of list.Instance() object.
+    """
+    instances_list = GetInstances(cfg)
+    if (len(instances_list) > 1) and not select_all_instances:
+        print("Multiple instance detected, choose 1 to proceed:")
+        instances_to_delete = utils.GetAnswerFromList(instances_list,
+                                                      enable_choose_all=True)
+        return instances_to_delete
+
+    return instances_list
+
+
 def Run(args):
     """Run list.
 
