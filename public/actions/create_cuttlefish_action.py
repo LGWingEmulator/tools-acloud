@@ -46,6 +46,9 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
     RELEASE_BRANCH_SUFFIX = "-release"
     RELEASE_BRANCH_PATH_GLOB_PATTERN = "*-%s"
+    LOG_FILES = ["/home/vsoc-01/cuttlefish_runtime/kernel.log",
+                 "/home/vsoc-01/cuttlefish_runtime/logcat",
+                 "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
 
     def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
                  avd_spec=None):
@@ -130,8 +133,8 @@ def CreateDevices(avd_spec=None,
         build_id: String, Build id, e.g. "2263051", "P2804227"
         kernel_build_id: String, Kernel build id.
         num: Integer, Number of devices to create.
-        serial_log_file: String, A path to a file where serial output should
-                        be saved to.
+        serial_log_file: String, A path to a tar file where serial output should
+                         be saved to.
         logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
         report_internal_ip: Boolean to report the internal ip instead of
@@ -140,9 +143,6 @@ def CreateDevices(avd_spec=None,
     Returns:
         A Report instance.
     """
-    # TODO: Implement copying files from the instance, including
-    # the serial log (kernel log), and logcat log files.
-    # TODO: Implement autoconnect.
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
@@ -151,6 +151,8 @@ def CreateDevices(avd_spec=None,
         num = avd_spec.num
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
+        serial_log_file = avd_spec.serial_log_file
+        logcat_file = avd_spec.logcat_file
     logger.info(
         "Creating a cuttlefish device in project %s, build_target: %s, "
         "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
@@ -160,4 +162,5 @@ def CreateDevices(avd_spec=None,
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
                                              kernel_build_id, avd_spec)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
-                                           num, report_internal_ip, autoconnect)
+                                           num, report_internal_ip, autoconnect,
+                                           serial_log_file, logcat_file)

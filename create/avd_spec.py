@@ -89,6 +89,10 @@ class AVDSpec(object):
         self._hw_property = None
         # Create config instance for android_build_client to query build api.
         self._cfg = config.GetAcloudConfig(args)
+        # Reporting args.
+        self._serial_log_file = None
+        self._logcat_file = None
+
         self._ProcessArgs(args)
 
     def __repr__(self):
@@ -227,6 +231,8 @@ class AVDSpec(object):
                                constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
         self._kernel_build_id = args.kernel_build_id
+        self._serial_log_file = args.serial_log_file
+        self._logcat_file = args.logcat_file
 
     def _ProcessLocalImageArgs(self, args):
         """Get local image path.
@@ -411,3 +417,13 @@ class AVDSpec(object):
     def image_download_dir(self, value):
         """Set image download dir."""
         self._image_download_dir = value
+
+    @property
+    def serial_log_file(self):
+        """Return serial log file path."""
+        return self._serial_log_file
+
+    @property
+    def logcat_file(self):
+        """Return logcat file path."""
+        return self._logcat_file

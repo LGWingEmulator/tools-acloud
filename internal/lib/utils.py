@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright 2016 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,6 +43,10 @@ logger = logging.getLogger(__name__)
 
 SSH_KEYGEN_CMD = ["ssh-keygen", "-t", "rsa", "-b", "4096"]
 SSH_KEYGEN_PUB_CMD = ["ssh-keygen", "-y"]
+SSH_ARGS = ["-o", "UserKnownHostsFile=/dev/null",
+            "-o", "StrictHostKeyChecking=no"]
+SSH_CMD = ["ssh"] + SSH_ARGS
+SCP_CMD = ["scp"] + SSH_ARGS
 DEFAULT_RETRY_BACKOFF_FACTOR = 1
 DEFAULT_SLEEP_MULTIPLIER = 0
 
@@ -282,6 +284,39 @@ def MakeTarFile(src_dict, dest):
     with tarfile.open(dest, "w:gz") as tar:
         for src, arcname in src_dict.iteritems():
             tar.add(src, arcname=arcname)
+
+
+def ScpPullFile(src_file, dst_file, host_name, user_name=None,
+                rsa_key_file=None):
+    """Scp pull file from remote.
+
+    Args:
+        src_file: The source file path to be pulled.
+        dst_file: The destiation file path the file is pulled to.
+        host_name: The device host_name or ip to pull file from.
+        user_name: The user_name for scp session.
+        rsa_key_file: The rsa key file.
+    Raises:
+        errors.DeviceConnectionError if scp failed.
+    """
+    scp_cmd_list = SCP_CMD[:]
+    if rsa_key_file:
+        scp_cmd_list.extend(["-i", rsa_key_file])
+    else:
+        logger.warning(
+            "Rsa key file is not specified. "
+            "Will use default rsa key set in user environment")
+    if user_name:
+        scp_cmd_list.append("%s@%s:%s" % (user_name, host_name, src_file))
+    else:
+        scp_cmd_list.append("%s:%s" % (host_name, src_file))
+    scp_cmd_list.append(dst_file)
+    try:
+        subprocess.check_call(scp_cmd_list)
+    except subprocess.CalledProcessError as e:
+        raise errors.DeviceConnectionError(
+            "Failed to pull file %s from %s with '%s': %s" % (
+                src_file, host_name, " ".join(scp_cmd_list), e))
 
 
 def CreateSshKeyPairIfNotExist(private_key_path, public_key_path):
