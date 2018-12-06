@@ -106,3 +106,11 @@ class LaunchCVDFail(CreateError):
 
 class NoExecuteCmd(CreateError):
     """Can't find execute bin command."""
+
+
+class ReconnectError(Exception):
+    """Base reconnect cmd exception."""
+
+
+class NoInstancesFound(ReconnectError):
+    """No instances found."""
