@@ -31,7 +31,9 @@ This a tool to create Android Virtual Devices locally/remotely.
  - Create instances:
     1) To create a remote cuttlefish instance with the local built image.
        Example:
-       $ acloud create --local_image /tmp/image_dir
+       $ acloud create --local-image
+       Or specify built image dir:
+       $ acloud create --local-image /tmp/image_dir
     2) To create a local cuttlefish instance using the image which has been
        built out in your workspace.
        Example:
