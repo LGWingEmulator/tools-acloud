@@ -25,10 +25,10 @@ import mock
 # pylint: disable=import-error
 import apiclient.http
 
+from acloud import errors
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
-from acloud.public import errors
 
 GS_IMAGE_SOURCE_URI = "https://storage.googleapis.com/fake-bucket/fake.tar.gz"
 GS_IMAGE_SOURCE_DISK = (
