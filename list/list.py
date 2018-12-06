@@ -21,6 +21,7 @@ from __future__ import print_function
 import getpass
 import logging
 
+from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import gcompute_client
@@ -128,8 +129,8 @@ def GetInstances(cfg):
 def ChooseInstances(cfg, select_all_instances=False):
     """Get instances.
 
-    Get remote and local instances and ask user to choose them to use.
-    (delete or reconnect)
+    Retrieve all remote/local instances and if there is more than 1 instance
+    found, ask user which instance they'd like.
 
     Args:
         cfg: AcloudConfig object.
@@ -147,6 +148,40 @@ def ChooseInstances(cfg, select_all_instances=False):
         return instances_to_delete
 
     return instances_list
+
+
+def GetInstancesFromInstanceNames(cfg, instance_names):
+    """Get instances from instance names.
+
+    Turn a list of instance names into a list of Instance().
+
+    Args:
+        cfg: AcloudConfig object.
+        instance_names: list of instance name.
+
+    Returns:
+        List of Instance() object.
+
+    Raises:
+        errors.NoInstancesFound: No instances found.
+    """
+    instance_list = []
+    full_list_of_instance = GetInstances(cfg)
+    for instance_object in full_list_of_instance:
+        if instance_object.name in instance_names:
+            instance_list.append(instance_object)
+
+    #find the missing instance.
+    missing_instances = []
+    instance_list_names = [instance_object.name for instance_object in instance_list]
+    missing_instances = [
+        instance_name for instance_name in instance_names
+        if instance_name not in instance_list_names
+    ]
+    if missing_instances:
+        raise errors.NoInstancesFound("Did not find the following instances: %s" %
+                                      ' '.join(missing_instances))
+    return instance_list
 
 
 def Run(args):

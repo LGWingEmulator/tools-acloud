@@ -89,12 +89,16 @@ USER_ANSWER_YES = {"y", "yes", "Y"}
 
 # Cuttlefish groups
 LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
+#For the cuttlefish remote instances: adb port is 6520 and vnc is 6444.
+CF_TARGET_ADB_PORT = 6520
+CF_TARGET_VNC_PORT = 6444
 
 DEFAULT_VNC_PORT = 6444
 DEFAULT_ADB_PORT = 6520
 VNC_PORT = "vnc_port"
 ADB_PORT = "adb_port"
 
+COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"
 CMD_STOP_CVD = "stop_cvd"
 ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
