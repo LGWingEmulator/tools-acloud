@@ -41,6 +41,7 @@ python_binary_host {
     libs: [
         "acloud_create",
         "acloud_delete",
+	"acloud_reconnect",
         "acloud_internal",
         "acloud_list",
         "acloud_metrics",
@@ -71,6 +72,7 @@ python_test_host {
     libs: [
         "acloud_create",
         "acloud_delete",
+	"acloud_reconnect",
         "acloud_internal",
         "acloud_list",
         "acloud_proto",
@@ -155,6 +157,14 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "list/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_reconnect",
+    defaults: ["acloud_default"],
+    srcs: [
+         "reconnect/*.py",
     ],
 }
 

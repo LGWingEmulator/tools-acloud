@@ -62,7 +62,7 @@ ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
 _VNC_BIN = "ssvnc"
 _CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
-_CMD_START_VNC = "%(bin)s vnc://127.0.01:%(port)d"
+_CMD_START_VNC = "%(bin)s vnc://127.0.0.1:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
 _SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto"}
@@ -854,13 +854,13 @@ def LaunchVNCFromReport(report, avd_spec):
         avd_spec: AVDSpec object that tells us what we're going to create.
     """
     for device in report.data.get("devices", []):
-        _LaunchVncClient(device.get(constants.VNC_PORT),
-                         avd_width=avd_spec.hw_property["x_res"],
-                         avd_height=avd_spec.hw_property["y_res"])
+        LaunchVncClient(device.get(constants.VNC_PORT),
+                        avd_width=avd_spec.hw_property["x_res"],
+                        avd_height=avd_spec.hw_property["y_res"])
 
 
-def _LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
-                     avd_height=None):
+def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
+                    avd_height=None):
     """Launch ssvnc.
 
     Args:
@@ -980,7 +980,7 @@ def IsCommandRunning(command):
     """
     try:
         with open(os.devnull, "w") as dev_null:
-            subprocess.check_call([_CMD_PGREP, command],
+            subprocess.check_call([_CMD_PGREP, "-f", command],
                                   stderr=dev_null, stdout=dev_null)
         return True
     except subprocess.CalledProcessError:

@@ -35,7 +35,6 @@ from acloud.internal import constants
 
 logger = logging.getLogger(__name__)
 
-_COMMAND_PS = ["ps", "aux"]
 _RE_GROUP_ADB = "local_adb_port"
 _RE_GROUP_VNC = "local_vnc_port"
 _RE_SSH_TUNNEL_PATTERN = (r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
@@ -65,7 +64,7 @@ class Instance(object):
         self._ip = None
         self._adb_port = None  # adb port which is forwarding to remote
         self._vnc_port = None  # vnc port which is forwarding to remote
-        self._is_ssh_tunnel_connected = None  # True if ssh tunnel is still connected
+        self._ssh_tunnel_is_connected = None  # True if ssh tunnel is still connected
         self._createtime = None
         self._avd_type = None
         self._avd_flavor = None
@@ -131,9 +130,9 @@ class Instance(object):
         return self._vnc_port
 
     @property
-    def is_ssh_tunnel_connected(self):
+    def ssh_tunnel_is_connected(self):
         """Return the connect status."""
-        return self._is_ssh_tunnel_connected
+        return self._ssh_tunnel_is_connected
 
     @property
     def createtime(self):
@@ -190,7 +189,7 @@ class LocalInstance(Instance):
                 local_instance._vnc_port = constants.DEFAULT_VNC_PORT
                 local_instance._display = ("%sx%s (%s)" % (x_res, y_res, dpi))
                 local_instance._is_local = True
-                local_instance._is_ssh_tunnel_connected = True
+                local_instance._ssh_tunnel_is_connected = True
                 return local_instance
         return None
 
@@ -239,12 +238,12 @@ class RemoteInstance(Instance):
             self._adb_port = forwarded_ports.adb_port
             self._vnc_port = forwarded_ports.vnc_port
             if self._adb_port:
-                self._is_ssh_tunnel_connected = True
+                self._ssh_tunnel_is_connected = True
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "127.0.0.1:%d" % self._adb_port,
                                    "instance_name": self._name})
             else:
-                self._is_ssh_tunnel_connected = False
+                self._ssh_tunnel_is_connected = False
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "not connected",
                                    "instance_name": self._name})
@@ -271,7 +270,7 @@ class RemoteInstance(Instance):
             NamedTuple ForwardedPorts(vnc_port, adb_port) holding the ports
             used in the ssh forwarded call. Both fields are integers.
         """
-        process_output = subprocess.check_output(_COMMAND_PS)
+        process_output = subprocess.check_output(constants.COMMAND_PS)
         re_pattern = re.compile(_RE_SSH_TUNNEL_PATTERN %
                                 (_RE_GROUP_VNC, constants.DEFAULT_VNC_PORT,
                                  _RE_GROUP_ADB, constants.DEFAULT_ADB_PORT, ip))

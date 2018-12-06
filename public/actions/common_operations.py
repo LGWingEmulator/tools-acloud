@@ -34,10 +34,6 @@ from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
-#For the cuttlefish remote instances: adb port is 6520 and vnc is 6444.
-_CF_TARGET_ADB_PORT = 6520
-_CF_TARGET_VNC_PORT = 6444
-
 def CreateSshKeyPairIfNecessary(cfg):
     """Create ssh key pair if necessary.
 
@@ -296,8 +292,8 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False,
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(ip,
                                                     cfg.ssh_private_key_path,
-                                                    _CF_TARGET_VNC_PORT,
-                                                    _CF_TARGET_ADB_PORT,
+                                                    constants.CF_TARGET_VNC_PORT,
+                                                    constants.CF_TARGET_ADB_PORT,
                                                     getpass.getuser())
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
