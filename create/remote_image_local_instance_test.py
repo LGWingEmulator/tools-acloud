@@ -60,6 +60,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(setup_common, "PackageInstalled", return_value=True)
         self.Patch(self.RemoteImageLocalInstance,
                    "_ConfirmDownloadRemoteImageDir", return_value="/tmp")
+        self.Patch(os.path, "exists", return_value=True)
         self.RemoteImageLocalInstance.GetImageArtifactsPath(avd_spec)
         mock_proc.assert_called_once_with(avd_spec)
 
