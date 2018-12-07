@@ -75,7 +75,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
             errors.NoCuttlefishCommonInstalled: cuttlefish-common doesn't install.
 
         Returns:
-            Tuple of (local image file, launch_cvd package) paths.
+            Tuple of (local image file, host bins package) paths.
         """
         if not setup_common.PackageInstalled("cuttlefish-common"):
             raise errors.NoCuttlefishCommonInstalled(
@@ -86,9 +86,13 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
             avd_spec.image_download_dir)
 
         image_dir = self._DownloadAndProcessImageFiles(avd_spec)
-        launch_cvd_path = os.path.join(image_dir, "bin", constants.CMD_LAUNCH_CVD)
-
-        return image_dir, launch_cvd_path
+        launch_cvd_path = os.path.join(image_dir, "bin",
+                                       constants.CMD_LAUNCH_CVD)
+        if not os.path.exists(launch_cvd_path):
+            raise errors.GetCvdLocalHostPackageError(
+                "No launch_cvd found. Please check downloaded artifacts dir: %s"
+                % image_dir)
+        return image_dir, image_dir
 
     @utils.TimeExecute(function_description="Downloading Android Build image")
     def _DownloadAndProcessImageFiles(self, avd_spec):

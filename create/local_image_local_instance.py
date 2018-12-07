@@ -58,21 +58,24 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             avd_spec: AVDSpec object that tells us what we're going to create.
         """
         self.PrintDisclaimer()
-        local_image_path, launch_cvd_path = self.GetImageArtifactsPath(avd_spec)
+        local_image_path, host_bins_path = self.GetImageArtifactsPath(avd_spec)
 
+        launch_cvd_path = os.path.join(host_bins_path, "bin",
+                                       constants.CMD_LAUNCH_CVD)
         cmd = self.PrepareLaunchCVDCmd(launch_cvd_path,
                                        avd_spec.hw_property,
                                        local_image_path)
         try:
-            self.CheckLaunchCVD(cmd, os.path.dirname(launch_cvd_path))
+            self.CheckLaunchCVD(cmd, host_bins_path)
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
         result_report = report.Report(constants.LOCAL_INS_NAME)
         result_report.SetStatus(report.Status.SUCCESS)
-        result_report.AddData(key="devices",
-                              value={"adb_port": constants.DEFAULT_ADB_PORT,
-                                     constants.VNC_PORT: constants.DEFAULT_VNC_PORT})
+        result_report.AddData(
+            key="devices",
+            value={"adb_port": constants.DEFAULT_ADB_PORT,
+                   constants.VNC_PORT: constants.DEFAULT_VNC_PORT})
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(result_report, avd_spec)
@@ -91,7 +94,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             avd_spec: AVDSpec object that tells us what we're going to create.
 
         Returns:
-            Tuple of (local image file, launch_cvd package) paths.
+            Tuple of (local image file, host bins package) paths.
         """
         try:
             # Check if local image is exist.
@@ -105,13 +108,14 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             raise imgerror
 
         # Check if launch_cvd is exist.
-        launch_cvd_path = os.path.join(
-            os.environ.get(_ENV_ANDROID_HOST_OUT), "bin", constants.CMD_LAUNCH_CVD)
+        host_bins_path = os.environ.get(_ENV_ANDROID_HOST_OUT)
+        launch_cvd_path = os.path.join(host_bins_path, "bin",
+                                       constants.CMD_LAUNCH_CVD)
         if not os.path.exists(launch_cvd_path):
             raise errors.GetCvdLocalHostPackageError(
                 "No launch_cvd found. Please run \"m launch_cvd\" first")
 
-        return avd_spec.local_image_dir, launch_cvd_path
+        return avd_spec.local_image_dir, host_bins_path
 
     @staticmethod
     def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, system_image_dir):
@@ -140,18 +144,23 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
     @staticmethod
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
-    def CheckLaunchCVD(cmd, host_pack_dir):
+    def CheckLaunchCVD(cmd, host_bins_path):
         """Execute launch_cvd command and wait for boot up completed.
 
         Args:
             cmd: String, launch_cvd command.
-            host_pack_dir: String of host package directory.
+            host_bins_path: String of host package directory.
         """
+        # launch_cvd assumes host bins are in $ANDROID_HOST_OUT, let's overwrite
+        # it to wherever we're running launch_cvd since they could be in a
+        # different dir (e.g. downloaded image).
+        os.environ[_ENV_ANDROID_HOST_OUT] = host_bins_path
         # Cuttlefish support launch single AVD at one time currently.
         if utils.IsCommandRunning(constants.CMD_LAUNCH_CVD):
             logger.info("Cuttlefish AVD is already running.")
             if utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
-                stop_cvd_cmd = os.path.join(host_pack_dir,
+                stop_cvd_cmd = os.path.join(host_bins_path,
+                                            "bin",
                                             constants.CMD_STOP_CVD)
                 with open(os.devnull, "w") as dev_null:
                     subprocess.check_call(
