@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import getpass
 import logging
-import platform
 
 from acloud.internal import constants
 from acloud.internal.lib import utils
@@ -40,31 +39,8 @@ _AVD_REQUIRED_PKGS = ["cuttlefish-common", "ssvnc",
                       # cuttlefish-common.
                       "qemu-kvm", "qemu-system-common", "qemu-system-x86",
                       "qemu-utils", "libvirt-clients", "libvirt-daemon-system"]
-# dict of supported system and their distributions.
-_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
-
-
-def _IsSupportedPlatform():
-    """Check if user's os is the supported platform.
-
-    Returns:
-        Boolean, True if user is using supported platform.
-    """
-    system = platform.system()
-    dist = platform.linux_distribution()[0]
-    platform_supported = (system in _SUPPORTED_SYSTEMS_AND_DISTS and
-                          dist in _SUPPORTED_SYSTEMS_AND_DISTS[system])
-
-    logger.info("supported system and dists: %s",
-                _SUPPORTED_SYSTEMS_AND_DISTS)
-    logger.info("%s[%s] %s supported platform",
-                system,
-                dist,
-                "is a" if platform_supported else "is not a")
-
-    return platform_supported
 
 
 class AvdPkgInstaller(base_task_runner.BaseTaskRunner):
@@ -81,7 +57,7 @@ class AvdPkgInstaller(base_task_runner.BaseTaskRunner):
         Returns:
             Boolean, True if required packages are not installed.
         """
-        if not _IsSupportedPlatform():
+        if not utils.IsSupportedPlatform():
             return False
 
         # Any required package is not installed or not up-to-date will need to
@@ -122,7 +98,7 @@ class CuttlefishHostSetup(base_task_runner.BaseTaskRunner):
              Boolean: False if user is in all required groups and all modules
                       are reloaded.
          """
-        if not _IsSupportedPlatform():
+        if not utils.IsSupportedPlatform():
             return False
 
         return not (utils.CheckUserInGroups(constants.LIST_CF_USER_GROUPS)
