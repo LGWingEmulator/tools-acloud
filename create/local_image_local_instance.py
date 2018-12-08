@@ -57,6 +57,12 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
         """
+        # Running instances on local is not supported on all OS.
+        if not utils.IsSupportedPlatform(print_warning=True):
+            result_report = report.Report(constants.LOCAL_INS_NAME)
+            result_report.SetStatus(report.Status.FAIL)
+            return result_report
+
         self.PrintDisclaimer()
         local_image_path, host_bins_path = self.GetImageArtifactsPath(avd_spec)
 

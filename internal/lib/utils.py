@@ -24,6 +24,7 @@ import getpass
 import grp
 import logging
 import os
+import platform
 import shutil
 import struct
 import socket
@@ -74,6 +75,8 @@ _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "anything else to abort it:[y] ") % _CMD_INSTALL_SSVNC
 _EvaluatedResult = collections.namedtuple("EvaluatedResult",
                                           ["is_result_ok", "result_message"])
+# dict of supported system and their distributions.
+_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 
 class TempDir(object):
     """A context manager that ceates a temporary directory.
@@ -1044,3 +1047,31 @@ def CheckUserInGroups(group_name_list):
             all_groups_present = False
             logger.info("missing group: %s", group)
     return all_groups_present
+
+
+def IsSupportedPlatform(print_warning=False):
+    """Check if user's os is the supported platform.
+
+    Args:
+        print_warning: Boolean, print the unsupported warning
+                       if True.
+    Returns:
+        Boolean, True if user is using supported platform.
+    """
+    system = platform.system()
+    dist = platform.linux_distribution()[0]
+    platform_supported = (system in _SUPPORTED_SYSTEMS_AND_DISTS and
+                          dist in _SUPPORTED_SYSTEMS_AND_DISTS[system])
+
+    logger.info("supported system and dists: %s",
+                _SUPPORTED_SYSTEMS_AND_DISTS)
+    platform_supported_msg = ("%s[%s] %s supported platform" %
+                              (system,
+                               dist,
+                               "is a" if platform_supported else "is not a"))
+    if print_warning and not platform_supported:
+        PrintColorString(platform_supported_msg, TextColors.WARNING)
+    else:
+        logger.info(platform_supported_msg)
+
+    return platform_supported
