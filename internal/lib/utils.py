@@ -822,14 +822,17 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
     """
     print("[0] to exit.")
     start_index = 1
+    max_choice = len(answer_list)
+
     if enable_choose_all:
         start_index = 2
+        max_choice += 1
         print("[1] for all.")
     for num, item in enumerate(answer_list, start_index):
         print("[%d] %s" % (num, item))
 
     choice = -1
-    max_choice = len(answer_list) + 1
+
     while True:
         try:
             choice = raw_input("Enter your choice[0-%d]: " % max_choice)
