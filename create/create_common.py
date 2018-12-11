@@ -63,14 +63,15 @@ def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
 
 
 def VerifyLocalImageArtifactsExist(local_image_dir):
-    """Verify the specifies local image dir.
+    """Verify local image artifacts exists.
 
-    Look for the image in the local_image_dir, the image name follows the pattern:
+    Look for the image in the local_image_dir and dist dir as backup.
 
+    The image name follows the pattern:
     Remote image: {target product}-img-{build id}.zip,
-                  an example would be aosp_cf_x86_phone-img-5046769.zip
+                  e.g. aosp_cf_x86_phone-img-5046769.zip
     Local built image: {target product}-img-{username}.zip,
-                       an example would be aosp_cf_x86_64_phone-img-eng.{username}.zip
+                       e.g. aosp_cf_x86_64_phone-img-eng.droid.zip
 
     Args:
         local_image_dir: A string to specifies local image dir.
@@ -81,11 +82,19 @@ def VerifyLocalImageArtifactsExist(local_image_dir):
     Raises:
         errors.GetLocalImageError: Can't find local image.
     """
-    image_pattern = os.path.join(local_image_dir, "*img*.zip")
-    images = glob.glob(image_pattern)
+    dirs_to_check = [local_image_dir]
+    dist_dir = utils.GetDistDir()
+    if dist_dir:
+        dirs_to_check.append(dist_dir)
+    for img_dir in dirs_to_check:
+        image_pattern = os.path.join(img_dir, "*img*.zip")
+        images = glob.glob(image_pattern)
+        if images:
+            break
     if not images:
-        raise errors.GetLocalImageError("No images matching pattern (%s) in %s" %
-                                        (image_pattern, local_image_dir))
+        raise errors.GetLocalImageError("No images found in %s\n"
+                                        "(Try building with 'm dist')" %
+                                        [local_image_dir, dist_dir])
     if len(images) > 1:
         print("Multiple images found, please choose 1.")
         image_path = utils.GetAnswerFromList(images)[0]

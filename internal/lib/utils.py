@@ -48,6 +48,7 @@ SSH_ARGS = ["-o", "UserKnownHostsFile=/dev/null",
             "-o", "StrictHostKeyChecking=no"]
 SSH_CMD = ["ssh"] + SSH_ARGS
 SCP_CMD = ["scp"] + SSH_ARGS
+GET_BUILD_VAR_CMD = ["build/soong/soong_ui.bash", "--dumpvar-mode"]
 DEFAULT_RETRY_BACKOFF_FACTOR = 1
 DEFAULT_SLEEP_MULTIPLIER = 0
 
@@ -68,6 +69,7 @@ _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
 _SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto"}
 _DEFAULT_DISPLAY_SCALE = 1.0
+_DIST_DIR = "DIST_DIR"
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssnvc). \nWould you like acloud to "
@@ -1078,3 +1080,17 @@ def IsSupportedPlatform(print_warning=False):
         logger.info(platform_supported_msg)
 
     return platform_supported
+
+
+def GetDistDir():
+    """Return the absolute path to the dist dir."""
+    android_build_top = os.environ.get(constants.ENV_ANDROID_BUILD_TOP)
+    if not android_build_top:
+        return None
+    dist_cmd = GET_BUILD_VAR_CMD[:]
+    dist_cmd.append(_DIST_DIR)
+    try:
+        dist_dir = subprocess.check_output(dist_cmd, cwd=android_build_top)
+    except subprocess.CalledProcessError:
+        return None
+    return os.path.join(android_build_top, dist_dir.strip())
