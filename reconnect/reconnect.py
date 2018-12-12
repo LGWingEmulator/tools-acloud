@@ -26,6 +26,7 @@ import re
 import subprocess
 
 from acloud import errors as root_errors
+from acloud.delete import delete
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.list import list as list_instance
@@ -35,9 +36,7 @@ _ADB_CONNECT = "connect"
 _ADB_DEVICE = "devices"
 _ADB_DISCONNECT = "disconnect"
 _ADB_STATUS_DEVICE = "device"
-_COMMAND_KILLVNC = ["pkill", "-9", "-f"]
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
-_SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
 
 
@@ -152,17 +151,6 @@ class AdbTools(object):
                                    utils.TextColors.FAIL)
 
 
-def CleanupSSVncviewer(ssvnc_viewer_pattern):
-    """Cleanup the old disconnected ssvnc viewer.
-
-    Args:
-        ssvnc_viewer_pattern: String, ssvnc viewer pattern.
-    """
-    if utils.IsCommandRunning(ssvnc_viewer_pattern):
-        command_kill_vnc = _COMMAND_KILLVNC + [ssvnc_viewer_pattern]
-        subprocess.check_call(command_kill_vnc)
-
-
 def StartVnc(vnc_port, display):
     """Start vnc connect to AVD.
 
@@ -177,8 +165,7 @@ def StartVnc(vnc_port, display):
     vnc_started_pattern = _VNC_STARTED_PATTERN % {"vnc_port": vnc_port}
     if not utils.IsCommandRunning(vnc_started_pattern):
         #clean old disconnect ssvnc viewer.
-        ssvnc_viewer_pattern = _SSVNC_VIEWER_PATTERN % {"vnc_port": vnc_port}
-        CleanupSSVncviewer(ssvnc_viewer_pattern)
+        delete.CleanupSSVncviewer(vnc_port)
 
         match = _RE_DISPLAY.match(display)
         if match:

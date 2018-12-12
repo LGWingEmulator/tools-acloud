@@ -112,21 +112,6 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.StartVnc(vnc_port, display)
         utils.LaunchVncClient.assert_called_with(5555, "888", "777")
 
-    # pylint: disable=protected-access, no-member
-    def testCleanupSSVncviwer(self):
-        """test cleanup ssvnc viewer."""
-        fake_vnc_port = 9999
-        fake_ss_vncviewer_pattern = reconnect._SSVNC_VIEWER_PATTERN % {
-            "vnc_port": fake_vnc_port}
-        self.Patch(utils, "IsCommandRunning", return_value=True)
-        self.Patch(subprocess, "check_call", return_value=True)
-        reconnect.CleanupSSVncviewer(fake_ss_vncviewer_pattern)
-        subprocess.check_call.assert_called_with(['pkill', '-9', '-f', fake_ss_vncviewer_pattern])
-
-        subprocess.check_call.call_count = 0
-        self.Patch(utils, "IsCommandRunning", return_value=False)
-        subprocess.check_call.assert_not_called()
-
 
 class AdbToolsTest(driver_test_lib.BaseDriverTest):
     """Test adb functions."""
