@@ -14,15 +14,18 @@
 """Tests for delete."""
 
 import unittest
+import subprocess
 import mock
 
 from acloud.delete import delete
-
+from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import utils
 
 # pylint: disable=invalid-name,protected-access,unused-argument,no-member
-class DeleteTest(unittest.TestCase):
+class DeleteTest(driver_test_lib.BaseDriverTest):
     """Test delete functions."""
 
+    # pylint: disable=protected-access
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output")
     def testGetStopcvd(self, mock_subprocess, mock_path_exist):
@@ -48,6 +51,21 @@ class DeleteTest(unittest.TestCase):
         })
         self.assertEquals(delete_report.command, "delete")
         self.assertEquals(delete_report.status, "SUCCESS")
+
+    # pylint: disable=protected-access, no-member
+    def testCleanupSSVncviwer(self):
+        """test cleanup ssvnc viewer."""
+        fake_vnc_port = 9999
+        fake_ss_vncviewer_pattern = delete._SSVNC_VIEWER_PATTERN % {
+            "vnc_port": fake_vnc_port}
+        self.Patch(utils, "IsCommandRunning", return_value=True)
+        self.Patch(subprocess, "check_call", return_value=True)
+        delete.CleanupSSVncviewer(fake_vnc_port)
+        subprocess.check_call.assert_called_with(["pkill", "-9", "-f", fake_ss_vncviewer_pattern])
+
+        subprocess.check_call.call_count = 0
+        self.Patch(utils, "IsCommandRunning", return_value=False)
+        subprocess.check_call.assert_not_called()
 
 
 if __name__ == "__main__":
