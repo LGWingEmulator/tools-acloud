@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 _COMMAND_GET_PROCESS_ID = ["pgrep", "launch_cvd"]
 _COMMAND_GET_PROCESS_COMMAND = ["ps", "-o", "command", "-p"]
 _RE_LAUNCH_CVD = re.compile(r"^(?P<launch_cvd>.+launch_cvd)(.*--daemon ).+")
+_SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 
 
 def _GetStopCvd():
@@ -72,6 +73,16 @@ def _GetStopCvd():
     raise errors.NoExecuteCmd("Cannot find stop_cvd binary.")
 
 
+def CleanupSSVncviewer(vnc_port):
+    """Cleanup the old disconnected ssvnc viewer.
+
+    Args:
+        vnc_port: Integer, port number of vnc.
+    """
+    ssvnc_viewer_pattern = _SSVNC_VIEWER_PATTERN % {"vnc_port":vnc_port}
+    utils.CleanupProcess(ssvnc_viewer_pattern)
+
+
 def DeleteInstances(cfg, instances_to_delete):
     """Delete instances according to instances_to_delete.
 
@@ -82,11 +93,6 @@ def DeleteInstances(cfg, instances_to_delete):
     Returns:
         Report instance if there are instances to delete, None otherwise.
     """
-    # TODO(b/117474343): We should do a couple extra things here:
-    #                    - adb disconnect
-    #                    - kill ssh tunnel and ssvnc
-    #                    - give details of each instance
-    #                    - Give better messaging about delete.
     if not instances_to_delete:
         print("No instances to delete")
         return None
@@ -98,6 +104,9 @@ def DeleteInstances(cfg, instances_to_delete):
             delete_report = DeleteLocalInstance()
         else:
             remote_instance_list.append(instance.name)
+        # Delete ssvnc viewer
+        if instance.forwarding_vnc_port:
+            CleanupSSVncviewer(instance.forwarding_vnc_port)
 
     if remote_instance_list:
         # TODO(119283708): We should move DeleteAndroidVirtualDevices into
