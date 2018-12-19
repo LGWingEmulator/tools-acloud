@@ -62,6 +62,7 @@ _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
                                                            constants.ADB_PORT])
 _VNC_BIN = "ssvnc"
+_CMD_KILL = ["pkill", "-9", "-f"]
 _CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
 _CMD_START_VNC = "%(bin)s vnc://127.0.0.1:%(port)d"
@@ -1094,3 +1095,14 @@ def GetDistDir():
     except subprocess.CalledProcessError:
         return None
     return os.path.join(android_build_top, dist_dir.strip())
+
+
+def CleanupProcess(pattern):
+    """Cleanup process with pattern.
+
+    Args:
+        pattern: String, string of process pattern.
+    """
+    if IsCommandRunning(pattern):
+        command_kill = _CMD_KILL + [pattern]
+        subprocess.check_call(command_kill)
