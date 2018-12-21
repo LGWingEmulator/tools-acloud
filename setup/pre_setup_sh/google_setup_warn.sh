@@ -1,7 +1,10 @@
 #!/bin/bash
 
 ACLOUD_PREBUILT_PROJECT_DIR=$ANDROID_BUILD_TOP/prebuilts/asuite
-ACLOUD_CONFIG_FOLDER=$ANDROID_BUILD_TOP/vendor/google/tools/acloud
+ACLOUD_VENDOR_FOLDER=$ANDROID_BUILD_TOP/vendor/google/tools/acloud
+ACLOUD_PRESETUP_FOLDER=$ANDROID_BUILD_TOP/tools/acloud/setup/pre_setup_sh
+GOOGLE_CONFIG=$ACLOUD_PRESETUP_FOLDER/google-acloud.config
+GOOGLE_SETUP=$ACLOUD_PRESETUP_FOLDER/google_acloud_setup.sh
 GREEN='\033[0;32m'
 NC='\033[0m'
 RED='\033[0;31m'
@@ -20,7 +23,8 @@ popd &> /dev/null
 
 # Display disclaimer to googlers if it doesn't look like their env will enable
 # streamlined setup.
-if [[ $USER == *@google.com ]] && [ ! -d $ACLOUD_CONFIG_FOLDER ]; then
+if [[ $USER == *@google.com ]] && [ ! -d $ACLOUD_VENDOR_FOLDER ] &&
+    [ ! -f $GOOGLE_CONFIG ] && [ ! -f $GOOGLE_SETUP ]; then
     echo "It looks like you're a googler running acloud for the first time."
     echo -e "Take a look at ${GREEN}go/acloud-googler-setup${NC} before continuing"
     echo "to enable a streamlined setup experience."
