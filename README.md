@@ -60,7 +60,7 @@ for cuttlefish phone target in the branch of your repo)
 
 > $ acloud create
 
-* Remote instance using a locally built image
+* Remote instance using a locally built image (use `m dist` to build the image)
 
 > $ acloud create --local-image [local-image-path]
 
@@ -69,7 +69,7 @@ target in the branch of your repo)
 
 > $ acloud create --local-instance
 
-* Local instance using a locally built image
+* Local instance using a locally built image (use `m dist` to build the image)
 
 > $ acloud create --local-instance --local-image
 
