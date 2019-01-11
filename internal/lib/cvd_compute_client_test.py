@@ -20,6 +20,7 @@ import unittest
 import mock
 
 from acloud.create import avd_spec
+from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import driver_test_lib
@@ -72,6 +73,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client = cvd_compute_client.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 
+    @mock.patch.object(create_common, "VerifyLocalImageArtifactsExist")
     @mock.patch.object(gcompute_client.ComputeClient, "CompareMachineSize",
                        return_value=1)
     @mock.patch.object(gcompute_client.ComputeClient, "GetImage",
@@ -81,7 +83,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
                        return_value=[{"fake_arg": "fake_value"}])
     @mock.patch("getpass.getuser", return_value="fake_user")
     def testCreateInstance(self, _get_user, _get_disk_args, mock_create,
-                           _get_image, _compare_machine_size):
+                           _get_image, _compare_machine_size, mock_img_path):
         """Test CreateInstance."""
         expected_metadata = {
             "cvd_01_dpi": str(self.DPI),
@@ -120,6 +122,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
 
         #test use local image in the remote instance.
         args = mock.MagicMock()
+        mock_img_path.return_value = "cf_x86_phone-img-eng.user.zip"
         args.local_image = "/tmp/path"
         args.config_file = ""
         args.avd_type = "cf"
