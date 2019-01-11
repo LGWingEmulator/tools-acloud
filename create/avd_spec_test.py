@@ -87,21 +87,21 @@ class AvdSpecTest(unittest.TestCase):
     def testGetBuildTarget(self):
         """Test get build target name."""
         self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "aosp-master"
-        self.args.flavor = constants.FLAVOR_IOT
+        self.AvdSpec._flavor = constants.FLAVOR_IOT
         self.args.avd_type = constants.TYPE_GCE
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
             "aosp_gce_x86_iot-userdebug")
 
         self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "aosp-master"
-        self.args.flavor = constants.FLAVOR_PHONE
+        self.AvdSpec._flavor = constants.FLAVOR_PHONE
         self.args.avd_type = constants.TYPE_CF
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
             "aosp_cf_x86_phone-userdebug")
 
         self.AvdSpec._remote_image[avd_spec._BUILD_BRANCH] = "git_branch"
-        self.args.flavor = constants.FLAVOR_PHONE
+        self.AvdSpec._flavor = constants.FLAVOR_PHONE
         self.args.avd_type = constants.TYPE_CF
         self.assertEqual(
             self.AvdSpec._GetBuildTarget(self.args),
