@@ -21,9 +21,8 @@ import logging
 
 import apiclient
 
-from acloud import errors as root_errors
+from acloud import errors
 from acloud.internal.lib import base_cloud_client
-from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +172,7 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
         build = self.Execute(api)
         if build:
             return str(build.get("builds")[0].get("buildId"))
-        raise root_errors.GetBuildIDError(
+        raise errors.GetBuildIDError(
             "No available good builds for branch: %s target: %s"
             % (build_branch, build_target)
         )

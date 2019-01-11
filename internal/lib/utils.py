@@ -36,9 +36,8 @@ import time
 import uuid
 import zipfile
 
-from acloud import errors as root_errors
+from acloud import errors
 from acloud.internal import constants
-from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 
@@ -454,7 +453,7 @@ def Decompress(sourcefile, dest=None):
         with zipfile.ZipFile(sourcefile, 'r') as compressor:
             compressor.extractall(dest_path)
     else:
-        raise root_errors.UnsupportedCompressionFileType(
+        raise errors.UnsupportedCompressionFileType(
             "Sorry, we could only support compression file type "
             "for zip or tar.gz.")
 
@@ -764,7 +763,7 @@ def _ExecuteCommand(cmd, args):
     """
     bin_path = find_executable(cmd)
     if not bin_path:
-        raise root_errors.NoExecuteCmd("unable to locate %s" % cmd)
+        raise errors.NoExecuteCmd("unable to locate %s" % cmd)
     command = [bin_path] + args
     logger.debug("Running '%s'", ' '.join(command))
     with open(os.devnull, "w") as dev_null:
