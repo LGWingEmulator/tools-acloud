@@ -60,14 +60,16 @@ def AddCommonCreateArgs(parser):
         action="store_true",
         dest="autoconnect",
         required=False,
-        help="For each instance created, we will automatically creates both 2 "
+        help="For each instance created, we will automatically create both 2 "
              "ssh tunnels forwarding both adb & vnc. Then add the device to "
              "adb.")
     parser.add_argument(
         "--no-autoconnect",
         action="store_false",
         dest="autoconnect",
-        required=False)
+        required=False,
+        help="Will not automatically create ssh tunnels forwarding adb & vnc "
+             "when instance created.")
     parser.set_defaults(autoconnect=True)
     parser.add_argument(
         "--report-internal-ip",
