@@ -23,9 +23,9 @@ import mock
 
 import apiclient
 
+from acloud import errors
 from acloud.internal.lib import base_cloud_client
 from acloud.internal.lib import driver_test_lib
-from acloud.public import errors
 
 
 class FakeError(Exception):

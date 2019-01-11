@@ -59,6 +59,7 @@ OAUTH2_LOGGER.setLevel(logging.CRITICAL)
 OAUTH2_LOGGER.addHandler(logging.FileHandler("/dev/null"))
 
 # pylint: disable=wrong-import-position
+from acloud import errors
 from acloud.create import create
 from acloud.create import create_args
 from acloud.delete import delete
@@ -72,7 +73,6 @@ from acloud.metrics import metrics
 from acloud.public import acloud_common
 from acloud.public import config
 from acloud.public import device_driver
-from acloud.public import errors
 from acloud.public.actions import create_cuttlefish_action
 from acloud.public.actions import create_goldfish_action
 from acloud.setup import setup

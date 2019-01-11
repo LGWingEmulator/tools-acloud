@@ -17,10 +17,10 @@
 import unittest
 import mock
 
+from acloud import errors
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
-from acloud.public import errors
 
 
 class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):

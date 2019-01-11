@@ -19,7 +19,7 @@ This class manages swapping kernel images for a Cloud Android instance.
 """
 import subprocess
 
-from acloud.public import errors
+from acloud import errors
 from acloud.public import report
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth

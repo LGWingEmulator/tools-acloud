@@ -21,7 +21,7 @@ emulator.
 import logging
 import os
 
-from acloud.public import errors
+from acloud import errors
 from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
 from acloud.internal.lib import android_build_client
