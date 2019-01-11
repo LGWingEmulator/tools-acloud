@@ -28,6 +28,7 @@ import mock
 
 from acloud import errors
 from acloud.create import avd_spec
+from acloud.create import create_common
 from acloud.create import local_image_remote_instance
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
@@ -51,16 +52,11 @@ class LocalImageRemoteInstanceTest(unittest.TestCase):
                 self.local_image_remote_instance.VerifyHostPackageArtifactsExist,
                 "/fake_dirs")
 
-    @mock.patch("glob.glob")
-    def testVerifyArtifactsExist(self, mock_glob):
+    def testVerifyArtifactsExist(self):
         """test verify artifacts exist."""
-        mock_glob.return_value = ["/fake_dirs/image1.zip"]
         with mock.patch("os.path.exists") as exists:
             exists.return_value = True
             self.local_image_remote_instance.VerifyArtifactsExist("/fake_dirs")
-            self.assertEqual(
-                self.local_image_remote_instance.local_image_artifact,
-                "/fake_dirs/image1.zip")
             self.assertEqual(
                 self.local_image_remote_instance.cvd_host_package_artifact,
                 "/fake_dirs/cvd-host_package.tar.gz")
@@ -92,7 +88,8 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(factory._ShellCmdWithRetry("fake cmd"), True)
 
     # pylint: disable=protected-access
-    def testCreateGceInstanceName(self):
+    @mock.patch.object(create_common, "VerifyLocalImageArtifactsExist")
+    def testCreateGceInstanceName(self, mock_image):
         """test create gce instance."""
         # Mock uuid
         args = mock.MagicMock()
@@ -100,6 +97,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         args.config_file = ""
         args.avd_type = "cf"
         args.flavor = "phone"
+        mock_image.return_value = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
         fake_avd_spec = avd_spec.AVDSpec(args)
 
         fake_uuid = mock.MagicMock(hex="1234")

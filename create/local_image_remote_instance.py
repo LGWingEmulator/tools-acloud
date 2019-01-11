@@ -26,7 +26,6 @@ import os
 import subprocess
 
 from acloud import errors
-from acloud.create import create_common
 from acloud.create import base_avd_create
 from acloud.internal import constants
 from acloud.internal.lib import auth
@@ -221,7 +220,6 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
 
     def __init__(self):
         """LocalImageRemoteInstance initialize."""
-        self.local_image_artifact = None
         self.cvd_host_package_artifact = None
 
     def VerifyArtifactsExist(self, local_image_dir):
@@ -230,8 +228,6 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Arsg:
             local_image_dir: A string, path to check the artifacts.
         """
-        self.local_image_artifact = create_common.VerifyLocalImageArtifactsExist(
-            local_image_dir)
         self.cvd_host_package_artifact = self.VerifyHostPackageArtifactsExist(
             local_image_dir)
 
@@ -288,7 +284,7 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         self.VerifyArtifactsExist(avd_spec.local_image_dir)
         device_factory = RemoteInstanceDeviceFactory(
             avd_spec,
-            self.local_image_artifact,
+            avd_spec.local_image_artifact,
             self.cvd_host_package_artifact)
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, avd_spec.num,

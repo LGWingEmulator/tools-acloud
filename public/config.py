@@ -50,6 +50,7 @@ from google.protobuf import text_format
 
 # pylint: disable=no-name-in-module,import-error
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.create import create_args
@@ -214,11 +215,23 @@ class AcloudConfig(object):
         if parsed_args.which == "create_gf" and parsed_args.base_image:
             self.stable_goldfish_host_image_name = parsed_args.base_image
         if parsed_args.which == create_args.CMD_CREATE and not self.hw_property:
-            self.hw_property = self.common_hw_property_map.get(
-                parsed_args.flavor, "")
+            flavor = parsed_args.flavor or constants.FLAVOR_PHONE
+            self.hw_property = self.common_hw_property_map.get(flavor, "")
         if parsed_args.which in [create_args.CMD_CREATE, "create_cf"]:
             if parsed_args.network:
                 self.network = parsed_args.network
+
+    def OverrideHwPropertyWithFlavor(self, flavor):
+        """Override hw configuration values with flavor name.
+
+        HwProperty will be overrided according to the change of flavor.
+        If flavor is None, set hw configuration with phone(default flavor).
+
+        Args:
+            flavor: string of flavor name.
+        """
+        self.hw_property = self.common_hw_property_map.get(
+            flavor, constants.FLAVOR_PHONE)
 
     def Verify(self):
         """Verify configuration fields."""
