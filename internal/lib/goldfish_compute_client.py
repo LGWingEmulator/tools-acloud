@@ -42,9 +42,9 @@ TODO: This class should likely be merged with CvdComputeClient
 import getpass
 import logging
 
+from acloud import errors
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
-from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 

@@ -49,10 +49,10 @@ import os
 from google.protobuf import text_format
 
 # pylint: disable=no-name-in-module,import-error
+from acloud import errors
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.create import create_args
-from acloud.public import errors
 
 _CONFIG_DATA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data")

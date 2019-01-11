@@ -29,8 +29,8 @@ import apiclient.http
 import httplib2
 from oauth2client import client
 
+from acloud import errors
 from acloud.internal.lib import utils
-from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 

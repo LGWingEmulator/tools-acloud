@@ -36,8 +36,8 @@ import sys
 import tempfile
 import urllib2
 
+from acloud import errors
 from acloud.internal.lib import utils
-from acloud.public import errors
 
 SDK_BIN_PATH = os.path.join("google-cloud-sdk", "bin")
 GCLOUD_BIN = "gcloud"

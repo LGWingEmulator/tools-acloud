@@ -24,9 +24,9 @@ import mock
 
 import apiclient
 
+from acloud import errors
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import driver_test_lib
-from acloud.public import errors
 
 # pylint: disable=protected-access
 class AndroidBuildClientTest(driver_test_lib.BaseDriverTest):

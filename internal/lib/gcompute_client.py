@@ -32,9 +32,9 @@ import functools
 import logging
 import os
 
+from acloud import errors
 from acloud.internal.lib import base_cloud_client
 from acloud.internal.lib import utils
-from acloud.public import errors
 
 logger = logging.getLogger(__name__)
 
