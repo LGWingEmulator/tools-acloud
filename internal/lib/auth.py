@@ -47,7 +47,7 @@ from oauth2client import service_account as oauth2_service_account
 from oauth2client.contrib import multistore_file
 from oauth2client import tools as oauth2_tools
 
-from acloud.public import errors
+from acloud import errors
 
 logger = logging.getLogger(__name__)
 HOME_FOLDER = os.path.expanduser("~")

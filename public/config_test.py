@@ -21,10 +21,10 @@ import tempfile
 import mock
 
 # pylint: disable=no-name-in-module,import-error
+from acloud import errors
 from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.public import config
-from acloud.public import errors
 
 
 class AcloudConfigManagerTest(unittest.TestCase):

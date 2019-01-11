@@ -27,9 +27,9 @@ import time
 import unittest
 import mock
 
+from acloud import errors
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
-from acloud.public import errors
 
 # Tkinter may not be supported so mock it out.
 try:

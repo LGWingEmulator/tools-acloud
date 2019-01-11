@@ -8,9 +8,9 @@ import mock
 
 import apiclient
 
+from acloud import errors
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gstorage_client
-from acloud.public import errors
 
 
 # pylint: disable=protected-access, no-member
