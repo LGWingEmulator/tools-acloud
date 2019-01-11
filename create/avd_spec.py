@@ -383,7 +383,7 @@ class AVDSpec(object):
         return "%s%s_%s_%s-%s" % (
             _BRANCH_TARGET_PREFIX.get(branch, ""),
             constants.AVD_TYPES_MAPPING[args.avd_type],
-            _DEFAULT_BUILD_BITNESS, args.flavor,
+            _DEFAULT_BUILD_BITNESS, self._flavor,
             _DEFAULT_BUILD_TYPE)
 
     @property
