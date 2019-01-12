@@ -1,8 +1,10 @@
 #!/bin/bash
 
+source "$ANDROID_BUILD_TOP/tools/acloud/setup/pre_setup_sh/setup_utils.sh"
+
 # Run any scripts in this dir and in any extra specified locations.
 SCRIPT_LOCATIONS=(
-  $(dirname $(realpath $0))
+  $(dirname $(get_real_path $0))
   "$ANDROID_BUILD_TOP/vendor/google/tools/acloud"
 )
 
