@@ -651,19 +651,40 @@ def DefaultEvaluator(result):
 
     Args:
         result:the return value of the target function.
+
+    Returns:
+        _EvaluatedResults namedtuple.
     """
     return _EvaluatedResult(is_result_ok=True, result_message=result)
 
 
 def ReportEvaluator(report):
-    """Evalute the the acloud operation by the report.
+    """Evalute the acloud operation by the report.
 
     Args:
-        report:acloud.public.report() object.
+        report: acloud.public.report() object.
+
+    Returns:
+        _EvaluatedResults namedtuple.
     """
     if report is None or report.errors:
-        return _EvaluatedResult(is_result_ok=False, result_message=report.errors)
+        return _EvaluatedResult(is_result_ok=False,
+                                result_message=report.errors)
 
+    return _EvaluatedResult(is_result_ok=True, result_message=None)
+
+
+def BootEvaluator(boot_dict):
+    """Evaluate if the device booted successfully.
+
+    Args:
+        boot_dict: Dict of instance_name:boot error.
+
+    Returns:
+        _EvaluatedResults namedtuple.
+    """
+    if boot_dict:
+        return _EvaluatedResult(is_result_ok=False, result_message=boot_dict)
     return _EvaluatedResult(is_result_ok=True, result_message=None)
 
 

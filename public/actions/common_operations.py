@@ -131,7 +131,8 @@ class DevicePool(object):
             self.devices.append(
                 avd.AndroidVirtualDevice(ip=ip, instance_name=instance))
 
-    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
+    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up",
+                       result_evaluator=utils.BootEvaluator)
     def WaitForBoot(self):
         """Waits for all devices to boot up.
 
