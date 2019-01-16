@@ -51,9 +51,6 @@ logger = logging.getLogger(__name__)
 
 MAX_BATCH_CLEANUP_COUNT = 100
 
-#For gce_x86_phones remote instances: adb port is 5555 and vnc is 6444.
-_TARGET_VNC_PORT = 6444
-_TARGET_ADB_PORT = 5555
 _SSH_USER = "root"
 
 
@@ -71,6 +68,7 @@ class AndroidVirtualDevicePool(object):
         self._compute_client = android_compute_client.AndroidComputeClient(
             cfg, credentials)
 
+    @utils.TimeExecute("Creating GCE image")
     def _CreateGceImageWithBuildInfo(self, build_target, build_id):
         """Creates a Gce image using build from Launch Control.
 
@@ -106,6 +104,7 @@ class AndroidVirtualDevicePool(object):
                                         disk_image_id)
         return image_name
 
+    @utils.TimeExecute("Creating GCE image")
     def _CreateGceImageWithLocalFile(self, local_disk_image):
         """Create a Gce image with a local image file.
 
@@ -167,7 +166,8 @@ class AndroidVirtualDevicePool(object):
                       local_disk_image=None,
                       cleanup=True,
                       extra_data_disk_size_gb=None,
-                      precreated_data_image=None):
+                      precreated_data_image=None,
+                      avd_spec=None):
         """Creates |num| devices for given build_target and build_id.
 
         - If gce_image is provided, will use it to create an instance.
@@ -191,6 +191,7 @@ class AndroidVirtualDevicePool(object):
                      the instance.
             extra_data_disk_size_gb: Integer, size of extra disk, or None.
             precreated_data_image: A string, the image to use for the extra disk.
+            avd_spec: AVDSpec object for pass hw_property.
 
         Raises:
             errors.DriverError: If no source is specified for image creation.
@@ -225,7 +226,8 @@ class AndroidVirtualDevicePool(object):
                 self._compute_client.CreateInstance(
                     instance=instance,
                     image_name=image_name,
-                    extra_disk_name=extra_disk_name)
+                    extra_disk_name=extra_disk_name,
+                    avd_spec=avd_spec)
                 ip = self._compute_client.GetInstanceIP(instance)
                 self.devices.append(avd.AndroidVirtualDevice(
                     ip=ip, instance_name=instance))
@@ -246,6 +248,7 @@ class AndroidVirtualDevicePool(object):
         return self._compute_client.DeleteInstances(instance_names,
                                                     self._cfg.zone)
 
+    @utils.TimeExecute("Waiting for AVD to boot")
     def WaitForBoot(self):
         """Waits for all devices to boot up.
 
@@ -340,7 +343,8 @@ def CreateAndroidVirtualDevices(cfg,
                                 serial_log_file=None,
                                 logcat_file=None,
                                 autoconnect=False,
-                                report_internal_ip=False):
+                                report_internal_ip=False,
+                                avd_spec=None):
     """Creates one or multiple android devices.
 
     Args:
@@ -361,6 +365,7 @@ def CreateAndroidVirtualDevices(cfg,
         autoconnect: Create ssh tunnel(s) and adb connect after device creation.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
+        avd_spec: AVDSpec object for pass hw_property.
 
     Returns:
         A Report instance.
@@ -381,7 +386,8 @@ def CreateAndroidVirtualDevices(cfg,
             cleanup,
             extra_data_disk_size_gb=cfg.extra_data_disk_size_gb,
             precreated_data_image=cfg.precreated_data_image_map.get(
-                cfg.extra_data_disk_size_gb))
+                cfg.extra_data_disk_size_gb),
+            avd_spec=avd_spec)
         failures = device_pool.WaitForBoot()
         # Write result to report.
         for device in device_pool.devices:
@@ -392,11 +398,12 @@ def CreateAndroidVirtualDevices(cfg,
                 "instance_name": device.instance_name
             }
             if autoconnect:
-                forwarded_ports = utils.AutoConnect(ip,
-                                                    cfg.ssh_private_key_path,
-                                                    _TARGET_VNC_PORT,
-                                                    _TARGET_ADB_PORT,
-                                                    _SSH_USER)
+                forwarded_ports = utils.AutoConnect(
+                    ip,
+                    cfg.ssh_private_key_path,
+                    constants.DEFAULT_GCE_VNC_PORT,
+                    constants.DEFAULT_GCE_ADB_PORT,
+                    _SSH_USER)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
