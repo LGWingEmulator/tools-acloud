@@ -33,7 +33,6 @@ from acloud.public import report
 
 logger = logging.getLogger(__name__)
 
-_BOOT_COMPLETE = "VIRTUAL_DEVICE_BOOT_COMPLETED"
 _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
                         "--memory_mb %s --blank_data_image_mb %s "
                         "--data_policy always_create "
@@ -43,7 +42,9 @@ _CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out [y]: ")
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
-
+_LAUNCH_CVD_TIMEOUT_SECS = 60  # setup timeout as 60 seconds
+_LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
+                             "within %d secs." % _LAUNCH_CVD_TIMEOUT_SECS)
 
 class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
     """Create class for a local image local instance AVD."""
@@ -136,9 +137,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         logger.debug("launch_cvd cmd:\n %s", launch_cmd)
         return launch_cmd
 
-    @staticmethod
-    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
-    def CheckLaunchCVD(cmd, host_bins_path):
+    def CheckLaunchCVD(self, cmd, host_bins_path):
         """Execute launch_cvd command and wait for boot up completed.
 
         Args:
@@ -164,7 +163,22 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             else:
                 print("Exiting out")
                 sys.exit()
+        self._LaunchCvd(cmd)
 
+    @staticmethod
+    @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
+    @utils.TimeoutException(_LAUNCH_CVD_TIMEOUT_SECS, _LAUNCH_CVD_TIMEOUT_ERROR)
+    def _LaunchCvd(cmd):
+        """Execute Launch CVD.
+
+        Kick off the launch_cvd command and log the output.
+
+        Args:
+            cmd: String, launch_cvd command.
+
+        Raises:
+            errors.LaunchCVDFail when any CalledProcessError.
+        """
         try:
             # Check the result of launch_cvd command.
             # An exit code of 0 is equivalent to VIRTUAL_DEVICE_BOOT_COMPLETED

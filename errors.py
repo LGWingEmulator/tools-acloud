@@ -201,3 +201,7 @@ class ReconnectError(Exception):
 
 class NoInstancesFound(ReconnectError):
     """No instances found."""
+
+
+class FunctionTimeoutError(Exception):
+    """Timeout error of decorator function."""
