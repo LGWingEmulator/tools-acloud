@@ -55,6 +55,7 @@ class FakeTkinter(object):
         return self.width
 
 
+# pylint: disable=too-many-public-methods
 class UtilsTest(driver_test_lib.BaseDriverTest):
     """Test Utils."""
 
@@ -374,6 +375,29 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         self.assertRaises(
             errors.DeviceConnectionError,
             utils.ScpPullFile, "/tmp/test", "/tmp/test_1.log", "192.168.0.1")
+
+
+    def testTimeoutException(self):
+        """Test TimeoutException."""
+        @utils.TimeoutException(1, "should time out")
+        def functionThatWillTimeOut():
+            """Test decorator of @utils.TimeoutException should timeout."""
+            time.sleep(5)
+
+        self.assertRaises(errors.FunctionTimeoutError,
+                          functionThatWillTimeOut)
+
+
+    def testTimeoutExceptionNoTimeout(self):
+        """Test No TimeoutException."""
+        @utils.TimeoutException(5, "shouldn't time out")
+        def functionThatShouldNotTimeout():
+            """Test decorator of @utils.TimeoutException shouldn't timeout."""
+            return None
+        try:
+            functionThatShouldNotTimeout()
+        except errors.FunctionTimeoutError:
+            self.fail("shouldn't timeout")
 
 
 if __name__ == "__main__":
