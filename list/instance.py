@@ -236,9 +236,21 @@ class RemoteInstance(Instance):
             for access_config in network_interface.get("accessConfigs"):
                 ip = access_config.get("natIP")
 
+        # Get metadata
+        for metadata in gce_instance.get("metadata", {}).get("items", []):
+            key = metadata["key"]
+            value = metadata["value"]
+            if key == constants.INS_KEY_DISPLAY:
+                self._display = value
+            elif key == constants.INS_KEY_AVD_TYPE:
+                self._avd_type = value
+            elif key == constants.INS_KEY_AVD_FLAVOR:
+                self._avd_flavor = value
+
         # Find ssl tunnel info.
         if ip:
-            forwarded_ports = self.GetAdbVncPortFromSSHTunnel(ip)
+            forwarded_ports = self.GetAdbVncPortFromSSHTunnel(ip,
+                                                              self._avd_type)
             self._ip = ip
             self._adb_port = forwarded_ports.adb_port
             self._vnc_port = forwarded_ports.vnc_port
@@ -253,32 +265,28 @@ class RemoteInstance(Instance):
                                   {"device_serial": "not connected",
                                    "instance_name": self._name})
 
-        # Get metadata
-        for metadata in gce_instance.get("metadata", {}).get("items", []):
-            key = metadata["key"]
-            value = metadata["value"]
-            if key == constants.INS_KEY_DISPLAY:
-                self._display = value
-            elif key == constants.INS_KEY_AVD_TYPE:
-                self._avd_type = value
-            elif key == constants.INS_KEY_AVD_FLAVOR:
-                self._avd_flavor = value
-
     @staticmethod
-    def GetAdbVncPortFromSSHTunnel(ip):
+    def GetAdbVncPortFromSSHTunnel(ip, avd_type):
         """Get forwarding adb and vnc port from ssh tunnel.
 
         Args:
             ip: String, ip address.
+            avd_type: String, the AVD type.
 
         Returns:
             NamedTuple ForwardedPorts(vnc_port, adb_port) holding the ports
             used in the ssh forwarded call. Both fields are integers.
         """
         process_output = subprocess.check_output(constants.COMMAND_PS)
+        default_vnc_port = (constants.DEFAULT_GCE_VNC_PORT
+                            if avd_type == constants.TYPE_GCE
+                            else constants.DEFAULT_VNC_PORT)
+        default_adb_port = (constants.DEFAULT_GCE_ADB_PORT
+                            if avd_type == constants.TYPE_GCE
+                            else constants.DEFAULT_ADB_PORT)
         re_pattern = re.compile(_RE_SSH_TUNNEL_PATTERN %
-                                (_RE_GROUP_VNC, constants.DEFAULT_VNC_PORT,
-                                 _RE_GROUP_ADB, constants.DEFAULT_ADB_PORT, ip))
+                                (_RE_GROUP_VNC, default_vnc_port,
+                                 _RE_GROUP_ADB, default_adb_port, ip))
 
         adb_port = None
         vnc_port = None

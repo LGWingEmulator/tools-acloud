@@ -93,6 +93,10 @@ LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
 CF_TARGET_ADB_PORT = 6520
 CF_TARGET_VNC_PORT = 6444
 
+# For gce_x86_phones remote instances
+DEFAULT_GCE_VNC_PORT = 6444
+DEFAULT_GCE_ADB_PORT = 5555
+# For cuttlefish remote instances
 DEFAULT_VNC_PORT = 6444
 DEFAULT_ADB_PORT = 6520
 VNC_PORT = "vnc_port"
