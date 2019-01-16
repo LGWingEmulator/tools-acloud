@@ -18,6 +18,7 @@ import collections
 import subprocess
 
 import unittest
+import mock
 
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
@@ -60,7 +61,9 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
     def testGetAdbVncPortFromSSHTunnel(self):
         """"Test Get forwarding adb and vnc port from ssh tunnel."""
         self.Patch(subprocess, "check_output", return_value=self.PS_SSH_TUNNEL)
-        forwarded_ports = instance.RemoteInstance.GetAdbVncPortFromSSHTunnel("fake_ip")
+        forwarded_ports = instance.RemoteInstance(
+            mock.MagicMock()).GetAdbVncPortFromSSHTunnel(
+                "fake_ip", "fake_avd_type")
         self.assertEqual(54321, forwarded_ports.adb_port)
         self.assertEqual(12345, forwarded_ports.vnc_port)
 

@@ -89,7 +89,6 @@ from acloud.delete import delete
 from acloud.delete import delete_args
 from acloud.reconnect import reconnect
 from acloud.reconnect import reconnect_args
-from acloud.internal import constants
 from acloud.list import list as list_instances
 from acloud.list import list_args
 from acloud.metrics import metrics
@@ -286,28 +285,10 @@ def _VerifyArgs(parsed_args):
     """
     if parsed_args.which == create_args.CMD_CREATE:
         create_args.VerifyArgs(parsed_args)
-
-    if (parsed_args.which == create_args.CMD_CREATE
-            and parsed_args.avd_type == constants.TYPE_GCE):
-        if (parsed_args.spec and parsed_args.spec not in constants.SPEC_NAMES):
-            raise errors.CommandArgError(
-                "%s is not valid. Choose from: %s" %
-                (parsed_args.spec, ", ".join(constants.SPEC_NAMES)))
-        if not ((parsed_args.build_id and parsed_args.build_target)
-                or parsed_args.gce_image or parsed_args.local_disk_image):
-            raise errors.CommandArgError(
-                "At least one of the following should be specified: "
-                "--build_id and --build_target, or --gce_image, or "
-                "--local_disk_image.")
-        if bool(parsed_args.build_id) != bool(parsed_args.build_target):
-            raise errors.CommandArgError(
-                "Must specify --build_id and --build_target at the same time.")
-
     if parsed_args.which == CMD_CREATE_CUTTLEFISH:
         if not parsed_args.build_id or not parsed_args.build_target:
             raise errors.CommandArgError(
                 "Must specify --build_id and --build_target")
-
     if parsed_args.which == CMD_CREATE_GOLDFISH:
         if not parsed_args.emulator_build_id and not parsed_args.build_id:
             raise errors.CommandArgError("Must specify either "
@@ -406,21 +387,7 @@ def main(argv=None):
 
     metrics.LogUsage()
     report = None
-    if (args.which == create_args.CMD_CREATE
-            and args.avd_type == constants.TYPE_GCE):
-        report = device_driver.CreateAndroidVirtualDevices(
-            cfg,
-            args.build_target,
-            args.build_id,
-            args.num,
-            args.gce_image,
-            args.local_disk_image,
-            cleanup=not args.no_cleanup,
-            serial_log_file=args.serial_log_file,
-            logcat_file=args.logcat_file,
-            autoconnect=args.autoconnect,
-            report_internal_ip=args.report_internal_ip)
-    elif args.which == create_args.CMD_CREATE:
+    if args.which == create_args.CMD_CREATE:
         create.Run(args)
     elif args.which == CMD_CREATE_CUTTLEFISH:
         report = create_cuttlefish_action.CreateDevices(

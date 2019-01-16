@@ -38,6 +38,7 @@ import os
 import uuid
 
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 
@@ -226,7 +227,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             utils.VerifyRsaPubKey(rsa)
         return rsa
 
-    # pylint: disable=too-many-locals,arguments-differ
+    # pylint: disable=too-many-locals, arguments-differ
+    @utils.TimeExecute("Creating GCE Instance")
     def CreateInstance(self,
                        instance,
                        image_name,
@@ -237,7 +239,9 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                        disk_args=None,
                        image_project=None,
                        gpu=None,
-                       extra_disk_name=None):
+                       extra_disk_name=None,
+                       labels=None,
+                       avd_spec=None):
         """Create a gce instance with a gce image.
         Args:
             instance: String, instance name.
@@ -256,12 +260,23 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                  None no gpus will be attached. For more details see:
                  https://cloud.google.com/compute/docs/gpus/add-gpus
             extra_disk_name: String,the name of the extra disk to attach.
+            labels: Dict, will be added to the instance's labels.
+            avd_spec: AVDSpec object that tells us what we're going to create.
         """
         self._CheckMachineSize()
         disk_args = self._GetDiskArgs(instance, image_name)
         metadata = self._metadata.copy()
         metadata["cfg_sta_display_resolution"] = self._resolution
         metadata["t_force_orientation"] = self._orientation
+        metadata[constants.INS_KEY_AVD_TYPE] = avd_spec.avd_type
+
+        # Use another METADATA_DISPLAY to record resolution which will be
+        # retrieved in acloud list cmd. We try not to use cvd_01_x_res
+        # since cvd_01_xxx metadata is going to deprecated by cuttlefish.
+        metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+            avd_spec.hw_property[constants.HW_X_RES],
+            avd_spec.hw_property[constants.HW_Y_RES],
+            avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
         # Add per-instance ssh key
         if self._ssh_public_key_path:
@@ -274,9 +289,14 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             logger.warning("ssh_public_key_path is not specified in config, "
                            "only project-wide key will be effective.")
 
+        # Add labels for giving the instances ability to be filter for
+        # acloud list/delete cmds.
+        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
+
         super(AndroidComputeClient, self).CreateInstance(
             instance, image_name, self._machine_type, metadata, self._network,
-            self._zone, disk_args, image_project, gpu, extra_disk_name)
+            self._zone, disk_args, image_project, gpu, extra_disk_name,
+            labels=labels)
 
     def CheckBootFailure(self, serial_out, instance):
         """Determine if serial output has indicated any boot failure.
