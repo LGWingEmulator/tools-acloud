@@ -399,6 +399,23 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         except errors.FunctionTimeoutError:
             self.fail("shouldn't timeout")
 
+    def testAutoConnectCreateSSHTunnelFail(self):
+        """test auto connect."""
+        fake_ip_addr = "1.1.1.1"
+        fake_rsa_key_file = "/tmp/rsa_file"
+        fake_target_vnc_port = 8888
+        target_adb_port = 9999
+        ssh_user = "fake_user"
+        call_side_effect = subprocess.CalledProcessError(123, "fake",
+                                                         "fake error")
+        result = utils.ForwardedPorts(vnc_port=None, adb_port=None)
+        self.Patch(subprocess, "check_call", side_effect=call_side_effect)
+        self.assertEqual(result, utils.AutoConnect(fake_ip_addr,
+                                                   fake_rsa_key_file,
+                                                   fake_target_vnc_port,
+                                                   target_adb_port,
+                                                   ssh_user))
+
 
 if __name__ == "__main__":
     unittest.main()
