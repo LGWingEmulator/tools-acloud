@@ -40,7 +40,7 @@ _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
                         "--vnc_server_port %s")
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
-                     "instance, enter anything else to exit out [y]: ")
+                     "instance, enter anything else to exit out[y/N]: ")
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 _LAUNCH_CVD_TIMEOUT_SECS = 60  # setup timeout as 60 seconds
 _LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
