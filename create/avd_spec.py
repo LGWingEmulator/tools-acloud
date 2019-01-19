@@ -107,6 +107,9 @@ class AVDSpec(object):
         # Reporting args.
         self._serial_log_file = None
         self._logcat_file = None
+        # gpu and emulator_build_id is only used for goldfish avd_type.
+        self._gpu = None
+        self._emulator_build_id = None
 
         self._ProcessArgs(args)
 
@@ -248,6 +251,8 @@ class AVDSpec(object):
         self._kernel_build_id = args.kernel_build_id
         self._serial_log_file = args.serial_log_file
         self._logcat_file = args.logcat_file
+        self._emulator_build_id = args.emulator_build_id
+        self._gpu = args.gpu
 
     @staticmethod
     def _GetFlavorFromLocalImage(image_path):
@@ -516,3 +521,13 @@ class AVDSpec(object):
     def logcat_file(self):
         """Return logcat file path."""
         return self._logcat_file
+
+    @property
+    def gpu(self):
+        """Return gpu."""
+        return self._gpu
+
+    @property
+    def emulator_build_id(self):
+        """Return emulator_build_id."""
+        return self._emulator_build_id
