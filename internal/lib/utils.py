@@ -73,7 +73,7 @@ _DEFAULT_DISPLAY_SCALE = 1.0
 _DIST_DIR = "DIST_DIR"
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
-                     "install a vnc client (ssnvc). \nWould you like acloud to "
+                     "install a vnc client (ssvnc). \nWould you like acloud to "
                      "install it for you? (%s) \nPress 'y' to continue or "
                      "anything else to abort it:[y] ") % _CMD_INSTALL_SSVNC
 _EvaluatedResult = collections.namedtuple("EvaluatedResult",
