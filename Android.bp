@@ -41,7 +41,7 @@ python_binary_host {
     libs: [
         "acloud_create",
         "acloud_delete",
-	"acloud_reconnect",
+        "acloud_reconnect",
         "acloud_internal",
         "acloud_list",
         "acloud_metrics",
@@ -53,6 +53,9 @@ python_binary_host {
         "py-google-api-python-client",
         "py-oauth2client",
     ],
+    dist: {
+        targets: ["droidcore"],
+    },
 }
 
 python_test_host {
