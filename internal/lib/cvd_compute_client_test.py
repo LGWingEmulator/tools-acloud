@@ -92,7 +92,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
                 branch=self.BRANCH, build_id=self.BUILD_ID),
             "cvd_01_fetch_kernel_bid": "{branch}/{build_id}".format(
                 branch=self.KERNEL_BRANCH, build_id=self.KERNEL_BUILD_ID),
-            "cvd_01_launch": "1",
             "cvd_01_x_res": str(self.X_RES),
             "cvd_01_y_res": str(self.Y_RES),
             "user": "fake_user",
@@ -101,6 +100,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             "cvd_01_blank_data_disk_size": str(self.EXTRA_DATA_DISK_SIZE_GB * 1024),
         }
         expected_metadata.update(self.METADATA)
+        remote_image_metadata = dict(expected_metadata)
+        remote_image_metadata["cvd_01_launch"] = "1"
         expected_disk_args = [{"fake_arg": "fake_value"}]
 
         self.cvd_compute_client.CreateInstance(
@@ -114,13 +115,14 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             image_name=self.IMAGE,
             image_project=self.IMAGE_PROJECT,
             disk_args=expected_disk_args,
-            metadata=expected_metadata,
+            metadata=remote_image_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
             labels={constants.LABEL_CREATE_BY: "fake_user"})
 
         #test use local image in the remote instance.
+        local_image_metadata = dict(expected_metadata)
         args = mock.MagicMock()
         mock_img_path.return_value = "cf_x86_phone-img-eng.user.zip"
         args.local_image = "/tmp/path"
@@ -133,10 +135,9 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         fake_avd_spec.hw_property[constants.HW_ALIAS_DPI] = str(self.DPI)
         fake_avd_spec.hw_property[constants.HW_ALIAS_DISK] = str(
             self.EXTRA_DATA_DISK_SIZE_GB * 1024)
-        expected_metadata["cvd_01_launch"] = "0"
-        expected_metadata["avd_type"] = "cf"
-        expected_metadata["flavor"] = "phone"
-        expected_metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+        local_image_metadata["avd_type"] = "cf"
+        local_image_metadata["flavor"] = "phone"
+        local_image_metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
             fake_avd_spec.hw_property[constants.HW_X_RES],
             fake_avd_spec.hw_property[constants.HW_Y_RES],
             fake_avd_spec.hw_property[constants.HW_ALIAS_DPI]))
@@ -152,7 +153,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             image_name=self.IMAGE,
             image_project=self.IMAGE_PROJECT,
             disk_args=expected_disk_args,
-            metadata=expected_metadata,
+            metadata=local_image_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
