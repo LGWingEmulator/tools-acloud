@@ -142,10 +142,10 @@ def ChooseInstances(cfg, select_all_instances=False):
     """
     instances_list = GetInstances(cfg)
     if (len(instances_list) > 1) and not select_all_instances:
-        print("Multiple instance detected, choose 1 to proceed:")
-        instances_to_delete = utils.GetAnswerFromList(instances_list,
-                                                      enable_choose_all=True)
-        return instances_to_delete
+        print("Multiple instances detected, choose any one to proceed:")
+        instances = utils.GetAnswerFromList(instances_list,
+                                            enable_choose_all=True)
+        return instances
 
     return instances_list
 

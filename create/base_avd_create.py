@@ -68,7 +68,8 @@ class BaseAVDCreate(object):
             avd_spec.instance_type)
         if avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
             utils.PrintColorString("Image (local):")
-            utils.PrintColorString("  %s" % avd_spec.local_image_dir)
+            utils.PrintColorString("  %s" % (avd_spec.local_image_dir or
+                                             avd_spec.local_image_artifact))
         elif avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
             utils.PrintColorString("Image:")
             utils.PrintColorString(
