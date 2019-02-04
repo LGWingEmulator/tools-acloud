@@ -100,9 +100,14 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_branch and kernel_build_id:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
-        metadata["cvd_01_launch"] = "0" if (
-            avd_spec
-            and avd_spec.image_source == constants.IMAGE_SRC_LOCAL) else "1"
+        metadata["cvd_01_launch"] = "1"
+
+        # The cuttlefish-google tools changed the usage of this cvd_01_launch
+        # variable. For the local image, we remove the cvd_01_launch from
+        # metadata to tell server not to launch cvd  while instance is booted
+        # up.
+        if avd_spec and avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
+            metadata.pop("cvd_01_launch", None)
 
         if blank_data_disk_size_gb > 0:
             # Policy 'create_if_missing' would create a blank userdata disk if
