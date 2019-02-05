@@ -43,6 +43,7 @@ _DEFAULT_BUILD_BITNESS = "x86"
 _DEFAULT_BUILD_TYPE = "userdebug"
 _ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
 _ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
+_RE_ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
 _RE_FLAVOR = re.compile(r"^.+_(?P<flavor>.+)-img.+")
 _RE_GBSIZE = re.compile(r"^(?P<gb_size>\d+)g$", re.IGNORECASE)
 _RE_INT = re.compile(r"^\d+$")
@@ -63,6 +64,18 @@ _DEFAULT_BRANCH_PREFIX = "git_"
 _BRANCH_TARGET_PREFIX = {"aosp": "aosp_"}
 
 logger = logging.getLogger(__name__)
+
+
+def EscapeAnsi(line):
+    """Remove ANSI control sequences (e.g. temrinal color codes...)
+
+    Args:
+        line: String, one line of command output.
+
+    Returns:
+        String without ANSI code.
+    """
+    return _RE_ANSI_ESCAPE.sub('', line)
 
 
 class AVDSpec(object):
@@ -375,8 +388,8 @@ class AVDSpec(object):
             )
 
         acloud_project = os.path.join(android_build_top, "tools", "acloud")
-        return subprocess.check_output(_COMMAND_GIT_REMOTE,
-                                       cwd=acloud_project).strip()
+        return EscapeAnsi(subprocess.check_output(_COMMAND_GIT_REMOTE,
+                                                  cwd=acloud_project).strip())
 
     def _GetBranchFromRepo(self):
         """Get branch information from command "repo info".
@@ -390,7 +403,7 @@ class AVDSpec(object):
         """
         repo_output = subprocess.check_output(_COMMAND_REPO_INFO)
         for line in repo_output.splitlines():
-            match = _BRANCH_RE.match(line)
+            match = _BRANCH_RE.match(EscapeAnsi(line))
             if match:
                 branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
                                                    _DEFAULT_BRANCH_PREFIX)
