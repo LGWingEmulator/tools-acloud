@@ -153,6 +153,15 @@ class AvdSpecTest(unittest.TestCase):
         img_path = "/fack_path/cf_x86_error-img-eng.user.zip"
         self.assertEqual(self.AvdSpec._GetFlavorFromLocalImage(img_path), None)
 
+    def testGetFlavorFromTarget(self):
+        """Test _GetFlavorFromTarget."""
+        target_name = "cf_x86_auto-userdebug"
+        self.assertEqual(self.AvdSpec._GetFlavorFromTarget(target_name), "auto")
+
+        # Target is not supported.
+        target_name = "cf_x86_error-userdebug"
+        self.assertEqual(self.AvdSpec._GetFlavorFromTarget(target_name), None)
+
     # pylint: disable=protected-access
     def testProcessRemoteBuildArgs(self):
         """Test _ProcessRemoteBuildArgs."""
