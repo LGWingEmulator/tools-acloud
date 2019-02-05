@@ -206,6 +206,12 @@ class AvdSpecTest(unittest.TestCase):
         self.AvdSpec._ProcessRemoteBuildArgs(self.args)
         self.assertTrue(self.AvdSpec.avd_type == "cuttlefish")
 
+    def testEscapeAnsi(self):
+        """Test EscapeAnsi."""
+        test_string = "\033[1;32;40m Manifest branch:"
+        expected_result = " Manifest branch:"
+        self.assertEqual(avd_spec.EscapeAnsi(test_string), expected_result)
+
 
 if __name__ == "__main__":
     unittest.main()
