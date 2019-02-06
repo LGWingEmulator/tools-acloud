@@ -79,4 +79,10 @@ message UserConfig {
 
   // Desired hw_property
   optional string hw_property = 21;
+
+  // [CHEEPS only] The name of the stable host image released by the ARC
+  // (arc-eng) team
+  optional string stable_cheeps_host_image_name = 22;
+  // [CHEEPS only] The project that the stable host image is released to
+  optional string stable_cheeps_host_image_project = 23;
 }

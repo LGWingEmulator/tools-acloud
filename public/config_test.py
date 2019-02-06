@@ -70,6 +70,8 @@ default_usr_cfg {
     stable_host_image_project: "fake_stable_host_image_project"
     stable_goldfish_host_image_name: "fake_stable_goldfish_host_image_name"
     stable_goldfish_host_image_project: "fake_stable_goldfish_host_image_project"
+    stable_cheeps_host_image_name: "fake_stable_cheeps_host_image_name"
+    stable_cheeps_host_image_project: "fake_stable_cheeps_host_image_project"
     metadata_variable {
         key: "metadata_1"
         value: "metadata_value_1"
@@ -229,6 +231,12 @@ common_hw_property_map {
         self.assertEqual(cfg.default_usr_cfg.stable_goldfish_host_image_project,
                          "fake_stable_goldfish_host_image_project")
         self.assertEqual(cfg.emulator_build_target, "sdk_tools_linux")
+
+        # Cheeps related
+        self.assertEqual(cfg.default_usr_cfg.stable_cheeps_host_image_name,
+                         "fake_stable_cheeps_host_image_name")
+        self.assertEqual(cfg.default_usr_cfg.stable_cheeps_host_image_project,
+                         "fake_stable_cheeps_host_image_project")
 
         # hw property
         self.assertEqual(

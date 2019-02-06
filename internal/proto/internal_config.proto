@@ -34,6 +34,10 @@ message DefaultUserConfig {
   optional string stable_goldfish_host_image_name = 7;
   // [GOLDFISH only] The project where stable host image is
   optional string stable_goldfish_host_image_project = 8;
+  // [CHEEPS only] The name of the stable host image
+  optional string stable_cheeps_host_image_name = 9;
+  // [CHEEPS only] The project where stable host image is
+  optional string stable_cheeps_host_image_project = 10;
 }
 
 // Internal configuration
