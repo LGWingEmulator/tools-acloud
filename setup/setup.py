@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright 2018 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +50,8 @@ def Run(args):
     host_env_runner = host_setup_runner.CuttlefishHostSetup()
     gcp_runner = gcp_setup_runner.GcpTaskRunner(args.config_file)
     task_queue = []
-    if args.host or not args.gcp_init:
+    # User must explicitly specify --host to install the host packages.
+    if args.host:
         task_queue.append(host_runner)
         task_queue.append(host_env_runner)
     if args.gcp_init or not args.host:
