@@ -75,7 +75,7 @@ _DIST_DIR = "DIST_DIR"
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssvnc). \nWould you like acloud to "
                      "install it for you? (%s) \nPress 'y' to continue or "
-                     "anything else to abort it:[y] ") % _CMD_INSTALL_SSVNC
+                     "anything else to abort it[y/N]: ") % _CMD_INSTALL_SSVNC
 _EvaluatedResult = collections.namedtuple("EvaluatedResult",
                                           ["is_result_ok", "result_message"])
 # dict of supported system and their distributions.
@@ -512,8 +512,10 @@ def GetUserAnswerYes(question):
     """Ask user about acloud setup question.
 
     Args:
-        question: String, ask question for user.
-            Ex: "Are you sure to change bucket name:[y/n]"
+        question: String of question for user. Enter is equivalent to pressing
+                  n. We should hint user with upper case N surrounded in square
+                  brackets.
+                  Ex: "Are you sure to change bucket name[y/N]:"
 
     Returns:
         Boolean, True if answer is "Yes", False otherwise.
