@@ -104,7 +104,7 @@ def _CheckForAutoconnect(args):
     disable_autoconnect = False
     answer = utils.InteractWithQuestion(
         "adb is required for autoconnect, without it autoconnect will be "
-        "disabled, would you like acloud to build it[y]? ")
+        "disabled, would you like acloud to build it[y/N]? ")
     if answer in constants.USER_ANSWER_YES:
         utils.PrintColorString("Building adb ... ", end="")
         android_build_top = os.environ.get(
@@ -170,7 +170,7 @@ def _CheckForSetup(args):
 
     if run_setup:
         answer = utils.InteractWithQuestion("Missing necessary acloud setup, "
-                                            "would you like to run setup[y]?")
+                                            "would you like to run setup[y/N]?")
         if answer in constants.USER_ANSWER_YES:
             setup.Run(args)
         else:

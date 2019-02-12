@@ -224,7 +224,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
             if not os.path.exists(download_dir):
                 answer = utils.InteractWithQuestion(
                     "No such directory %s.\nEnter 'y' to create it, enter "
-                    "anything else to exit out [y]: " % download_dir)
+                    "anything else to exit out[y/N]: " % download_dir)
                 if answer.lower() == "y":
                     os.makedirs(download_dir)
                 else:

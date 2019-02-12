@@ -262,7 +262,7 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
             "Your default Project/Zone settings are:\n"
             "project:[%s]\n"
             "zone:[%s]\n"
-            "Would you like to update them? [y/n]\n") % (self.project, self.zone)
+            "Would you like to update them?[y/N]: \n") % (self.project, self.zone)
 
         if not self.project or not self.zone:
             logger.info("Project or zone is empty. Start to run setup process.")
