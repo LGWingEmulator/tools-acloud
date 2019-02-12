@@ -152,6 +152,6 @@ class CuttlefishHostSetup(base_task_runner.BaseTaskRunner):
             True if user answer yes.
         """
         answer_client = utils.InteractWithQuestion(
-            "\nPress 'y' to continue or anything else to do it myself:[y]",
+            "\nPress 'y' to continue or anything else to do it myself[y/N]: ",
             utils.TextColors.WARNING)
         return answer_client in constants.USER_ANSWER_YES
