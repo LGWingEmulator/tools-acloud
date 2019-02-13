@@ -1013,14 +1013,18 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         Returns:
             A dictionary representing network args.
         """
-        return {
+        network_args = {
             "network": self.GetNetworkUrl(network),
-            "subnetwork": self.GetSubnetworkUrl(network, zone),
             "accessConfigs": [{
                 "name": "External NAT",
                 "type": "ONE_TO_ONE_NAT"
             }]
         }
+        # default network can be blank or set to default, we don't need to
+        # specify the subnetwork for that.
+        if network and network != "default":
+            network_args["subnetwork"] = self.GetSubnetworkUrl(network, zone)
+        return network_args
 
     def _GetDiskArgs(self,
                      disk_name,
@@ -1280,7 +1284,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             project=self._project, network=network)
         result = self.Execute(api)
         region = zone.rsplit("-", 1)[0]
-        for subnetwork in result["subnetworks"]:
+        for subnetwork in result.get("subnetworks", []):
             if region in subnetwork:
                 return subnetwork
         raise errors.NoSubnetwork("No subnetwork for network %s in region %s" %
