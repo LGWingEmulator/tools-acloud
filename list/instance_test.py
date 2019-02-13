@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for instance class."""
+
 import collections
 import datetime
 import subprocess
@@ -27,6 +28,7 @@ import dateutil.tz
 
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib.adb_tools import AdbTools
 from acloud.list import instance
 
 
@@ -120,6 +122,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
             "GetAdbVncPortFromSSHTunnel",
             return_value=forwarded_ports(vnc_port=fake_vnc, adb_port=fake_adb))
         self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
+        self.Patch(AdbTools, "IsAdbConnected", return_value=True)
 
         # test ssh_tunnel_is_connected will be true if ssh tunnel connection is found
         instance_info = instance.RemoteInstance(gce_instance)
@@ -128,6 +131,14 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(instance_info.forwarding_vnc_port, fake_vnc)
         expected_full_name = "device serial: 127.0.0.1:%s (%s) elapsed time: %s" % (
             fake_adb, gce_instance[constants.INS_KEY_NAME], "fake_time")
+        self.assertEqual(expected_full_name, instance_info.fullname)
+
+        # test ssh tunnel is connected but adb is disconnected
+        self.Patch(AdbTools, "IsAdbConnected", return_value=False)
+        instance_info = instance.RemoteInstance(gce_instance)
+        self.assertTrue(instance_info.ssh_tunnel_is_connected)
+        expected_full_name = "device serial: not connected (%s) elapsed time: %s" % (
+            instance_info.name, "fake_time")
         self.assertEqual(expected_full_name, instance_info.fullname)
 
         # test ssh_tunnel_is_connected will be false if ssh tunnel connection is not found
