@@ -197,4 +197,4 @@ Cheatsheet:
 
 If you have any questions or feedback, contact [acloud@google.com](mailto:acloud@google.com).
 
-If you have any bugs or feature requests, [go/acloud-bug](go/acloud-bug).
+If you have any bugs or feature requests, [go/acloud-bug](http://go/acloud-bug).
