@@ -27,20 +27,27 @@ The details include:
 """
 
 import collections
+import datetime
 import logging
 import re
 import subprocess
+
+# pylint: disable=import-error
+import dateutil.parser
+import dateutil.tz
 
 from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
+_MSG_UNABLE_TO_CALCULATE = "Unable to calculate"
 _RE_GROUP_ADB = "local_adb_port"
 _RE_GROUP_VNC = "local_vnc_port"
 _RE_SSH_TUNNEL_PATTERN = (r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
                           r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
                           r"(.+%s)")
+_RE_TIMEZONE = re.compile(r"^(?P<time>[0-9\-\.:T]*)(?P<timezone>[+-]\d+:\d+)$")
 
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-eo", "lstart,cmd"]
 _RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
@@ -50,9 +57,38 @@ _RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
                             r"((.*\s*-dpi\s)(?P<dpi>\d+))?"
                             r"((.*\s*-memory_mb\s)(?P<memory>\d+))?"
                             r"((.*\s*-blank_data_image_mb\s)(?P<disk>\d+))?")
-_FULL_NAME_STRING = "device serial: %(device_serial)s (%(instance_name)s)"
+_FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
+                     "elapsed time: %(elapsed_time)s")
+
 ForwardedPorts = collections.namedtuple("ForwardedPorts",
                                         [constants.VNC_PORT, constants.ADB_PORT])
+
+
+def _GetElapsedTime(start_time):
+    """Calculate the elapsed time from start_time till now.
+
+    Args:
+        start_time: String of instance created time.
+
+    Returns:
+        datetime.timedelta of elapsed time, _MSG_UNABLE_TO_CALCULATE for
+        datetime can't parse cases.
+    """
+    match = _RE_TIMEZONE.match(start_time)
+    try:
+        # Check start_time has timezone or not. If timezone can't be found,
+        # use local timezone to get elapsed time.
+        if match:
+            return datetime.datetime.now(
+                dateutil.tz.tzlocal()) - dateutil.parser.parse(start_time)
+
+        return datetime.datetime.now(
+            dateutil.tz.tzlocal()) - dateutil.parser.parse(
+                start_time).replace(tzinfo=dateutil.tz.tzlocal())
+    except ValueError:
+        logger.debug(("Can't parse datetime string(%s)."), start_time)
+        return _MSG_UNABLE_TO_CALCULATE
+
 
 class Instance(object):
     """Class to store data of instance."""
@@ -67,6 +103,7 @@ class Instance(object):
         self._vnc_port = None  # vnc port which is forwarding to remote
         self._ssh_tunnel_is_connected = None  # True if ssh tunnel is still connected
         self._createtime = None
+        self._elapsed_time = None
         self._avd_type = None
         self._avd_flavor = None
         self._is_local = None  # True if this is a local instance
@@ -82,6 +119,7 @@ class Instance(object):
         representation.append(" name: %s" % self._name)
         representation.append("%s IP: %s" % (indent, self._ip))
         representation.append("%s create time: %s" % (indent, self._createtime))
+        representation.append("%s elapse time: %s" % (indent, self._elapsed_time))
         representation.append("%s status: %s" % (indent, self._status))
         representation.append("%s avd type: %s" % (indent, self._avd_type))
         representation.append("%s display: %s" % (indent, self._display))
@@ -182,11 +220,13 @@ class LocalInstance(Instance):
                 dpi = match.group("dpi")
                 date_str = match.group("date_str").strip()
                 local_instance._name = constants.LOCAL_INS_NAME
+                local_instance._createtime = date_str
+                local_instance._elapsed_time = _GetElapsedTime(date_str)
                 local_instance._fullname = (_FULL_NAME_STRING %
                                             {"device_serial": "127.0.0.1:%d" %
                                                               constants.DEFAULT_ADB_PORT,
-                                             "instance_name": local_instance._name})
-                local_instance._createtime = date_str
+                                             "instance_name": local_instance._name,
+                                             "elapsed_time": local_instance._elapsed_time})
                 local_instance._avd_type = constants.TYPE_CF
                 local_instance._ip = "127.0.0.1"
                 local_instance._status = constants.INS_STATUS_RUNNING
@@ -227,8 +267,8 @@ class RemoteInstance(Instance):
         """
         self._name = gce_instance.get(constants.INS_KEY_NAME)
 
-        # TODO(b/119291750): calculate the elapsed time since instance has been created.
         self._createtime = gce_instance.get(constants.INS_KEY_CREATETIME)
+        self._elapsed_time = _GetElapsedTime(self._createtime)
         self._status = gce_instance.get(constants.INS_KEY_STATUS)
 
         ip = None
@@ -258,18 +298,21 @@ class RemoteInstance(Instance):
                 self._ssh_tunnel_is_connected = True
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "127.0.0.1:%d" % self._adb_port,
-                                   "instance_name": self._name})
+                                   "instance_name": self._name,
+                                   "elapsed_time": self._elapsed_time})
             else:
                 self._ssh_tunnel_is_connected = False
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "not connected",
-                                   "instance_name": self._name})
+                                   "instance_name": self._name,
+                                   "elapsed_time": self._elapsed_time})
         # If instance is terminated, its ip is None.
         else:
             self._ssh_tunnel_is_connected = False
             self._fullname = (_FULL_NAME_STRING %
                               {"device_serial": "terminated",
-                               "instance_name": self._name})
+                               "instance_name": self._name,
+                               "elapsed_time": self._elapsed_time})
 
     @staticmethod
     def GetAdbVncPortFromSSHTunnel(ip, avd_type):
