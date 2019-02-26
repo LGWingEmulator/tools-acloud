@@ -264,6 +264,12 @@ class RemoteInstance(Instance):
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "not connected",
                                    "instance_name": self._name})
+        # If instance is terminated, its ip is None.
+        else:
+            self._ssh_tunnel_is_connected = False
+            self._fullname = (_FULL_NAME_STRING %
+                              {"device_serial": "terminated",
+                               "instance_name": self._name})
 
     @staticmethod
     def GetAdbVncPortFromSSHTunnel(ip, avd_type):
