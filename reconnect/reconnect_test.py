@@ -40,6 +40,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.ip = "1.1.1.1"
         instance_object.islocal = False
         instance_object.forwarding_adb_port = "8686"
+        instance_object.avd_type = "cuttlefish"
         self.Patch(getpass, "getuser", return_value="fake_user")
         self.Patch(subprocess, "check_call", return_value=True)
         self.Patch(utils, "LaunchVncClient")
@@ -96,6 +97,37 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
         utils.AutoConnect.assert_not_called()
         utils.LaunchVncClient.assert_called_with(5555)
+
+    def testReconnectInstanceAvdtype(self):
+        """Test Reconnect Instances of avd_type."""
+        ssh_private_key_path = "/fake/acloud_rea"
+        instance_object = mock.MagicMock()
+        instance_object.ip = "1.1.1.1"
+        instance_object.forwarding_vnc_port = 9999
+        instance_object.forwarding_adb_port = "9999"
+        instance_object.islocal = False
+        instance_object.ssh_tunnel_is_connected = False
+        self.Patch(getpass, "getuser", return_value="fake_user")
+        self.Patch(utils, "AutoConnect")
+        self.Patch(reconnect, "StartVnc")
+
+        #test reconnect remote instance when avd_type as gce.
+        instance_object.avd_type = "gce"
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        utils.AutoConnect.assert_called_with(instance_object.ip,
+                                             ssh_private_key_path,
+                                             constants.DEFAULT_GCE_VNC_PORT,
+                                             constants.DEFAULT_GCE_ADB_PORT,
+                                             "fake_user")
+
+        #test reconnect remote instance when avd_type as cuttlefish.
+        instance_object.avd_type = "cuttlefish"
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        utils.AutoConnect.assert_called_with(instance_object.ip,
+                                             ssh_private_key_path,
+                                             constants.CF_TARGET_VNC_PORT,
+                                             constants.CF_TARGET_ADB_PORT,
+                                             "fake_user")
 
     def testStartVnc(self):
         """Test start Vnc."""
