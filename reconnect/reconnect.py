@@ -20,6 +20,7 @@ Reconnect will:
 """
 
 from __future__ import print_function
+from collections import namedtuple
 from distutils.spawn import find_executable
 import getpass
 import re
@@ -38,6 +39,15 @@ _ADB_DISCONNECT = "disconnect"
 _ADB_STATUS_DEVICE = "device"
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
+# TODO(b/122929848): merge all definition of ForwardedPorts into one spot.
+ForwardedPorts = namedtuple("ForwardedPorts",
+                            [constants.VNC_PORT, constants.ADB_PORT])
+_AVD_PORT_CLASS_DICT = {
+    constants.TYPE_GCE: ForwardedPorts(constants.DEFAULT_GCE_VNC_PORT,
+                                       constants.DEFAULT_GCE_ADB_PORT),
+    constants.TYPE_CF: ForwardedPorts(constants.CF_TARGET_VNC_PORT,
+                                      constants.CF_TARGET_ADB_PORT)
+}
 
 
 class AdbTools(object):
@@ -191,11 +201,12 @@ def ReconnectInstance(ssh_private_key_path, instance):
     # ssh tunnel is down and it's a remote instance
     elif not instance.ssh_tunnel_is_connected and not instance.islocal:
         adb_cmd.DisconnectAdb()
-        forwarded_ports = utils.AutoConnect(instance.ip,
-                                            ssh_private_key_path,
-                                            constants.CF_TARGET_VNC_PORT,
-                                            constants.CF_TARGET_ADB_PORT,
-                                            getpass.getuser())
+        forwarded_ports = utils.AutoConnect(
+            instance.ip,
+            ssh_private_key_path,
+            _AVD_PORT_CLASS_DICT.get(instance.avd_type).vnc_port,
+            _AVD_PORT_CLASS_DICT.get(instance.avd_type).adb_port,
+            getpass.getuser())
         vnc_port = forwarded_ports.vnc_port
 
     if vnc_port:
