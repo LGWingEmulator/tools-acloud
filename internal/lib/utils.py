@@ -827,6 +827,8 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_use
     except subprocess.CalledProcessError:
         PrintColorString("Failed to create ssh tunnels, retry with '#acloud "
                          "reconnect'.", TextColors.FAIL)
+        return ForwardedPorts(vnc_port=None, adb_port=None)
+
     try:
         adb_connect_args = _ADB_CONNECT_ARGS % {"adb_port": local_free_adb_port}
         _ExecuteCommand(constants.ADB_BIN, adb_connect_args.split())
@@ -887,10 +889,13 @@ def LaunchVNCFromReport(report, avd_spec):
         avd_spec: AVDSpec object that tells us what we're going to create.
     """
     for device in report.data.get("devices", []):
-        LaunchVncClient(device.get(constants.VNC_PORT),
-                        avd_width=avd_spec.hw_property["x_res"],
-                        avd_height=avd_spec.hw_property["y_res"])
-
+        if device.get(constants.VNC_PORT):
+            LaunchVncClient(device.get(constants.VNC_PORT),
+                            avd_width=avd_spec.hw_property["x_res"],
+                            avd_height=avd_spec.hw_property["y_res"])
+        else:
+            PrintColorString("No VNC port specified, skipping VNC startup.",
+                             TextColors.FAIL)
 
 def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
                     avd_height=None):
