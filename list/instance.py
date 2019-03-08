@@ -38,6 +38,7 @@ import dateutil.tz
 
 from acloud.internal import constants
 from acloud.internal.lib import utils
+from acloud.internal.lib.adb_tools import AdbTools
 
 logger = logging.getLogger(__name__)
 
@@ -259,8 +260,15 @@ class RemoteInstance(Instance):
     def _ProcessGceInstance(self, gce_instance):
         """Parse the required data from gce_instance to local variables.
 
-        We also gather more details on client side including the forwarding adb port
-        and vnc port which will be used to determine the status of connection.
+        We also gather more details on client side including the forwarding adb
+        port and vnc port which will be used to determine the status of ssh
+        tunnel connection.
+
+        The status of gce instance will be displayed in _fullname property:
+        - Connected: If gce instance and ssh tunnel and adb connection are all
+         active.
+        - No connected: If ssh tunnel or adb connection is not found.
+        - Terminated: If we can't retrieve the public ip from gce instance.
 
         Args:
            gce_instance: dict object queried from gce.
@@ -294,14 +302,15 @@ class RemoteInstance(Instance):
             self._ip = ip
             self._adb_port = forwarded_ports.adb_port
             self._vnc_port = forwarded_ports.vnc_port
-            if self._adb_port:
-                self._ssh_tunnel_is_connected = True
+            self._ssh_tunnel_is_connected = self._adb_port is not None
+
+            adb_device = AdbTools(self._adb_port)
+            if adb_device.IsAdbConnected():
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "127.0.0.1:%d" % self._adb_port,
                                    "instance_name": self._name,
                                    "elapsed_time": self._elapsed_time})
             else:
-                self._ssh_tunnel_is_connected = False
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "not connected",
                                    "instance_name": self._name,
