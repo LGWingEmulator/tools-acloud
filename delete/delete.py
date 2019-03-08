@@ -28,6 +28,7 @@ from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.list import list as list_instances
+from acloud.list import instance as instance_class
 from acloud.public import config
 from acloud.public import device_driver
 from acloud.public import report
@@ -173,11 +174,15 @@ def DeleteLocalInstance():
         delete_report.AddError(str(e))
         delete_report.SetStatus(report.Status.FAIL)
 
+    CleanupSSVncviewer(constants.DEFAULT_VNC_PORT)
     return delete_report
 
 
 def Run(args):
     """Run delete.
+
+    After delete command executed, tool will return one Report instance.
+    If there is no instance to delete, just reutrn empty Report.
 
     Args:
         args: Namespace object from argparse.parse_args.
@@ -190,6 +195,12 @@ def Run(args):
 
     if remote_instances_to_delete:
         return DeleteRemoteInstances(cfg, remote_instances_to_delete)
+
+    if args.local_instance:
+        if instance_class.LocalInstance():
+            return DeleteLocalInstance()
+        print("There is no local instance AVD to delete.")
+        return report.Report(command="delete")
 
     # Provide instances list to user and let user choose what to delete if user
     # didn't specific instance name in args.
