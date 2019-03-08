@@ -47,6 +47,12 @@ def GetDeleteArgParser(subparser):
         dest="all",
         required=False,
         help="If more than 1 AVD instance is found, delete them all.")
+    delete_parser.add_argument(
+        "--local-instance",
+        action="store_true",
+        dest="local_instance",
+        required=False,
+        help="Only delete the local instance.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
