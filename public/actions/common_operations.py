@@ -237,8 +237,10 @@ class DevicePool(object):
 # TODO: Delete unused-argument when b/119614469 is resolved.
 # pylint: disable=unused-argument
 # pylint: disable=too-many-locals
-def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False,
-                  autoconnect=False, serial_log_file=None, logcat_file=None):
+def CreateDevices(command, cfg, device_factory, num,
+                  report_internal_ip=False, autoconnect=False,
+                  vnc_port=None, adb_port=None,
+                  serial_log_file=None, logcat_file=None):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -252,6 +254,8 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False,
         num: The number of devices to create.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
+        vnc_port: (int) The VNC port to use for a remote instance.
+        adb_port: (int) The ADB port to use for a remote instance.
         serial_log_file: String, the file path to tar the serial logs.
         logcat_file: String, the file path to tar the logcats.
         autoconnect: Boolean, whether to auto connect to device.
@@ -291,10 +295,13 @@ def CreateDevices(command, cfg, device_factory, num, report_internal_ip=False,
                 "instance_name": device.instance_name
             }
             if autoconnect:
+                if (not vnc_port) or (not adb_port):
+                    logger.error("vnc_port and adb_port must be specified to"
+                                 " use autoconnect")
                 forwarded_ports = utils.AutoConnect(ip,
                                                     cfg.ssh_private_key_path,
-                                                    constants.CF_TARGET_VNC_PORT,
-                                                    constants.CF_TARGET_ADB_PORT,
+                                                    vnc_port,
+                                                    adb_port,
                                                     getpass.getuser())
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
