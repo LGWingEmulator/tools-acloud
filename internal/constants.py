@@ -34,8 +34,9 @@ BUILD_BRANCH = "build_branch"
 BUILD_ID = "build_id"
 
 # AVD types
-TYPE_GCE = "gce"
+TYPE_CHEEPS = "cheeps"
 TYPE_CF = "cuttlefish"
+TYPE_GCE = "gce"
 TYPE_GF = "goldfish"
 
 # Image types
@@ -47,6 +48,8 @@ AVD_TYPES_MAPPING = {
     TYPE_GCE: "gce",
     TYPE_CF: "cf",
     TYPE_GF: "sdk",
+    # Cheeps uses the cheets target.
+    TYPE_CHEEPS: "cheets",
 }
 
 # Instance types
@@ -96,11 +99,18 @@ CF_TARGET_VNC_PORT = 6444
 # For gce_x86_phones remote instances
 DEFAULT_GCE_VNC_PORT = 6444
 DEFAULT_GCE_ADB_PORT = 5555
+# For goldfish remote instances
+DEFAULT_GOLDFISH_VNC_PORT = 6444
+DEFAULT_GOLDFISH_ADB_PORT = 5555
 # For cuttlefish remote instances
 DEFAULT_VNC_PORT = 6444
 DEFAULT_ADB_PORT = 6520
 VNC_PORT = "vnc_port"
 ADB_PORT = "adb_port"
+
+# For cheeps remote instances.
+DEFAULT_CHEEPS_TARGET_ADB_PORT = 9222
+DEFAULT_CHEEPS_TARGET_VNC_PORT = 5900
 
 COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"

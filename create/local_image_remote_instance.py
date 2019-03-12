@@ -289,7 +289,9 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, avd_spec.num,
             report_internal_ip=avd_spec.report_internal_ip,
-            autoconnect=avd_spec.autoconnect)
+            autoconnect=avd_spec.autoconnect,
+            vnc_port=constants.CF_TARGET_VNC_PORT,
+            adb_port=constants.CF_TARGET_ADB_PORT)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(report, avd_spec)
