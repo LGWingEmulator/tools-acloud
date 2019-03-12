@@ -24,6 +24,7 @@ import os
 from acloud import errors
 from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
+from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import goldfish_compute_client
@@ -243,6 +244,13 @@ def CreateDevices(cfg,
                                            cfg.emulator_build_target,
                                            emulator_build_id, gpu)
 
-    return common_operations.CreateDevices("create_gf", cfg, device_factory,
-                                           num, report_internal_ip,
-                                           serial_log_file, logcat_file)
+    return common_operations.CreateDevices(
+        command="create_gf",
+        cfg=cfg,
+        device_factory=device_factory,
+        num=num,
+        report_internal_ip=report_internal_ip,
+        vnc_port=constants.DEFAULT_GOLDFISH_VNC_PORT,
+        adb_port=constants.DEFAULT_GOLDFISH_ADB_PORT,
+        serial_log_file=serial_log_file,
+        logcat_file=logcat_file)
