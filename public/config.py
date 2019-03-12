@@ -188,6 +188,13 @@ class AcloudConfig(object):
             usr_cfg.stable_goldfish_host_image_project or
             internal_cfg.default_usr_cfg.stable_goldfish_host_image_project)
 
+        self.stable_cheeps_host_image_name = (
+            usr_cfg.stable_cheeps_host_image_name or
+            internal_cfg.default_usr_cfg.stable_cheeps_host_image_name)
+        self.stable_cheeps_host_image_project = (
+            usr_cfg.stable_cheeps_host_image_project or
+            internal_cfg.default_usr_cfg.stable_cheeps_host_image_project)
+
         self.common_hw_property_map = internal_cfg.common_hw_property_map
         self.hw_property = usr_cfg.hw_property
 

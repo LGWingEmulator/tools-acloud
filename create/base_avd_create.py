@@ -42,6 +42,7 @@ class BaseAVDCreate(object):
         self.PrintAvdDetails(avd_spec)
         results = self._CreateAVD(avd_spec)
         utils.PrintDeviceSummary(results)
+        return results
 
     @staticmethod
     def PrintAvdDetails(avd_spec):
