@@ -123,8 +123,6 @@ def _ParseArgs(args):
     usage = ",".join([
         setup_args.CMD_SETUP,
         create_args.CMD_CREATE,
-        CMD_CREATE_CUTTLEFISH,
-        CMD_CREATE_GOLDFISH,
         list_args.CMD_LIST,
         delete_args.CMD_DELETE,
         reconnect_args.CMD_RECONNECT,
@@ -133,7 +131,7 @@ def _ParseArgs(args):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         usage="acloud {" + usage + "} ...")
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(metavar="{" + usage + "}")
     subparser_list = []
 
     # Command "create_cf", create cuttlefish instances
