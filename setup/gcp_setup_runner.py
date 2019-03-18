@@ -192,17 +192,21 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         Args:
             config_path: String, acloud config path.
         """
+        # pylint: disable=invalid-name
         config_mgr = config.AcloudConfigManager(config_path)
         cfg = config_mgr.Load()
         self.config_path = config_mgr.user_config_path
-        self.client_id = cfg.client_id
-        self.client_secret = cfg.client_secret
         self.project = cfg.project
         self.zone = cfg.zone
         self.storage_bucket_name = cfg.storage_bucket_name
         self.ssh_private_key_path = cfg.ssh_private_key_path
         self.ssh_public_key_path = cfg.ssh_public_key_path
         self.stable_host_image_name = cfg.stable_host_image_name
+        self.client_id = cfg.client_id
+        self.client_secret = cfg.client_secret
+        self.service_account_name = cfg.service_account_name
+        self.service_account_private_key_path = cfg.service_account_private_key_path
+        self.service_account_json_private_key_path = cfg.service_account_json_private_key_path
 
     def ShouldRun(self):
         """Check if we actually need to run GCP setup.
@@ -212,9 +216,18 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         Returns:
             True if reqired config fields are empty, False otherwise.
         """
-        return (not self.client_id
-                or not self.client_secret
-                or not self.project)
+        # We need to ensure the config has the proper auth-related fields set,
+        # so config requires just 1 of the following:
+        # 1. client id/secret
+        # 2. service account name/private key path
+        # 3. service account json private key path
+        if ((not self.client_id or not self.client_secret)
+                and (not self.service_account_name or not self.service_account_private_key_path)
+                and not self.service_account_json_private_key_path):
+            return True
+
+        # If a project isn't set, then we need to run setup.
+        return not self.project
 
     def _Run(self):
         """Run GCP setup task."""
