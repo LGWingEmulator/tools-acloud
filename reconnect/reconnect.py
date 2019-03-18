@@ -21,12 +21,10 @@ Reconnect will:
 
 from __future__ import print_function
 
-from collections import namedtuple
 import getpass
 import re
 
 from acloud.delete import delete
-from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import utils
@@ -36,15 +34,6 @@ from acloud.public import config
 
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
-# TODO(b/122929848): merge all definition of ForwardedPorts into one spot.
-ForwardedPorts = namedtuple("ForwardedPorts",
-                            [constants.VNC_PORT, constants.ADB_PORT])
-_AVD_PORT_CLASS_DICT = {
-    constants.TYPE_GCE: ForwardedPorts(constants.DEFAULT_GCE_VNC_PORT,
-                                       constants.DEFAULT_GCE_ADB_PORT),
-    constants.TYPE_CF: ForwardedPorts(constants.CF_TARGET_VNC_PORT,
-                                      constants.CF_TARGET_ADB_PORT)
-}
 
 
 def StartVnc(vnc_port, display):
@@ -110,8 +99,8 @@ def ReconnectInstance(ssh_private_key_path, instance):
         forwarded_ports = utils.AutoConnect(
             instance.ip,
             ssh_private_key_path,
-            _AVD_PORT_CLASS_DICT.get(instance.avd_type).vnc_port,
-            _AVD_PORT_CLASS_DICT.get(instance.avd_type).adb_port,
+            utils.AVD_PORT_DICT[instance.avd_type].vnc_port,
+            utils.AVD_PORT_DICT[instance.avd_type].adb_port,
             getpass.getuser())
         vnc_port = forwarded_ports.vnc_port
 
