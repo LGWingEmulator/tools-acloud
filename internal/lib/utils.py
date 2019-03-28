@@ -853,12 +853,11 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
     start_index = 1
     max_choice = len(answer_list)
 
-    if enable_choose_all:
-        start_index = 2
-        max_choice += 1
-        print("[1] for all.")
     for num, item in enumerate(answer_list, start_index):
         print("[%d] %s" % (num, item))
+    if enable_choose_all:
+        max_choice += 1
+        print("[%d] for all." % max_choice)
 
     choice = -1
 
@@ -873,7 +872,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
         if choice == 0:
             print("Exiting acloud.")
             sys.exit()
-        if enable_choose_all and choice == 1:
+        if enable_choose_all and choice == max_choice:
             return answer_list
         if choice < 0 or choice > max_choice:
             print("please choose between 0 and %d" % max_choice)
