@@ -259,7 +259,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         mock_raw_input.return_value = 0
         with self.assertRaises(SystemExit):
             utils.GetAnswerFromList(answer_list)
-        mock_raw_input.side_effect = [1, 2, 3, 1]
+        mock_raw_input.side_effect = [1, 2, 3, 4]
         self.assertEqual(utils.GetAnswerFromList(answer_list),
                          ["image1.zip"])
         self.assertEqual(utils.GetAnswerFromList(answer_list),
