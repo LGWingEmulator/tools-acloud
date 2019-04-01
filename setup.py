@@ -89,7 +89,8 @@ setuptools.setup(
         "acloud", "acloud.internal", "acloud.public", "acloud.delete",
         "acloud.create", "acloud.setup", "acloud.metrics",
         "acloud.internal.lib", "acloud.internal.proto", "acloud.public.data",
-        "acloud.public.acloud_kernel", "acloud.public.actions", "acloud.list",
+        "acloud.public.acloud_kernel", "acloud.public.actions", "acloud.reconnect",
+        "acloud.list",
     ],
     package_dir={
         "acloud": ".",
@@ -104,6 +105,7 @@ setuptools.setup(
         "acloud.public.data": "public/data",
         "acloud.public.acloud_kernel": "public/acloud_kernel",
         "acloud.public.actions": "public/actions",
+        "acloud.reconnect": "reconnect",
         "acloud.list": "list"
     },
     package_data={"acloud.public.data": ["default.config"]},
