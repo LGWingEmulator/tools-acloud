@@ -204,6 +204,6 @@ def Run(args):
                                            spec.instance_type,
                                            spec.image_source)
     avd_creator = avd_creator_class()
-    report = avd_creator.Create(spec)
+    report = avd_creator.Create(spec, args.no_prompt)
     if report and args.report_file:
         report.Dump(args.report_file)
