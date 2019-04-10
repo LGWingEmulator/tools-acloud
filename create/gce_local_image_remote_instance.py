@@ -36,11 +36,12 @@ class GceLocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
 
     @utils.TimeExecute(function_description="Total time: ",
                        print_before_call=False, print_status=False)
-    def _CreateAVD(self, avd_spec):
+    def _CreateAVD(self, avd_spec, no_prompts):
         """Create the AVD.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+            no_prompts: Boolean, True to skip all prompts.
 
         Returns:
             A Report instance.
@@ -58,7 +59,7 @@ class GceLocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
 
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
-            utils.LaunchVNCFromReport(report, avd_spec)
+            utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
 
         return report
 
