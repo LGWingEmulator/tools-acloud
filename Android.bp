@@ -29,6 +29,8 @@ python_defaults {
 
 python_binary_host {
     name: "acloud",
+    // Make acloud's built name to acloud-dev
+    stem: "acloud-dev",
     defaults: ["acloud_default"],
     main: "public/acloud_main.py",
     srcs: [
