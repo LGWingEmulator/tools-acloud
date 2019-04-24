@@ -37,6 +37,7 @@ Android build, and start Android within the host instance.
 import getpass
 import logging
 
+from acloud import errors
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 
@@ -49,7 +50,15 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
     """
     # This is the timeout for betty to start.
     BOOT_TIMEOUT_SECS = 10*60
+    # This is printed by betty.sh.
     BOOT_COMPLETED_MSG = "VM successfully started"
+    # systemd prints this if betty.sh returns nonzero status code.
+    BOOT_FAILED_MSG = "betty.service: Failed with result 'exit-code'"
+
+    def CheckBootFailure(self, serial_out, instance):
+        """Overrides superclass. Determines if there's a boot failure."""
+        if self.BOOT_FAILED_MSG in serial_out:
+            raise errors.DeviceBootError("Betty failed to start")
 
     # pylint: disable=too-many-locals,arguments-differ
     def CreateInstance(self, instance, image_name, image_project,
