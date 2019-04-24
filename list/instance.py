@@ -50,7 +50,7 @@ _RE_SSH_TUNNEL_PATTERN = (r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
                           r"(.+%s)")
 _RE_TIMEZONE = re.compile(r"^(?P<time>[0-9\-\.:T]*)(?P<timezone>[+-]\d+:\d+)$")
 
-_COMMAND_PS_LAUNCH_CVD = ["ps", "-eo", "lstart,cmd"]
+_COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
 _RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
                             r"((.*\s*-cpus\s)(?P<cpu>\d+))?"
                             r"((.*\s*-x_res\s)(?P<x_res>\d+))?"
