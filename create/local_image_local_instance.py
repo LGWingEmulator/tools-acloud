@@ -27,6 +27,7 @@ import sys
 
 from acloud import errors
 from acloud.create import base_avd_create
+from acloud.delete import delete
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public import report
@@ -51,11 +52,12 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
     @utils.TimeExecute(function_description="Total time: ",
                        print_before_call=False, print_status=False)
-    def _CreateAVD(self, avd_spec):
+    def _CreateAVD(self, avd_spec, no_prompts):
         """Create the AVD.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+            no_prompts: Boolean, True to skip all prompts.
         """
         # Running instances on local is not supported on all OS.
         if not utils.IsSupportedPlatform(print_warning=True):
@@ -72,7 +74,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        avd_spec.hw_property,
                                        local_image_path)
         try:
-            self.CheckLaunchCVD(cmd, host_bins_path)
+            self.CheckLaunchCVD(cmd, host_bins_path, no_prompts)
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
@@ -84,7 +86,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                    constants.VNC_PORT: constants.DEFAULT_VNC_PORT})
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
-            utils.LaunchVNCFromReport(result_report, avd_spec)
+            utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
         return result_report
 
     @staticmethod
@@ -137,12 +139,13 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         logger.debug("launch_cvd cmd:\n %s", launch_cmd)
         return launch_cmd
 
-    def CheckLaunchCVD(self, cmd, host_bins_path):
+    def CheckLaunchCVD(self, cmd, host_bins_path, no_prompts=False):
         """Execute launch_cvd command and wait for boot up completed.
 
         Args:
             cmd: String, launch_cvd command.
             host_bins_path: String of host package directory.
+            no_prompts: Boolean, True to skip all prompts.
         """
         # launch_cvd assumes host bins are in $ANDROID_HOST_OUT, let's overwrite
         # it to wherever we're running launch_cvd since they could be in a
@@ -151,7 +154,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # Cuttlefish support launch single AVD at one time currently.
         if utils.IsCommandRunning(constants.CMD_LAUNCH_CVD):
             logger.info("Cuttlefish AVD is already running.")
-            if utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
+            if no_prompts or utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
                 stop_cvd_cmd = os.path.join(host_bins_path,
                                             "bin",
                                             constants.CMD_STOP_CVD)
@@ -160,6 +163,10 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                         utils.AddUserGroupsToCmd(
                             stop_cvd_cmd, constants.LIST_CF_USER_GROUPS),
                         stderr=dev_null, stdout=dev_null, shell=True)
+
+                # Delete ssvnc viewer
+                delete.CleanupSSVncviewer(constants.CF_TARGET_VNC_PORT)
+
             else:
                 print("Exiting out")
                 sys.exit()

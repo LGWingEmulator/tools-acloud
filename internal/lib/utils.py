@@ -880,30 +880,33 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
             return [answer_list[choice-start_index]]
 
 
-def LaunchVNCFromReport(report, avd_spec):
+def LaunchVNCFromReport(report, avd_spec, no_prompts=False):
     """Launch vnc client according to the instances report.
 
     Args:
         report: Report object, that stores and generates report.
         avd_spec: AVDSpec object that tells us what we're going to create.
+        no_prompts: Boolean, True to skip all prompts.
     """
     for device in report.data.get("devices", []):
         if device.get(constants.VNC_PORT):
             LaunchVncClient(device.get(constants.VNC_PORT),
                             avd_width=avd_spec.hw_property["x_res"],
-                            avd_height=avd_spec.hw_property["y_res"])
+                            avd_height=avd_spec.hw_property["y_res"],
+                            no_prompts=no_prompts)
         else:
             PrintColorString("No VNC port specified, skipping VNC startup.",
                              TextColors.FAIL)
 
 def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
-                    avd_height=None):
+                    avd_height=None, no_prompts=False):
     """Launch ssvnc.
 
     Args:
         port: Integer, port number.
         avd_width: String, the width of avd.
         avd_height: String, the height of avd.
+        no_prompts: Boolean, True to skip all prompts.
     """
     try:
         os.environ[_ENV_DISPLAY]
@@ -913,7 +916,7 @@ def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
         return
 
     if not find_executable(_VNC_BIN):
-        if GetUserAnswerYes(_CONFIRM_CONTINUE):
+        if no_prompts or GetUserAnswerYes(_CONFIRM_CONTINUE):
             try:
                 PrintColorString("Installing ssvnc vnc client... ", end="")
                 sys.stdout.flush()

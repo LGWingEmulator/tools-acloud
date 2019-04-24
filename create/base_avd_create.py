@@ -25,22 +25,24 @@ from acloud.internal.lib import utils
 class BaseAVDCreate(object):
     """Base class for all AVD intance creation classes."""
 
-    def _CreateAVD(self, avd_spec):
+    def _CreateAVD(self, avd_spec, no_prompts):
         """Do the actual creation work, should be overridden by child classes.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+            no_prompts: Boolean, True to skip all prompts.
         """
         raise NotImplementedError
 
-    def Create(self, avd_spec):
+    def Create(self, avd_spec, no_prompts):
         """Create the AVD.
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+            no_prompts: Boolean, True to skip all prompts.
         """
         self.PrintAvdDetails(avd_spec)
-        results = self._CreateAVD(avd_spec)
+        results = self._CreateAVD(avd_spec, no_prompts)
         utils.PrintDeviceSummary(results)
         return results
 

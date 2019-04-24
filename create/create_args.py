@@ -184,6 +184,13 @@ def GetCreateArgParser(subparser):
         dest="image_download_dir",
         required=False,
         help="Define remote image download directory, e.g. /usr/local/dl.")
+    create_parser.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        dest="no_prompt",
+        required=False,
+        help=("Automatic yes to prompts. Assume 'yes' as answer to all prompts "
+              "and run non-interactively."))
     # User should not specify --spec and --hw_property at the same time.
     hw_spec_group = create_parser.add_mutually_exclusive_group()
     hw_spec_group.add_argument(

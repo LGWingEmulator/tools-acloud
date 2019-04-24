@@ -73,7 +73,7 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
         avd_spec.remote_image = {constants.BUILD_ID: self.ANDROID_BUILD_ID}
         avd_spec.autoconnect = False
         instance = cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance()
-        report = instance.Create(avd_spec)
+        report = instance.Create(avd_spec, no_prompts=False)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
