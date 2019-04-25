@@ -48,7 +48,6 @@ Try $acloud [cmd] --help for further details.
 
 from __future__ import print_function
 import argparse
-import getpass
 import logging
 import platform
 import sys
@@ -107,7 +106,6 @@ ACLOUD_LOGGER = "acloud"
 CMD_CREATE_CUTTLEFISH = "create_cf"
 CMD_CREATE_GOLDFISH = "create_gf"
 CMD_CLEANUP = "cleanup"
-CMD_SSHKEY = "project_sshkey"
 
 
 # pylint: disable=too-many-statements
@@ -208,26 +206,6 @@ def _ParseArgs(args):
         help="Garbage collect all gce instances, gce images, cached disk "
         "images that are older than |expiration_mins|.")
     subparser_list.append(cleanup_parser)
-
-    # Command "project_sshkey"
-    sshkey_parser = subparsers.add_parser(CMD_SSHKEY)
-    sshkey_parser.required = False
-    sshkey_parser.set_defaults(which=CMD_SSHKEY)
-    sshkey_parser.add_argument(
-        "--user",
-        type=str,
-        dest="user",
-        default=getpass.getuser(),
-        help="The user name which the sshkey belongs to, default to: %s." %
-        getpass.getuser())
-    sshkey_parser.add_argument(
-        "--ssh_rsa_path",
-        type=str,
-        dest="ssh_rsa_path",
-        required=True,
-        help="Absolute path to the file that contains the public rsa key "
-        "that will be added as project-wide ssh key.")
-    subparser_list.append(sshkey_parser)
 
     # Command "create"
     subparser_list.append(create_args.GetCreateArgParser(subparsers))
@@ -399,8 +377,6 @@ def main(argv=None):
         list_instances.Run(args)
     elif args.which == reconnect_args.CMD_RECONNECT:
         reconnect.Run(args)
-    elif args.which == CMD_SSHKEY:
-        report = device_driver.AddSshRsa(cfg, args.user, args.ssh_rsa_path)
     elif args.which == setup_args.CMD_SETUP:
         setup.Run(args)
     else:
