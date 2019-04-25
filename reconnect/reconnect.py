@@ -27,6 +27,8 @@ import re
 
 from acloud.delete import delete
 from acloud.internal import constants
+from acloud.internal.lib import auth
+from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 from acloud.list import list as list_instance
@@ -66,6 +68,26 @@ def StartVnc(vnc_port, display):
             utils.LaunchVncClient(vnc_port, match.group(1), match.group(2))
         else:
             utils.LaunchVncClient(vnc_port)
+
+
+def AddPublicSshRsaToInstance(cfg, user, instance_name):
+    """Add the public rsa key to the instance's metadata.
+
+    When the public key doesn't exist in the metadata, it will add it.
+
+    Args:
+        cfg: An AcloudConfig instance.
+        user: String, the ssh username to access instance.
+        instance_name: String, instance name.
+    """
+    credentials = auth.CreateCredentials(cfg)
+    compute_client = android_compute_client.AndroidComputeClient(
+        cfg, credentials)
+    compute_client.AddSshRsaInstanceMetadata(
+        cfg.zone,
+        user,
+        cfg.ssh_public_key_path,
+        instance_name)
 
 
 def ReconnectInstance(ssh_private_key_path, instance):
@@ -112,4 +134,5 @@ def Run(args):
     if not instances_to_reconnect:
         instances_to_reconnect = list_instance.ChooseInstances(cfg, args.all)
     for instance in instances_to_reconnect:
+        AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
         ReconnectInstance(cfg.ssh_private_key_path, instance)

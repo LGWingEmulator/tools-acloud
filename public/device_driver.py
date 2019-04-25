@@ -575,30 +575,6 @@ def Cleanup(cfg, expiration_mins):
     return r
 
 
-def AddSshRsa(cfg, user, ssh_rsa_path):
-    """Add public ssh rsa key to the project.
-
-    Args:
-        cfg: An AcloudConfig instance.
-        user: the name of the user which the key belongs to.
-        ssh_rsa_path: The absolute path to public rsa key.
-
-    Returns:
-        A Report instance.
-    """
-    r = report.Report(command="sshkey")
-    try:
-        credentials = auth.CreateCredentials(cfg)
-        compute_client = android_compute_client.AndroidComputeClient(
-            cfg, credentials)
-        compute_client.AddSshRsa(user, ssh_rsa_path)
-        r.SetStatus(report.Status.SUCCESS)
-    except errors.DriverError as e:
-        r.AddError(str(e))
-        r.SetStatus(report.Status.FAIL)
-    return r
-
-
 def CheckAccess(cfg):
     """Check if user has access.
 
