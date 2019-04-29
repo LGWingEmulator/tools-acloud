@@ -91,7 +91,7 @@ HW_Y_RES = "y_res"
 USER_ANSWER_YES = {"y", "yes", "Y"}
 
 # Cuttlefish groups
-LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
+LIST_CF_USER_GROUPS = ["kvm", "cvdnetwork"]
 #For the cuttlefish remote instances: adb port is 6520 and vnc is 6444.
 CF_TARGET_ADB_PORT = 6520
 CF_TARGET_VNC_PORT = 6444
