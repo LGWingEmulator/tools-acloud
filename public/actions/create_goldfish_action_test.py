@@ -15,9 +15,10 @@
 # limitations under the License.
 """Tests for acloud.public.actions.create_goldfish_actions."""
 import uuid
-
 import unittest
 import mock
+
+from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth
@@ -62,6 +63,16 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "AndroidComputeClient",
             return_value=self.compute_client)
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
+        #Initialize new avd_spec
+        self.avd_spec = mock.MagicMock()
+        self.avd_spec.cfg = self._CreateCfg()
+        self.avd_spec.remote_image = {constants.BUILD_ID: self.BUILD_ID,
+                                      constants.BUILD_BRANCH: self.BRANCH,
+                                      constants.BUILD_TARGET: self.BUILD_TARGET}
+        self.avd_spec.emulator_build_id = self.EMULATOR_BUILD_ID
+        self.avd_spec.gpu = self.GPU
+        self.avd_spec.serial_log_file = None
+        self.avd_spec.autoconnect = False
 
     def _CreateCfg(self):
         """A helper method that creates a mock configuration object."""
@@ -95,10 +106,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             self.BRANCH, self.EMULATOR_BRANCH
         ]
 
-        # Call CreateDevices
+        none_avd_spec = None
+
+        # Call CreateDevices with avd_spec is None
         report = create_goldfish_action.CreateDevices(
-            cfg, self.BUILD_TARGET, self.BUILD_ID, self.EMULATOR_BUILD_ID,
-            self.GPU)
+            none_avd_spec, cfg, self.BUILD_TARGET, self.BUILD_ID,
+            self.EMULATOR_BUILD_ID, self.GPU)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -111,7 +124,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            avd_spec=none_avd_spec)
 
         self.assertEquals(report.data, {
             "devices": [
@@ -123,6 +137,25 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEquals(report.command, "create_gf")
         self.assertEquals(report.status, "SUCCESS")
+
+        # Call CreateDevices with avd_spec
+        self.build_client.GetBranch.side_effect = [
+            self.BRANCH, self.EMULATOR_BRANCH
+        ]
+        report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            image_name=self.GOLDFISH_HOST_IMAGE_NAME,
+            image_project=self.GOLDFISH_HOST_IMAGE_PROJECT,
+            build_target=self.BUILD_TARGET,
+            branch=self.BRANCH,
+            build_id=self.BUILD_ID,
+            emulator_branch=self.EMULATOR_BRANCH,
+            emulator_build_id=self.EMULATOR_BUILD_ID,
+            gpu=self.GPU,
+            avd_spec=self.avd_spec)
 
     def testCreateDevicesWithoutBuildId(self):
         """Test CreateDevices when emulator sys image build id is not provided."""
@@ -148,8 +181,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "_FetchBuildIdFromFile",
             return_value=self.BUILD_ID)
 
-        # Call CreateDevices
+        none_avd_spec = None
+        # Call CreateDevices with no avd_spec
         report = create_goldfish_action.CreateDevices(
+            none_avd_spec,
             cfg,
             self.BUILD_TARGET,
             None,
@@ -168,7 +203,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            avd_spec=none_avd_spec)
 
         self.assertEquals(report.data, {
             "devices": [{
@@ -178,6 +214,25 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEquals(report.command, "create_gf")
         self.assertEquals(report.status, "SUCCESS")
+
+        # Call CreateDevices with avd_spec
+        self.build_client.GetBranch.side_effect = [
+            self.BRANCH, self.EMULATOR_BRANCH
+        ]
+        report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            image_name=self.GOLDFISH_HOST_IMAGE_NAME,
+            image_project=self.GOLDFISH_HOST_IMAGE_PROJECT,
+            build_target=self.BUILD_TARGET,
+            branch=self.BRANCH,
+            build_id=self.BUILD_ID,
+            emulator_branch=self.EMULATOR_BRANCH,
+            emulator_build_id=self.EMULATOR_BUILD_ID,
+            gpu=self.GPU,
+            avd_spec=self.avd_spec)
 
     #pylint: disable=invalid-name
     def testCreateDevicesWithoutEmulatorBuildId(self):
@@ -204,9 +259,11 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "_FetchBuildIdFromFile",
             return_value=self.EMULATOR_BUILD_ID)
 
+        none_avd_spec = None
         # Call CreateDevices
         report = create_goldfish_action.CreateDevices(
-            cfg, self.BUILD_TARGET, self.BUILD_ID, None, self.GPU)
+            none_avd_spec, cfg, self.BUILD_TARGET, self.BUILD_ID, None,
+            self.GPU)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -219,7 +276,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            avd_spec=none_avd_spec)
 
         self.assertEquals(report.data, {
             "devices": [{
@@ -229,6 +287,25 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEquals(report.command, "create_gf")
         self.assertEquals(report.status, "SUCCESS")
+
+        # Call CreateDevices with avd_spec
+        self.build_client.GetBranch.side_effect = [
+            self.BRANCH, self.EMULATOR_BRANCH
+        ]
+        report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
+            image_name=self.GOLDFISH_HOST_IMAGE_NAME,
+            image_project=self.GOLDFISH_HOST_IMAGE_PROJECT,
+            build_target=self.BUILD_TARGET,
+            branch=self.BRANCH,
+            build_id=self.BUILD_ID,
+            emulator_branch=self.EMULATOR_BRANCH,
+            emulator_build_id=self.EMULATOR_BUILD_ID,
+            gpu=self.GPU,
+            avd_spec=self.avd_spec)
 
 
 if __name__ == "__main__":

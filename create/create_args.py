@@ -208,6 +208,24 @@ def GetCreateArgParser(subparser):
         choices=constants.SPEC_NAMES,
         help="The name of a pre-configured device spec that we are "
         "going to use.")
+    # Arguments for goldfish type.
+    # TODO(b/118439885): Verify args that are used in wrong avd_type.
+    # e.g. $acloud create --avd-type cuttlefish --emulator-build-id
+    create_parser.add_argument(
+        "--gpu",
+        type=str,
+        dest="gpu",
+        required=False,
+        default=None,
+        help="'goldfish only' GPU accelerator to use if any. "
+        "e.g. nvidia-tesla-k80, omit to use swiftshader")
+    create_parser.add_argument(
+        "--emulator-build-id",
+        type=int,
+        dest="emulator_build_id",
+        required=False,
+        help="'goldfish only' Emulator build used to run the images. "
+        "e.g. 4669466.")
 
     AddCommonCreateArgs(create_parser)
     return create_parser
