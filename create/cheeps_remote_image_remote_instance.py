@@ -57,7 +57,8 @@ class CheepsRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             num=avd_spec.num,
             report_internal_ip=avd_spec.report_internal_ip,
             autoconnect=avd_spec.autoconnect,
-            avd_type=constants.TYPE_CHEEPS)
+            avd_type=constants.TYPE_CHEEPS,
+            client_adb_port=avd_spec.client_adb_port)
 
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:

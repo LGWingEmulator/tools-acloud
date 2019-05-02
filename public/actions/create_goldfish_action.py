@@ -220,6 +220,7 @@ def CreateDevices(avd_spec=None,
     Returns:
         A Report instance.
     """
+    client_adb_port = None
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
@@ -232,6 +233,7 @@ def CreateDevices(avd_spec=None,
         logcat_file = avd_spec.logcat_file
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
+        client_adb_port = avd_spec.client_adb_port
 
     if emulator_build_id is None:
         emulator_build_id = _FetchBuildIdFromFile(cfg,
@@ -269,4 +271,5 @@ def CreateDevices(avd_spec=None,
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
                                            num, constants.TYPE_GF,
                                            report_internal_ip, autoconnect,
-                                           serial_log_file, logcat_file)
+                                           serial_log_file, logcat_file,
+                                           client_adb_port)

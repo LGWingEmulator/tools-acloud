@@ -137,6 +137,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         args.config_file = ""
         args.avd_type = constants.TYPE_CF
         args.flavor = "phone"
+        args.adb_port = None
         fake_avd_spec = avd_spec.AVDSpec(args)
         fake_avd_spec.hw_property[constants.HW_X_RES] = str(self.X_RES)
         fake_avd_spec.hw_property[constants.HW_Y_RES] = str(self.Y_RES)
