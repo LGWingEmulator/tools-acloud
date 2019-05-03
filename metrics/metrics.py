@@ -26,9 +26,24 @@ _COMMAND_GIT_CONFIG = ["git", "config", "--get", "user.email"]
 
 logger = logging.getLogger(__name__)
 
+# pylint: disable=broad-except
+def LogUsage(argv):
+    """Log acloud start event.
 
-def LogUsage():
-    """Log acloud run."""
+    Log acloud start event and the usage, following are the data we log:
+    - tool_name: All asuite tools are storing event in the same database. This
+      property is provided to distinguish different tools.
+    - command_line: Log all command arguments.
+    - test_references: Should be a list, we record the acloud sub-command.
+      e.g. create/delete/reconnect/..etc. We could use this property as filter
+      criteria to speed up query time.
+    - cwd: User's current working directory.
+    - os: The platform that users are working at.
+
+    Args:
+        argv: A list of system arguments.
+    """
+    # TODO(b131867764): We could remove this metics tool after we apply clearcut.
     try:
         from asuite import asuite_metrics
         asuite_metrics.log_event(_METRICS_URL, dummy_key_fallback=False,
@@ -36,8 +51,19 @@ def LogUsage():
     except ImportError:
         logger.debug("No metrics recorder available, not sending metrics.")
 
+    #Log start event via clearcut tool.
+    try:
+        from asuite import atest_utils
+        from asuite.metrics import metrics_utils
+        atest_utils.print_data_collection_notice()
+        metrics_utils.send_start_event(tool_name=constants.TOOL_NAME,
+                                       command_line=' '.join(argv),
+                                       test_references=[argv[0]])
+    except Exception as e:
+        logger.debug("Failed to send start event:%s", str(e))
 
 
+#TODO(b131867764): We could remove this metics tool after we apply clearcut.
 def _GetLdap():
     """Return string email username for valid domains only, None otherwise."""
     try:
@@ -52,3 +78,23 @@ def _GetLdap():
     except Exception as e:
         logger.debug("error retrieving email: %s", e)
     return None
+
+# pylint: disable=broad-except
+def LogExitEvent(exit_code, stacktrace="", logs=""):
+    """Log acloud exit event.
+
+    A start event should followed by an exit event to calculate the consuming
+    time. This function will be run at the end of acloud main process or
+    at the init of the error object.
+
+    Args:
+        exit_code: Integer, the exit code of acloud main process.
+        stacktrace: A string of stacktrace.
+        logs: A string of logs.
+    """
+    try:
+        from asuite.metrics import metrics_utils
+        metrics_utils.send_exit_event(exit_code, stacktrace=stacktrace,
+                                      logs=logs)
+    except Exception as e:
+        logger.debug("Failed to send exit event:%s", str(e))
