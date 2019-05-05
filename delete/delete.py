@@ -202,6 +202,10 @@ def Run(args):
         print("There is no local instance AVD to delete.")
         return report.Report(command="delete")
 
+    if args.adb_port:
+        return DeleteInstances(
+            cfg, list_instances.GetInstanceFromAdbPort(cfg, args.adb_port))
+
     # Provide instances list to user and let user choose what to delete if user
     # didn't specific instance name in args.
     return DeleteInstances(cfg, list_instances.ChooseInstances(cfg, args.all))

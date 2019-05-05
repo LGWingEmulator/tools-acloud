@@ -184,6 +184,34 @@ def GetInstancesFromInstanceNames(cfg, instance_names):
     return instance_list
 
 
+def GetInstanceFromAdbPort(cfg, adb_port):
+    """Get instance from adb port.
+
+    Args:
+        cfg: AcloudConfig object.
+        adb_port: int, adb port of instance.
+
+    Returns:
+        List of list.Instance() object.
+
+    Raises:
+        errors.NoInstancesFound: No instances found.
+    """
+    all_instance_info = []
+    for instance_object in GetInstances(cfg):
+        if instance_object.forwarding_adb_port == adb_port:
+            return [instance_object]
+        all_instance_info.append(instance_object.fullname)
+
+    # Show devices information to user when user provides wrong adb port.
+    if all_instance_info:
+        hint_message = ("No instance with adb port %d, available instances:\n%s"
+                        % (adb_port, "\n".join(all_instance_info)))
+    else:
+        hint_message = "No instances to delete."
+    raise errors.NoInstancesFound(hint_message)
+
+
 def Run(args):
     """Run list.
 
