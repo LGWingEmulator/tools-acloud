@@ -162,14 +162,7 @@ def CreateDevices(avd_spec=None,
         report_internal_ip)
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
                                              kernel_build_id, avd_spec)
-    return common_operations.CreateDevices(
-        command="create_cf",
-        cfg=cfg,
-        device_factory=device_factory,
-        num=num,
-        report_internal_ip=report_internal_ip,
-        autoconnect=autoconnect,
-        vnc_port=constants.CF_TARGET_VNC_PORT,
-        adb_port=constants.CF_TARGET_ADB_PORT,
-        serial_log_file=serial_log_file,
-        logcat_file=logcat_file)
+    return common_operations.CreateDevices("create_cf", cfg, device_factory,
+                                           num, constants.TYPE_CF,
+                                           report_internal_ip, autoconnect,
+                                           serial_log_file, logcat_file)

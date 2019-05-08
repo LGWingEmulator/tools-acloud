@@ -264,14 +264,7 @@ def CreateDevices(avd_spec=None,
                                            cfg.emulator_build_target,
                                            emulator_build_id, gpu, avd_spec)
 
-    return common_operations.CreateDevices(
-        command="create_gf",
-        cfg=cfg,
-        device_factory=device_factory,
-        num=num,
-        report_internal_ip=report_internal_ip,
-        autoconnect=autoconnect,
-        vnc_port=constants.DEFAULT_GOLDFISH_VNC_PORT,
-        adb_port=constants.DEFAULT_GOLDFISH_ADB_PORT,
-        serial_log_file=serial_log_file,
-        logcat_file=logcat_file)
+    return common_operations.CreateDevices("create_gf", cfg, device_factory,
+                                           num, constants.TYPE_GF,
+                                           report_internal_ip, autoconnect,
+                                           serial_log_file, logcat_file)
