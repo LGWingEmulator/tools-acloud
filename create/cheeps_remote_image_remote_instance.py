@@ -55,6 +55,7 @@ class CheepsRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             cfg=avd_spec.cfg,
             device_factory=device_factory,
             num=avd_spec.num,
+            report_internal_ip=avd_spec.report_internal_ip,
             autoconnect=avd_spec.autoconnect,
             vnc_port=constants.DEFAULT_CHEEPS_TARGET_VNC_PORT,
             adb_port=constants.DEFAULT_CHEEPS_TARGET_ADB_PORT)
