@@ -401,8 +401,8 @@ def CreateAndroidVirtualDevices(cfg,
                 forwarded_ports = utils.AutoConnect(
                     ip,
                     cfg.ssh_private_key_path,
-                    constants.DEFAULT_GCE_VNC_PORT,
-                    constants.DEFAULT_GCE_ADB_PORT,
+                    constants.GCE_VNC_PORT,
+                    constants.GCE_ADB_PORT,
                     _SSH_USER)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port

@@ -61,6 +61,17 @@ _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 # Store the ports that vnc/adb are forwarded to, both are integers.
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
                                                            constants.ADB_PORT])
+AVD_PORT_DICT = {
+    constants.TYPE_GCE: ForwardedPorts(constants.GCE_VNC_PORT,
+                                       constants.GCE_ADB_PORT),
+    constants.TYPE_CF: ForwardedPorts(constants.CF_VNC_PORT,
+                                      constants.CF_ADB_PORT),
+    constants.TYPE_GF: ForwardedPorts(constants.GF_VNC_PORT,
+                                      constants.GF_ADB_PORT),
+    constants.TYPE_CHEEPS: ForwardedPorts(constants.CHEEPS_VNC_PORT,
+                                          constants.CHEEPS_ADB_PORT)
+}
+
 _VNC_BIN = "ssvnc"
 _CMD_KILL = ["pkill", "-9", "-f"]
 _CMD_PGREP = "pgrep"
@@ -902,8 +913,8 @@ def LaunchVNCFromReport(report, avd_spec, no_prompts=False):
             PrintColorString("No VNC port specified, skipping VNC startup.",
                              TextColors.FAIL)
 
-def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
-                    avd_height=None, no_prompts=False):
+
+def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
     """Launch ssvnc.
 
     Args:

@@ -36,6 +36,7 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
     IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     CMD = "test-cmd"
+    AVD_TYPE = "fake-type"
 
     def setUp(self):
         """Set up the test."""
@@ -84,7 +85,8 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         """Test Create Devices."""
         cfg = self._CreateCfg()
         _report = common_operations.CreateDevices(self.CMD, cfg,
-                                                  self.device_factory, 1)
+                                                  self.device_factory, 1,
+                                                  self.AVD_TYPE)
         self.assertEqual(_report.command, self.CMD)
         self.assertEqual(_report.status, report.Status.SUCCESS)
         self.assertEqual(
@@ -99,6 +101,7 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         cfg = self._CreateCfg()
         _report = common_operations.CreateDevices(self.CMD, cfg,
                                                   self.device_factory, 1,
+                                                  self.AVD_TYPE,
                                                   report_internal_ip=True)
         self.assertEqual(_report.command, self.CMD)
         self.assertEqual(_report.status, report.Status.SUCCESS)
