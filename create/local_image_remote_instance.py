@@ -21,13 +21,13 @@ local image.
 
 from distutils.spawn import find_executable
 import getpass
+import glob
 import logging
 import os
 import subprocess
 
 from acloud import errors
 from acloud.create import base_avd_create
-from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
@@ -92,7 +92,8 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._SetAVDenv(_CVD_USER)
         self._UploadArtifacts(_CVD_USER,
                               self._local_image_artifact,
-                              self._cvd_host_package_artifact)
+                              self._cvd_host_package_artifact,
+                              self._avd_spec.local_image_dir)
         self._LaunchCvd(_CVD_USER, self._avd_spec.hw_property)
         return instance
 
@@ -129,15 +130,16 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         Override method from parent class.
         build_target: The format is like "aosp_cf_x86_phone". We only get info
                       from the user build image file name. If the file name is
-                      not custom format (no "-"), We will use the original
-                      flavor as our build_target.
+                      not custom format (no "-"), we will use $TARGET_PRODUCT
+                      from environment variable as build_target.
 
         Returns:
             A string, representing instance name.
         """
-        image_name = os.path.basename(self._local_image_artifact)
-        build_target = self._avd_spec.flavor if "-" not in image_name else image_name.split(
-            "-")[0]
+        image_name = os.path.basename(
+            self._local_image_artifact) if self._local_image_artifact else ""
+        build_target = (os.environ.get(constants.ENV_BUILD_TARGET) if "-" not
+                        in image_name else image_name.split("-")[0])
         instance = self._compute_client.GenerateInstanceName(
             build_target=build_target, build_id=_USER_BUILD)
         # Create an instance from Stable Host Image
@@ -171,23 +173,45 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         logger.debug("remote_cmd:\n %s", remote_cmd)
         self._ShellCmdWithRetry(self._ssh_cmd + remote_cmd)
 
-    @utils.TimeExecute(function_description="Uploading local image")
+    @utils.TimeExecute(function_description="Processing and uploading local images")
     def _UploadArtifacts(self,
                          cvd_user,
-                         local_image_artifact,
-                         cvd_host_package_artifact):
-        """Upload local image and avd local host package to instance.
+                         local_image_zip,
+                         cvd_host_package_artifact,
+                         images_dir):
+        """Upload local images and avd local host package to instance.
+
+        There are two ways to upload local images.
+        1. Using local image zip, it would be decompressed by install_zip.sh.
+        2. Using local image directory, this directory contains all images.
+           Images are compressed/decompressed by lzop during upload process.
 
         Args:
-            cvd_user: A string, user upload the artifacts to instance.
-            local_image_artifact: A string, path to local image.
-            cvd_host_package_artifact: A string, path to cvd host package.
+            cvd_user: String, user upload the artifacts to instance.
+            local_image_zip: String, path to zip of local images which
+                             build from 'm dist'.
+            cvd_host_package_artifact: String, path to cvd host package.
+            images_dir: String, directory of local images which build
+                        from 'm'.
         """
-        # TODO(b/129376163) Use lzop for fast sparse image upload
-        remote_cmd = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s" %
-                      (cvd_user, local_image_artifact))
-        logger.debug("remote_cmd:\n %s", remote_cmd)
-        self._ShellCmdWithRetry(self._ssh_cmd + remote_cmd)
+        # TODO(b/133461252) Deprecate acloud create with local image zip.
+        # Upload local image zip file
+        if local_image_zip:
+            remote_cmd = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s"
+                          % (cvd_user, local_image_zip))
+            logger.debug("remote_cmd:\n %s", remote_cmd)
+            self._ShellCmdWithRetry(self._ssh_cmd + remote_cmd)
+        else:
+            # Compress image files for faster upload.
+            artifact_files = [os.path.basename(image) for image in glob.glob(
+                os.path.join(images_dir, "*.img"))]
+            cmd = ("tar -cf - --lzop -S -C {images_dir} {artifact_files} | "
+                   "{ssh_cmd} -- tar -xf - --lzop -S".format(
+                       images_dir=images_dir,
+                       artifact_files=" ".join(artifact_files),
+                       ssh_cmd=self._ssh_cmd))
+            logger.debug("cmd:\n %s", cmd)
+            self._ShellCmdWithRetry(cmd)
 
         # host_package
         remote_cmd = ("\"sudo su -c 'tar -x -z -f -' - '%s'\" < %s" %
@@ -272,16 +296,9 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             no_prompts: Boolean, True to skip all prompts.
         """
         self.cvd_host_package_artifact = self.VerifyHostPackageArtifactsExist()
-
-        if avd_spec.local_image_artifact:
-            local_image_artifact = avd_spec.local_image_artifact
-        else:
-            local_image_artifact = create_common.ZipCFImageFiles(
-                avd_spec.local_image_dir)
-
         device_factory = RemoteInstanceDeviceFactory(
             avd_spec,
-            local_image_artifact,
+            avd_spec.local_image_artifact,
             self.cvd_host_package_artifact)
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, avd_spec.num,
