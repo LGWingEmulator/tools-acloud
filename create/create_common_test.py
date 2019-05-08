@@ -13,15 +13,35 @@
 # limitations under the License.
 """Tests for create_common."""
 
+import os
+import tempfile
+import time
 import unittest
-import mock
+import zipfile
 
 from acloud import errors
 from acloud.create import create_common
+from acloud.internal import constants
+from acloud.internal.lib import driver_test_lib
+
+
+
+class FakeZipFile(object):
+    """Fake implementation of ZipFile()"""
+
+    # pylint: disable=invalid-name,unused-argument,no-self-use
+    def write(self, filename, arcname=None, compress_type=None):
+        """Fake write method."""
+        return
+
+    # pylint: disable=invalid-name,no-self-use
+    def close(self):
+        """Fake close method."""
+        return
 
 
 # pylint: disable=invalid-name,protected-access
-class CreateCommonTest(unittest.TestCase):
+class CreateCommonTest(driver_test_lib.BaseDriverTest):
     """Test create_common functions."""
 
     # pylint: disable=protected-access
@@ -45,21 +65,24 @@ class CreateCommonTest(unittest.TestCase):
         result_dict = create_common.ParseHWPropertyArgs(args_str)
         self.assertTrue(expected_dict == result_dict)
 
-    @mock.patch("glob.glob")
-    def testVerifyLocalImageArtifactsExist(self, mock_glob):
-        """Test VerifyArtifactsPath."""
-        #can't find the image
-        mock_glob.return_value = []
-        self.assertRaises(errors.GetLocalImageError,
-                          create_common.VerifyLocalImageArtifactsExist,
-                          "/fake_dirs")
+    def testZipCFImageFiles(self):
+        """Test ZipCFImageFiles."""
+        # Should raise error if zip file already exists
+        fake_image_path = "/fake_image_dir/"
+        self.Patch(os.path, "exists", return_value=True)
+        self.assertRaises(errors.ZipImageError,
+                          create_common.ZipCFImageFiles,
+                          fake_image_path)
 
-        mock_glob.return_value = [
-            "/fake_dirs/aosp_cf_x86_phone-img-5046769.zip"
-        ]
-        self.assertEqual(
-            create_common.VerifyLocalImageArtifactsExist("/fake_dirs"),
-            "/fake_dirs/aosp_cf_x86_phone-img-5046769.zip")
+        # Test should get archive name by timestamp if zip file does not exist.
+        self.Patch(zipfile, "ZipFile", return_value=FakeZipFile())
+        self.Patch(os.path, "exists", return_value=False)
+        self.Patch(os.environ, "get", return_value="fake_build_target")
+        self.Patch(time, "time", return_value=12345)
+        self.Patch(tempfile, "gettempdir", return_value="/fake_temp")
+        self.assertEqual(create_common.ZipCFImageFiles(fake_image_path),
+                         "/fake_temp/%s/fake_build_target-local-12345.zip" %
+                         constants.TEMP_ARTIFACTS_FOLDER)
 
 
 if __name__ == "__main__":

@@ -20,11 +20,17 @@ from __future__ import print_function
 import glob
 import logging
 import os
+import tempfile
+import time
+import zipfile
 
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
+
+_ACLOUD_IMAGE_ZIP_POSTFIX = "-local-img-%s.zip"
 
 
 def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
@@ -62,43 +68,38 @@ def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
     return hw_dict
 
 
-def VerifyLocalImageArtifactsExist(local_image_dir):
-    """Verify local image artifacts exists.
+@utils.TimeExecute(function_description="Compressing images")
+def ZipCFImageFiles(basedir):
+    """Zip images from basedir.
 
-    Look for the image in the local_image_dir and dist dir as backup.
-
-    The image name follows the pattern:
-    Remote image: {target product}-img-{build id}.zip,
-                  e.g. aosp_cf_x86_phone-img-5046769.zip
-    Local built image: {target product}-img-{username}.zip,
-                       e.g. aosp_cf_x86_64_phone-img-eng.droid.zip
+    TODO(b/129376163):Use lzop for fast sparse image upload when host image
+    support it.
 
     Args:
-        local_image_dir: A string to specifies local image dir.
+        basedir: String of local images path.
 
     Return:
-        Strings of local image path.
-
-    Raises:
-        errors.GetLocalImageError: Can't find local image.
+        Strings of zipped image path.
     """
-    dirs_to_check = [local_image_dir]
-    dist_dir = utils.GetDistDir()
-    if dist_dir:
-        dirs_to_check.append(dist_dir)
-    for img_dir in dirs_to_check:
-        image_pattern = os.path.join(img_dir, "*img*.zip")
-        images = glob.glob(image_pattern)
-        if images:
-            break
-    if not images:
-        raise errors.GetLocalImageError("No images found in %s\n"
-                                        "(Try building with 'm dist')" %
-                                        [local_image_dir, dist_dir])
-    if len(images) > 1:
-        print("Multiple images found, please choose 1.")
-        image_path = utils.GetAnswerFromList(images)[0]
-    else:
-        image_path = images[0]
-    logger.debug("Local image: %s ", image_path)
-    return image_path
+    archive_name = "%s-local-%d.zip" % (os.environ.get(constants.ENV_BUILD_TARGET),
+                                        int(time.time()))
+    archive_file = os.path.join(tempfile.gettempdir(),
+                                constants.TEMP_ARTIFACTS_FOLDER,
+                                archive_name)
+    if os.path.exists(archive_file):
+        raise errors.ZipImageError("This file shouldn't exist, please delete: %s"
+                                   % archive_file)
+
+    zip_file = zipfile.ZipFile(archive_file, 'w', zipfile.ZIP_DEFLATED,
+                               allowZip64=True)
+    required_files = ([os.path.join(basedir, "android-info.txt")] +
+                      glob.glob(os.path.join(basedir, "*.img")))
+    logger.debug("archiving images: %s", required_files)
+
+    for f in required_files:
+        # Pass arcname arg to remove the directory structure.
+        zip_file.write(f, arcname=os.path.basename(f))
+
+    zip_file.close()
+    logger.debug("zip images done:%s", archive_file)
+    return archive_file
