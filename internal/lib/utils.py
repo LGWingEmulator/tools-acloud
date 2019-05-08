@@ -82,6 +82,7 @@ _EvaluatedResult = collections.namedtuple("EvaluatedResult",
 _SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 _DEFAULT_TIMEOUT_ERR = "Function did not complete within %d secs."
 
+
 class TempDir(object):
     """A context manager that ceates a temporary directory.
 
@@ -436,6 +437,7 @@ def VerifyRsaPubKey(rsa):
         raise errors.DriverError(
             "rsa key is invalid: %s, error: %s" % (rsa, str(e)))
 
+
 def Decompress(sourcefile, dest=None):
     """Decompress .zip or .tar.gz.
 
@@ -458,6 +460,7 @@ def Decompress(sourcefile, dest=None):
         raise errors.UnsupportedCompressionFileType(
             "Sorry, we could only support compression file type "
             "for zip or tar.gz.")
+
 
 # pylint: disable=old-style-class,no-init
 class TextColors:
@@ -845,6 +848,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
 
     Args:
         answer_list: list of the answers to choose from.
+        enable_choose_all: True to choose all items from answer list.
 
     Return:
         List holding the answer(s).
@@ -1169,3 +1173,25 @@ def TimeoutException(timeout_secs, timeout_error=_DEFAULT_TIMEOUT_ERR):
         return _FunctionWrapper
 
     return _Wrapper
+
+
+def GetBuildEnvironmentVariable(variable_name):
+    """Get build environment variable.
+
+    Args:
+        variable_name: String of variable name.
+
+    Returns:
+        String, the value of the variable.
+
+    Raises:
+        errors.GetAndroidBuildEnvVarError: No environment variable found.
+    """
+    try:
+        return os.environ[variable_name]
+    except KeyError:
+        raise errors.GetAndroidBuildEnvVarError(
+            "Could not get environment var: %s\n"
+            "Try to run 'source build/envsetup.sh && lunch <target>'"
+            % variable_name
+        )
