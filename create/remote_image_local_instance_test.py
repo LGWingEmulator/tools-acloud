@@ -127,18 +127,6 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
                           self.RemoteImageLocalInstance._UnpackBootImage,
                           self._extract_path)
 
-    @mock.patch.object(subprocess, "check_call")
-    def testAclCfImageFiles(self, mock_call):
-        """Test acl related files."""
-        self.Patch(os.path, "exists",
-                   side_effect=[True, True, True, True, False, True, True])
-        # Raise error when acl required file does not exist at 5th run cehck_call.
-        self.assertRaises(errors.CheckPathError,
-                          self.RemoteImageLocalInstance._AclCfImageFiles,
-                          self._extract_path)
-        # it should be run check_call 4 times before raise error.
-        self.assertEqual(mock_call.call_count, 4)
-
     def testConfirmDownloadRemoteImageDir(self):
         """Test confirm download remote image dir"""
         self.Patch(os.path, "exists", return_value=True)

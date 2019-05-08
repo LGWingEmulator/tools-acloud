@@ -27,6 +27,7 @@ import subprocess
 
 from acloud import errors
 from acloud.create import base_avd_create
+from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
@@ -41,7 +42,6 @@ _CVD_USER = getpass.getuser()
 _CMD_LAUNCH_CVD_ARGS = (" -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s -blank_data_image_mb %s "
                         "-data_policy always_create ")
-
 #Output to Serial port 1 (console) group in the instance
 _OUTPUT_CONSOLE_GROUPS = "tty"
 SSH_BIN = "ssh"
@@ -155,7 +155,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                         else ip.external)}
         return instance
 
-    @utils.TimeExecute(function_description="Setup GCE environment")
+    @utils.TimeExecute(function_description="Setting up GCE environment")
     def _SetAVDenv(self, cvd_user):
         """set the user to run AVD in the instance.
 
@@ -183,7 +183,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             local_image_artifact: A string, path to local image.
             cvd_host_package_artifact: A string, path to cvd host package.
         """
-        # local image
+        # TODO(b/129376163) Use lzop for fast sparse image upload
         remote_cmd = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s" %
                       (cvd_user, local_image_artifact))
         logger.debug("remote_cmd:\n %s", remote_cmd)
@@ -222,32 +222,20 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         """LocalImageRemoteInstance initialize."""
         self.cvd_host_package_artifact = None
 
-    def VerifyArtifactsExist(self, local_image_dir):
-        """Verify required cuttlefish image artifacts exists.
-
-        Arsg:
-            local_image_dir: A string, path to check the artifacts.
-        """
-        self.cvd_host_package_artifact = self.VerifyHostPackageArtifactsExist(
-            local_image_dir)
-
-    def VerifyHostPackageArtifactsExist(self, local_image_dir):
+    def VerifyHostPackageArtifactsExist(self):
         """Verify the host package exists and return its path.
 
-        Look for the host package in local_image_dir (when we download the
-        image artifacts from Android Build into 1 folder), if we can't find
-        it, look in the dist dir (if the user built the image locally).
-
-        Args:
-            local_image_dir: A string, path to check for the host package.
+        Look for the host package in $ANDROID_HOST_OUT and dist dir.
 
         Return:
             A string, the path to the host package.
         """
-        dirs_to_check = [local_image_dir]
+        dirs_to_check = filter(None,
+                               [os.environ.get(constants.ENV_ANDROID_HOST_OUT)])
         dist_dir = utils.GetDistDir()
         if dist_dir:
             dirs_to_check.append(dist_dir)
+
         cvd_host_package_artifact = self.GetCvdHostPackage(dirs_to_check)
         logger.debug("cvd host package: %s", cvd_host_package_artifact)
         return cvd_host_package_artifact
@@ -270,8 +258,9 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             if os.path.exists(cvd_host_package):
                 return cvd_host_package
         raise errors.GetCvdLocalHostPackageError, (
-            "Can't find the cvd host package (Try building with 'm dist'): \n%s"
-            % '\n'.join(paths))
+            "Can't find the cvd host package (Try lunching a cuttlefish target"
+            " like aosp_cf_x86_phone-userdebug and running 'm'): \n%s" %
+            '\n'.join(paths))
 
     @utils.TimeExecute(function_description="Total time: ",
                        print_before_call=False, print_status=False)
@@ -282,10 +271,17 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             avd_spec: AVDSpec object that tells us what we're going to create.
             no_prompts: Boolean, True to skip all prompts.
         """
-        self.VerifyArtifactsExist(avd_spec.local_image_dir)
+        self.cvd_host_package_artifact = self.VerifyHostPackageArtifactsExist()
+
+        if avd_spec.local_image_artifact:
+            local_image_artifact = avd_spec.local_image_artifact
+        else:
+            local_image_artifact = create_common.ZipCFImageFiles(
+                avd_spec.local_image_dir)
+
         device_factory = RemoteInstanceDeviceFactory(
             avd_spec,
-            avd_spec.local_image_artifact,
+            local_image_artifact,
             self.cvd_host_package_artifact)
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, avd_spec.num,

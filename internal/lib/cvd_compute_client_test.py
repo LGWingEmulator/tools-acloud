@@ -16,15 +16,16 @@
 
 """Tests for acloud.internal.lib.cvd_compute_client."""
 
+import glob
 import unittest
 import mock
 
 from acloud.create import avd_spec
-from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
+from acloud.internal.lib import utils
 
 
 class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
@@ -73,7 +74,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client = cvd_compute_client.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 
-    @mock.patch.object(create_common, "VerifyLocalImageArtifactsExist")
+    @mock.patch.object(utils, "GetBuildEnvironmentVariable", return_value="fake_env")
+    @mock.patch.object(glob, "glob", return_value=["fake.img"])
     @mock.patch.object(gcompute_client.ComputeClient, "CompareMachineSize",
                        return_value=1)
     @mock.patch.object(gcompute_client.ComputeClient, "GetImage",
@@ -83,7 +85,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
                        return_value=[{"fake_arg": "fake_value"}])
     @mock.patch("getpass.getuser", return_value="fake_user")
     def testCreateInstance(self, _get_user, _get_disk_args, mock_create,
-                           _get_image, _compare_machine_size, mock_img_path):
+                           _get_image, _compare_machine_size, mock_check_img,
+                           _mock_env):
         """Test CreateInstance."""
         expected_metadata = {
             "cvd_01_dpi": str(self.DPI),
@@ -108,7 +111,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
             self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
             self.EXTRA_DATA_DISK_SIZE_GB)
-        # gcompute_client.ComputeClient.CreateInstance.assert_called_with(
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
@@ -124,10 +126,10 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         #test use local image in the remote instance.
         local_image_metadata = dict(expected_metadata)
         args = mock.MagicMock()
-        mock_img_path.return_value = "cf_x86_phone-img-eng.user.zip"
-        args.local_image = "/tmp/path"
+        mock_check_img.return_value = True
+        args.local_image = None
         args.config_file = ""
-        args.avd_type = "cf"
+        args.avd_type = constants.TYPE_CF
         args.flavor = "phone"
         fake_avd_spec = avd_spec.AVDSpec(args)
         fake_avd_spec.hw_property[constants.HW_X_RES] = str(self.X_RES)
@@ -135,7 +137,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         fake_avd_spec.hw_property[constants.HW_ALIAS_DPI] = str(self.DPI)
         fake_avd_spec.hw_property[constants.HW_ALIAS_DISK] = str(
             self.EXTRA_DATA_DISK_SIZE_GB * 1024)
-        local_image_metadata["avd_type"] = "cf"
+        local_image_metadata["avd_type"] = constants.TYPE_CF
         local_image_metadata["flavor"] = "phone"
         local_image_metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
             fake_avd_spec.hw_property[constants.HW_X_RES],

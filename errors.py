@@ -205,3 +205,7 @@ class NoInstancesFound(ReconnectError):
 
 class FunctionTimeoutError(Exception):
     """Timeout error of decorator function."""
+
+
+class ZipImageError(Exception):
+    """Zip image error."""
