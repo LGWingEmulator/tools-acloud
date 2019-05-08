@@ -100,7 +100,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_branch and kernel_build_id:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
-        metadata["cvd_01_launch"] = "1"
+        metadata["cvd_01_launch"] = (self._launch_args
+                                     if self._launch_args else "1")
 
         # The cuttlefish-google tools changed the usage of this cvd_01_launch
         # variable. For the local image, we remove the cvd_01_launch from

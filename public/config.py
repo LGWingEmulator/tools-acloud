@@ -198,6 +198,8 @@ class AcloudConfig(object):
         self.common_hw_property_map = internal_cfg.common_hw_property_map
         self.hw_property = usr_cfg.hw_property
 
+        self.launch_args = usr_cfg.launch_args
+
         # Verify validity of configurations.
         self.Verify()
 
