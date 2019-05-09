@@ -49,6 +49,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     METADATA = {"metadata_key": "metadata_value"}
     EXTRA_DATA_DISK_SIZE_GB = 4
     BOOT_DISK_SIZE_GB = 10
+    LAUNCH_ARGS = "--setupwizard_mode=REQUIRED"
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -65,6 +66,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             x=self.X_RES, y=self.Y_RES, dpi=self.DPI)
         fake_cfg.metadata_variable = self.METADATA
         fake_cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_SIZE_GB
+        fake_cfg.launch_args = self.LAUNCH_ARGS
         return fake_cfg
 
     def setUp(self):
@@ -104,13 +106,13 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         }
         expected_metadata.update(self.METADATA)
         remote_image_metadata = dict(expected_metadata)
-        remote_image_metadata["cvd_01_launch"] = "1"
+        remote_image_metadata["cvd_01_launch"] = self.LAUNCH_ARGS
         expected_disk_args = [{"fake_arg": "fake_value"}]
 
         self.cvd_compute_client.CreateInstance(
-            self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
-            self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-            self.EXTRA_DATA_DISK_SIZE_GB)
+            self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
+            self.BRANCH, self.BUILD_ID, self.KERNEL_BRANCH,
+            self.KERNEL_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB)
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
