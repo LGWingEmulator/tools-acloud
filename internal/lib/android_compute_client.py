@@ -78,6 +78,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._resolution = acloud_config.resolution
         self._metadata = acloud_config.metadata_variable.copy()
         self._ssh_public_key_path = acloud_config.ssh_public_key_path
+        self._launch_args = acloud_config.launch_args
 
     @classmethod
     def _FormalizeName(cls, name):

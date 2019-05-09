@@ -85,4 +85,8 @@ message UserConfig {
   optional string stable_cheeps_host_image_name = 22;
   // [CHEEPS only] The project that the stable host image is released to
   optional string stable_cheeps_host_image_project = 23;
+
+  // [CVD only] It will get passed into the launch_cvd command if not empty.
+  // In version 0.7.2 and later.
+  optional string launch_args = 24;
 }
