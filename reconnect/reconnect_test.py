@@ -20,6 +20,7 @@ import subprocess
 
 import mock
 
+from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
@@ -129,6 +130,28 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
                                              constants.CF_VNC_PORT,
                                              constants.CF_ADB_PORT,
                                              "fake_user")
+
+
+    def testReconnectInstanceUnknownAvdType(self):
+        """Test reconnect instances of unknown avd type."""
+        ssh_private_key_path = "/fake/acloud_rea"
+        instance_object = mock.MagicMock()
+        instance_object.avd_type = "unknown"
+        self.assertRaises(errors.UnknownAvdType,
+                          reconnect.ReconnectInstance,
+                          ssh_private_key_path,
+                          instance_object)
+
+
+    def testReconnectInstanceNoAvdType(self):
+        """Test reconnect instances with no avd type."""
+        ssh_private_key_path = "/fake/acloud_rea"
+        instance_object = mock.MagicMock()
+        self.assertRaises(errors.UnknownAvdType,
+                          reconnect.ReconnectInstance,
+                          ssh_private_key_path,
+                          instance_object)
+
 
     def testStartVnc(self):
         """Test start Vnc."""
