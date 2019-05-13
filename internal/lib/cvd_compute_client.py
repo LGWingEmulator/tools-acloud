@@ -67,13 +67,13 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         Args:
             instance: instance name.
             image_name: A string, the name of the GCE image.
-            image_project: A string, name of the project where the image belongs.
+            image_project: A string, name of the project where the image lives.
                            Assume the default project if None.
             build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             branch: Branch name, e.g. "aosp-master"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
-            kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
-            kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
+            kernel_branch: Kernel branch name, e.g. "kernel-common-android-4.14"
+            kernel_build_id: Kernel build id, a string, e.g. "223051", "P280427"
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             avd_spec: An AVDSpec instance.
         """
