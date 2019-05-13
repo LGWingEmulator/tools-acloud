@@ -24,6 +24,8 @@ BaseDeviceFactory provides basic interface to create a device factory.
 class BaseDeviceFactory(object):
   """A class that provides basic interface to create a device factory."""
 
+  LATEST = "latest"
+
   def __init__(self, compute_client):
 
     self._compute_client = compute_client

@@ -132,6 +132,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 {
                     "instance_name": self.INSTANCE,
                     "ip": self.IP.external,
+                    "branch": self.BRANCH,
+                    "build_id": self.BUILD_ID,
+                    "build_target": self.BUILD_TARGET,
+                    "emulator_branch": self.EMULATOR_BRANCH,
+                    "emulator_build_id": self.EMULATOR_BUILD_ID,
+                    "emulator_build_target": self.EMULATOR_TARGET,
                 },
             ],
         })
@@ -210,6 +216,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "devices": [{
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
+                "branch": self.BRANCH,
+                "build_id": self.BUILD_ID,
+                "build_target": self.BUILD_TARGET,
+                "emulator_branch": self.EMULATOR_BRANCH,
+                "emulator_build_id": self.EMULATOR_BUILD_ID,
+                "emulator_build_target": self.EMULATOR_TARGET,
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -283,6 +295,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             "devices": [{
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
+                "branch": self.BRANCH,
+                "build_id": self.BUILD_ID,
+                "build_target": self.BUILD_TARGET,
+                "emulator_branch": self.EMULATOR_BRANCH,
+                "emulator_build_id": self.EMULATOR_BUILD_ID,
+                "emulator_build_target": self.EMULATOR_TARGET,
             },],
         })
         self.assertEquals(report.command, "create_gf")

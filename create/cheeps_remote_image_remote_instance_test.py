@@ -86,6 +86,7 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
 
         self.assertEquals(report.data, {
             "devices": [{
+                "build_id": self.ANDROID_BUILD_ID,
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
             },],
