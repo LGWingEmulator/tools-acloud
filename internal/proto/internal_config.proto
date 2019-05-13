@@ -38,6 +38,10 @@ message DefaultUserConfig {
   optional string stable_cheeps_host_image_name = 9;
   // [CHEEPS only] The project where stable host image is
   optional string stable_cheeps_host_image_project = 10;
+  // The pattern of the instance name, e.g. ins-{uuid}-{build_id}-{build_target}
+  // the parts in {} will be automatically replaced with the actual value if
+  // you specify them in the pattern, uuid will be automatically generated.
+  optional string instance_name_pattern = 11;
 }
 
 // Internal configuration
