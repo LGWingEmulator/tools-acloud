@@ -94,6 +94,7 @@ class AcloudConfig(object):
         "disk_image_name", "disk_image_mime_type"
     ]
 
+    # pylint: disable=too-many-statements
     def __init__(self, usr_cfg, internal_cfg):
         """Initialize.
 
@@ -199,6 +200,10 @@ class AcloudConfig(object):
         self.hw_property = usr_cfg.hw_property
 
         self.launch_args = usr_cfg.launch_args
+        self.instance_name_pattern = (
+            usr_cfg.instance_name_pattern or
+            internal_cfg.default_usr_cfg.instance_name_pattern)
+
 
         # Verify validity of configurations.
         self.Verify()
