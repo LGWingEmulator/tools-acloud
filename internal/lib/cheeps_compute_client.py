@@ -63,7 +63,7 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
 
     # pylint: disable=too-many-locals,arguments-differ
     def CreateInstance(self, instance, image_name, image_project,
-                       build_id=None):
+                       build_id=None, avd_spec=None):
         """ Creates a cheeps instance in GCE.
 
         Args:
@@ -72,10 +72,22 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
             image_project: project the GCE image is in
             build_id: (optional) the Android build id to use. To specify a
                 different betty image you should use a different image_name
+            avd_spec: An AVDSpec instance.
         """
         metadata = self._metadata.copy()
+        metadata[constants.INS_KEY_AVD_TYPE] = constants.TYPE_CHEEPS
         if build_id:
             metadata['android_build_id'] = build_id
+
+        # Update metadata by avd_spec
+        if avd_spec:
+            metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
+            metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
+            metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
+            metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+                avd_spec.hw_property[constants.HW_X_RES],
+                avd_spec.hw_property[constants.HW_Y_RES],
+                avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
         # Add per-instance ssh key
         if self._ssh_public_key_path:

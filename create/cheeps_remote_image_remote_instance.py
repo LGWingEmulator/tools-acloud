@@ -48,7 +48,7 @@ class CheepsRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             "Creating a cheeps device in project %s, build_id: %s",
             avd_spec.cfg.project, build_id)
 
-        device_factory = CheepsDeviceFactory(avd_spec.cfg, build_id)
+        device_factory = CheepsDeviceFactory(avd_spec.cfg, build_id, avd_spec)
 
         report = common_operations.CreateDevices(
             command="create_cheeps",
@@ -76,12 +76,13 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
     """
     LOG_FILES = []
 
-    def __init__(self, cfg, build_id):
+    def __init__(self, cfg, build_id, avd_spec=None):
         """Initialize.
 
         Args:
             cfg: An AcloudConfig instance.
             build_id: String, Build id, e.g. "2263051", "P2804227"
+            avd_spec: An AVDSpec instance.
         """
         self.credentials = auth.CreateCredentials(cfg)
 
@@ -91,6 +92,7 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
 
         self._cfg = cfg
         self._build_id = build_id
+        self._avd_spec = avd_spec
 
     def CreateInstance(self):
         """Creates single configured cheeps device.
@@ -103,5 +105,6 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
             instance=instance,
             image_name=self._cfg.stable_cheeps_host_image_name,
             image_project=self._cfg.stable_cheeps_host_image_project,
-            build_id=self._build_id)
+            build_id=self._build_id,
+            avd_spec=self._avd_spec)
         return instance
