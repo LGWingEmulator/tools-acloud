@@ -49,6 +49,8 @@ metadata_variable {
     value: "metadata_value_1"
 }
 hw_property: "cpu:3,resolution:1080x1920,dpi:480,memory:4g,disk:10g"
+extra_scopes: "scope1"
+extra_scopes: "scope2"
 """
 
     INTERNAL_CONFIG = """
@@ -136,6 +138,7 @@ common_hw_property_map {
         self.assertEqual(cfg.hw_property,
                          "cpu:3,resolution:1080x1920,dpi:480,memory:4g,"
                          "disk:10g")
+        self.assertEqual(cfg.extra_scopes, ["scope1", "scope2"])
 
     # pylint: disable=protected-access
     @mock.patch("os.makedirs")

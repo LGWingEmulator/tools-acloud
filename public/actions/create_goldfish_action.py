@@ -94,6 +94,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._gpu = gpu
         self._avd_spec = avd_spec
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
+        self._extra_scopes = cfg.extra_scopes
 
         # Configure clients
         self._build_client = android_build_client.AndroidBuildClient(
@@ -126,7 +127,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             emulator_build_id=self._emulator_build_id,
             gpu=self._gpu,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
-            avd_spec=self._avd_spec)
+            avd_spec=self._avd_spec,
+            extra_scopes=self._extra_scopes)
 
         return instance
 

@@ -50,6 +50,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     EXTRA_DATA_DISK_SIZE_GB = 4
     BOOT_DISK_SIZE_GB = 10
     LAUNCH_ARGS = "--setupwizard_mode=REQUIRED"
+    EXTRA_SCOPES = ["scope1"]
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -67,6 +68,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         fake_cfg.metadata_variable = self.METADATA
         fake_cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_SIZE_GB
         fake_cfg.launch_args = self.LAUNCH_ARGS
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         return fake_cfg
 
     def setUp(self):
@@ -112,7 +114,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
             self.BRANCH, self.BUILD_ID, self.KERNEL_BRANCH,
-            self.KERNEL_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB)
+            self.KERNEL_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB,
+            extra_scopes=self.EXTRA_SCOPES)
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
@@ -123,7 +126,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels={constants.LABEL_CREATE_BY: "fake_user"})
+            labels={constants.LABEL_CREATE_BY: "fake_user"},
+            extra_scopes=self.EXTRA_SCOPES)
 
         #test use local image in the remote instance.
         local_image_metadata = dict(expected_metadata)
@@ -148,7 +152,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
             self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-            self.EXTRA_DATA_DISK_SIZE_GB, fake_avd_spec)
+            self.EXTRA_DATA_DISK_SIZE_GB, fake_avd_spec,
+            extra_scopes=self.EXTRA_SCOPES)
 
         expected_labels = {constants.LABEL_CREATE_BY: "fake_user"}
         mock_create.assert_called_with(
@@ -161,7 +166,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels=expected_labels)
+            labels=expected_labels,
+            extra_scopes=self.EXTRA_SCOPES)
 
 
 if __name__ == "__main__":

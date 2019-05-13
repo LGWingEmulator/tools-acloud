@@ -167,7 +167,8 @@ class AndroidVirtualDevicePool(object):
                       cleanup=True,
                       extra_data_disk_size_gb=None,
                       precreated_data_image=None,
-                      avd_spec=None):
+                      avd_spec=None,
+                      extra_scopes=None):
         """Creates |num| devices for given build_target and build_id.
 
         - If gce_image is provided, will use it to create an instance.
@@ -192,6 +193,7 @@ class AndroidVirtualDevicePool(object):
             extra_data_disk_size_gb: Integer, size of extra disk, or None.
             precreated_data_image: A string, the image to use for the extra disk.
             avd_spec: AVDSpec object for pass hw_property.
+            extra_scopes: A list of extra scopes given to the new instance.
 
         Raises:
             errors.DriverError: If no source is specified for image creation.
@@ -227,7 +229,8 @@ class AndroidVirtualDevicePool(object):
                     instance=instance,
                     image_name=image_name,
                     extra_disk_name=extra_disk_name,
-                    avd_spec=avd_spec)
+                    avd_spec=avd_spec,
+                    extra_scopes=extra_scopes)
                 ip = self._compute_client.GetInstanceIP(instance)
                 self.devices.append(avd.AndroidVirtualDevice(
                     ip=ip, instance_name=instance))
@@ -387,7 +390,8 @@ def CreateAndroidVirtualDevices(cfg,
             extra_data_disk_size_gb=cfg.extra_data_disk_size_gb,
             precreated_data_image=cfg.precreated_data_image_map.get(
                 cfg.extra_data_disk_size_gb),
-            avd_spec=avd_spec)
+            avd_spec=avd_spec,
+            extra_scopes=cfg.extra_scopes)
         failures = device_pool.WaitForBoot()
         # Write result to report.
         for device in device_pool.devices:
