@@ -89,4 +89,9 @@ message UserConfig {
   // [CVD only] It will get passed into the launch_cvd command if not empty.
   // In version 0.7.2 and later.
   optional string launch_args = 24;
+
+  // The pattern of the instance name, e.g. ins-{uuid}-{build_id}-{build_target}
+  // the parts in {} will be automatically replaced with the actual value if
+  // you specify them in the pattern, uuid will be automatically generated.
+  optional string instance_name_pattern = 25;
 }
