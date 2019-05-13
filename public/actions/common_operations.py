@@ -293,6 +293,12 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                 "ip": ip,
                 "instance_name": device.instance_name
             }
+            for attr in ("branch", "build_target", "build_id", "kernel_branch",
+                         "kernel_build_target", "kernel_build_id",
+                         "emulator_branch", "emulator_build_target",
+                         "emulator_build_id"):
+                if getattr(device_factory, "_%s" % attr, None):
+                    device_dict[attr] = getattr(device_factory, "_%s" % attr)
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
                     ip, cfg.ssh_private_key_path,

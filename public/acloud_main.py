@@ -143,13 +143,26 @@ def _ParseArgs(args):
         help="Android branch, e.g. git_master")
     create_cf_parser.add_argument(
         "--kernel_build_id",
+        "--kernel-build-id",
         type=str,
         dest="kernel_build_id",
         required=False,
         help="Android kernel build id, e.g. 4586590. This is to test a new"
-        " kernel build with a particular Android build (--build_id). If not"
-        " specified, the kernel that's bundled with the Android build would"
-        " be used.")
+        " kernel build with a particular Android build (--build_id). If neither"
+        " kernel_branch nor kernel_build_id are specified, the kernel that's"
+        " bundled with the Android build would be used.")
+    create_cf_parser.add_argument(
+        "--kernel_branch",
+        "--kernel-branch",
+        type=str,
+        dest="kernel_branch",
+        required=False,
+        help="Android kernel build branch name, e.g."
+        " kernel-common-android-4.14. This is to test a new kernel build with a"
+        " particular Android build (--build-id). If specified without"
+        " specifying kernel_build_id, the last green build in the branch will"
+        " be used. If neither kernel_branch nor kernel_build_id are specified,"
+        " the kernel that's bundled with the Android build would be used.")
 
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
@@ -351,6 +364,7 @@ def main(argv=None):
             build_target=args.build_target,
             build_id=args.build_id,
             kernel_build_id=args.kernel_build_id,
+            kernel_branch=args.kernel_branch,
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
