@@ -169,6 +169,9 @@ class AcloudConfig(object):
             if "cfg_sta_ephemeral_data_size_mb" in self.metadata_variable:
                 del self.metadata_variable["cfg_sta_ephemeral_data_size_mb"]
 
+        # Additional scopes to be passed to the created instance
+        self.extra_scopes = usr_cfg.extra_scopes
+
         # Fields that can be overriden by args
         self.orientation = usr_cfg.orientation
         self.resolution = usr_cfg.resolution

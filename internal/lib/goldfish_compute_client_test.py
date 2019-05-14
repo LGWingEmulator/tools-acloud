@@ -44,6 +44,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
     EXTRA_DATA_DISK_SIZE_GB = 4
     BOOT_DISK_SIZE_GB = 10
     GPU = "nvidia-tesla-k80"
+    EXTRA_SCOPES = "scope1"
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -60,6 +61,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             x=self.X_RES, y=self.Y_RES, dpi=self.DPI)
         fake_cfg.metadata_variable = self.METADATA
         fake_cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_SIZE_GB
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         return fake_cfg
 
     def setUp(self):
@@ -112,7 +114,8 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
         self.goldfish_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
             self.BRANCH, self.BUILD_ID, self.EMULATOR_BRANCH,
-            self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU)
+            self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU,
+            extra_scopes=self.EXTRA_SCOPES)
 
         # pylint: disable=no-member
         gcompute_client.ComputeClient.CreateInstance.assert_called_with(
@@ -126,7 +129,8 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE,
             gpu=self.GPU,
-            labels=expected_labels)
+            labels=expected_labels,
+            extra_scopes=self.EXTRA_SCOPES)
 
 
 if __name__ == "__main__":

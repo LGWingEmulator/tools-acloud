@@ -65,6 +65,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         "pxXR7I2YhynqovkEt/OXG4qWgvLEXGsWtSQs0CtCzqEVxz0Y9ECr7er4VdjSQxV"
         "AaeLAsQsK9ROae8hMBFZ3//8zLVapBwpuffCu+fUoql9qeV9xagZcc9zj8XOUOW"
         "ApiihqNL1111 test@test1.org")
+    EXTRA_SCOPES = ["scope1"]
 
     def setUp(self):
         """Set up test."""
@@ -72,6 +73,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(gcompute_client.ComputeClient, "InitResourceHandle")
         fake_cfg = mock.MagicMock()
         fake_cfg.project = PROJECT
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         self.compute_client = gcompute_client.ComputeClient(
             fake_cfg, mock.MagicMock())
         self.compute_client._service = mock.MagicMock()
@@ -530,6 +532,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         extra_disk_name = "gce-x86-userdebug-2345-abcd-data"
         expected_disk_args = [self._disk_args]
         expected_disk_args.extend([{"fake_extra_arg": "fake_extra_value"}])
+        expected_scope = []
+        expected_scope.extend(self.compute_client.DEFAULT_INSTANCE_SCOPE)
+        expected_scope.extend(self.EXTRA_SCOPES)
 
         expected_body = {
             "machineType": self.MACHINE_TYPE_URL,
@@ -547,7 +552,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             "disks": expected_disk_args,
             "serviceAccounts": [
                 {"email": "default",
-                 "scopes": self.compute_client.DEFAULT_INSTANCE_SCOPE}
+                 "scopes": expected_scope}
             ],
             "metadata": {
                 "items": [{"key": self.METADATA[0],
@@ -562,7 +567,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata={self.METADATA[0]: self.METADATA[1]},
             network=self.NETWORK,
             zone=self.ZONE,
-            extra_disk_name=extra_disk_name)
+            extra_disk_name=extra_disk_name,
+            extra_scopes=self.EXTRA_SCOPES)
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
@@ -632,7 +638,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata={self.METADATA[0]: self.METADATA[1]},
             network=self.NETWORK,
             zone=self.ZONE,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            extra_scopes=None)
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)

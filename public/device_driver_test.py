@@ -48,6 +48,7 @@ def _CreateCfg():
         4: "extradisk-image-4gb",
         10: "extradisk-image-10gb"
     }
+    cfg.extra_scopes = None
     cfg.ssh_private_key_path = ""
     cfg.ssh_public_key_path = ""
 
@@ -109,7 +110,8 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
             instance=fake_instance,
             image_name=fake_image,
             extra_disk_name=disk_name,
-            avd_spec=None)
+            avd_spec=None,
+            extra_scopes=None)
         self.compute_client.DeleteImage.assert_called_with(fake_image)
         self.storage_client.Delete(cfg.storage_bucket_name, fake_gs_object)
 

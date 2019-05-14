@@ -69,6 +69,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._avd_spec = avd_spec
         self._kernel_branch = kernel_branch
         self._kernel_build_target = cfg.kernel_build_target
+        self._extra_scopes = cfg.extra_scopes
 
         # Configure clients for interaction with GCE/Build servers
         self._build_client = android_build_client.AndroidBuildClient(
@@ -121,7 +122,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             kernel_branch=self._kernel_branch,
             kernel_build_id=self._kernel_build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
-            avd_spec=self._avd_spec)
+            avd_spec=self._avd_spec,
+            extra_scopes=self._extra_scopes)
 
         return instance
 
