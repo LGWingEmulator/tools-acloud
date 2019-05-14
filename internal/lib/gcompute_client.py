@@ -1083,7 +1083,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                        image_project=None,
                        gpu=None,
                        extra_disk_name=None,
-                       labels=None):
+                       labels=None,
+                       extra_scopes=None):
         """Create a gce instance with a gce image.
 
         Args:
@@ -1104,11 +1105,18 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                  https://cloud.google.com/compute/docs/gpus/add-gpus
             extra_disk_name: String,the name of the extra disk to attach.
             labels: Dict, will be added to the instance's labels.
+            extra_scopes: A list of extra scopes to be provided to the instance.
         """
         disk_args = (disk_args
                      or self._GetDiskArgs(instance, image_name, image_project))
         if extra_disk_name:
             disk_args.extend(self._GetExtraDiskArgs(extra_disk_name, zone))
+
+        scopes = []
+        scopes.extend(self.DEFAULT_INSTANCE_SCOPE)
+        if extra_scopes:
+            scopes.extend(extra_scopes)
+
         body = {
             "machineType": self.GetMachineType(machine_type, zone)["selfLink"],
             "name": instance,
@@ -1116,9 +1124,10 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             "disks": disk_args,
             "serviceAccounts": [{
                 "email": "default",
-                "scopes": self.DEFAULT_INSTANCE_SCOPE
+                "scopes": scopes,
             }],
         }
+
 
         if labels is not None:
             body["labels"] = labels

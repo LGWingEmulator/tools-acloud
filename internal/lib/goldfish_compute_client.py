@@ -134,7 +134,8 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                        emulator_build_id=None,
                        blank_data_disk_size_gb=None,
                        gpu=None,
-                       avd_spec=None):
+                       avd_spec=None,
+                       extra_scopes=None):
         """Create a goldfish instance given a stable host image and a build id.
 
         Args:
@@ -151,6 +152,7 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             gpu: String, GPU that should be attached to the instance, or None of no
                  acceleration is needed. e.g. "nvidia-tesla-k80"
             avd_spec: An AVDSpec instance.
+            extra_scopes: A list of extra scopes to be passed to the instance.
         """
         self._CheckMachineSize()
 
@@ -221,4 +223,5 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             network=self._network,
             zone=self._zone,
             gpu=gpu,
-            labels=labels)
+            labels=labels,
+            extra_scopes=extra_scopes)

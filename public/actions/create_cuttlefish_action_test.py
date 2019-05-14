@@ -47,6 +47,7 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
     STABLE_HOST_IMAGE_NAME = "fake-stable-host-image-name"
     STABLE_HOST_IMAGE_PROJECT = "fake-stable-host-image-project"
     EXTRA_DATA_DISK_GB = 4
+    EXTRA_SCOPES = ["scope1", "scope2"]
 
     def setUp(self):
         """Set up the test."""
@@ -81,6 +82,7 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         cfg.stable_host_image_project = self.STABLE_HOST_IMAGE_PROJECT
         cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_GB
         cfg.kernel_build_target = self.KERNEL_BUILD_TARGET
+        cfg.extra_scopes = self.EXTRA_SCOPES
         return cfg
 
     def testCreateDevices(self):
@@ -118,7 +120,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
             blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
-            avd_spec=none_avd_spec)
+            avd_spec=none_avd_spec,
+            extra_scopes=self.EXTRA_SCOPES)
 
         self.assertEquals(report.data, {
             "devices": [

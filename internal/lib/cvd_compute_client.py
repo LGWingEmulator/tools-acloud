@@ -61,7 +61,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
     def CreateInstance(self, instance, image_name, image_project,
                        build_target=None, branch=None, build_id=None,
                        kernel_branch=None, kernel_build_id=None,
-                       blank_data_disk_size_gb=None, avd_spec=None):
+                       blank_data_disk_size_gb=None, avd_spec=None,
+                       extra_scopes=None):
         """Create a cuttlefish instance given stable host image and build id.
 
         Args:
@@ -76,6 +77,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             kernel_build_id: Kernel build id, a string, e.g. "223051", "P280427"
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             avd_spec: An AVDSpec instance.
+            extra_scopes: A list of extra scopes to be passed to the instance.
         """
         self._CheckMachineSize()
 
@@ -169,4 +171,5 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
-            labels=labels)
+            labels=labels,
+            extra_scopes=extra_scopes)
