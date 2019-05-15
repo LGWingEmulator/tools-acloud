@@ -70,6 +70,7 @@ class CreateCommonTest(driver_test_lib.BaseDriverTest):
         # Should raise error if zip file already exists
         fake_image_path = "/fake_image_dir/"
         self.Patch(os.path, "exists", return_value=True)
+        self.Patch(os, "makedirs")
         self.assertRaises(errors.ZipImageError,
                           create_common.ZipCFImageFiles,
                           fake_image_path)
