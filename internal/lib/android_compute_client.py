@@ -239,7 +239,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                        extra_disk_name=None,
                        labels=None,
                        avd_spec=None,
-                       extra_scopes=None):
+                       extra_scopes=None,
+                       tags=None):
         """Create a gce instance with a gce image.
 
         Args:
@@ -263,6 +264,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             avd_spec: AVDSpec object that tells us what we're going to create.
             extra_scopes: List, extra scopes (strings) to be passed to the
                           instance.
+            tags: A list of tags to associate with the instance. e.g.
+                 ["http-server", "https-server"]
         """
         self._CheckMachineSize()
         disk_args = self._GetDiskArgs(instance, image_name)
@@ -297,7 +300,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         super(AndroidComputeClient, self).CreateInstance(
             instance, image_name, self._machine_type, metadata, self._network,
             self._zone, disk_args, image_project, gpu, extra_disk_name,
-            labels=labels, extra_scopes=extra_scopes)
+            labels=labels, extra_scopes=extra_scopes, tags=tags)
 
     def CheckBootFailure(self, serial_out, instance):
         """Determine if serial output has indicated any boot failure.

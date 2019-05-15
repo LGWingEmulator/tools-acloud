@@ -65,7 +65,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  emulator_build_target,
                  emulator_build_id,
                  gpu=None,
-                 avd_spec=None):
+                 avd_spec=None,
+                 tags=None):
 
         """Initialize.
 
@@ -77,6 +78,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             emulator_build_id: String, emulator build id.
             gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
             avd_spec: An AVDSpec instance.
+            tags: A list of tags to associate with the instance. e.g.
+                  ["http-server", "https-server"]
         """
 
         self.credentials = auth.CreateCredentials(cfg)
@@ -95,6 +98,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._avd_spec = avd_spec
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
         self._extra_scopes = cfg.extra_scopes
+        self._tags = tags
 
         # Configure clients
         self._build_client = android_build_client.AndroidBuildClient(
@@ -128,6 +132,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             gpu=self._gpu,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
             avd_spec=self._avd_spec,
+            tags=self._tags,
             extra_scopes=self._extra_scopes)
 
         return instance
@@ -198,6 +203,7 @@ def CreateDevices(avd_spec=None,
                   logcat_file=None,
                   autoconnect=False,
                   branch=None,
+                  tags=None,
                   report_internal_ip=False):
     """Create one or multiple Goldfish devices.
 
@@ -214,6 +220,8 @@ def CreateDevices(avd_spec=None,
         logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
         branch: String, Branch name for system image.
+        tags: A list of tags to associate with the instance. e.g.
+              ["http-server", "https-server"]
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
 
@@ -267,7 +275,7 @@ def CreateDevices(avd_spec=None,
 
     device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
                                            cfg.emulator_build_target,
-                                           emulator_build_id, gpu, avd_spec)
+                                           emulator_build_id, gpu, avd_spec, tags)
 
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
                                            num, constants.TYPE_GF,

@@ -45,6 +45,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
     BOOT_DISK_SIZE_GB = 10
     GPU = "nvidia-tesla-k80"
     EXTRA_SCOPES = "scope1"
+    TAGS=['http-server']
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -115,7 +116,8 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
             self.BRANCH, self.BUILD_ID, self.EMULATOR_BRANCH,
             self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=self.TAGS)
 
         # pylint: disable=no-member
         gcompute_client.ComputeClient.CreateInstance.assert_called_with(
@@ -129,6 +131,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE,
             gpu=self.GPU,
+            tags=self.TAGS,
             labels=expected_labels,
             extra_scopes=self.EXTRA_SCOPES)
 
