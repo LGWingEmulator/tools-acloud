@@ -170,6 +170,7 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
             maxResults=self.ONE_RESULT,
             successful=self.BUILD_SUCCESSFUL)
         build = self.Execute(api)
+        logger.info("GetLKGB build API response: %s", build)
         if build:
             return str(build.get("builds")[0].get("buildId"))
         raise errors.GetBuildIDError(
