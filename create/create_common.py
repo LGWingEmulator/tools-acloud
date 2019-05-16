@@ -81,11 +81,13 @@ def ZipCFImageFiles(basedir):
     Return:
         Strings of zipped image path.
     """
+    tmp_folder = os.path.join(tempfile.gettempdir(),
+                              constants.TEMP_ARTIFACTS_FOLDER)
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
     archive_name = "%s-local-%d.zip" % (os.environ.get(constants.ENV_BUILD_TARGET),
                                         int(time.time()))
-    archive_file = os.path.join(tempfile.gettempdir(),
-                                constants.TEMP_ARTIFACTS_FOLDER,
-                                archive_name)
+    archive_file = os.path.join(tmp_folder, archive_name)
     if os.path.exists(archive_file):
         raise errors.ZipImageError("This file shouldn't exist, please delete: %s"
                                    % archive_file)
