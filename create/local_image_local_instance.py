@@ -168,8 +168,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                 delete.CleanupSSVncviewer(constants.CF_VNC_PORT)
 
             else:
-                print("Exiting out")
-                sys.exit()
+                sys.exit(constants.EXIT_BY_USER)
         self._LaunchCvd(cmd)
 
     @staticmethod

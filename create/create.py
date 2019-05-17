@@ -183,7 +183,7 @@ def _CheckForSetup(args):
             setup.Run(args)
         else:
             print("Please run '#acloud setup' so we can get your host setup")
-            sys.exit()
+            sys.exit(constants.EXIT_BY_USER)
 
 
 def PreRunCheck(args):
