@@ -222,8 +222,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                 if answer.lower() == "y":
                     os.makedirs(download_dir)
                 else:
-                    print("Exiting acloud!")
-                    sys.exit()
+                    sys.exit(constants.EXIT_BY_USER)
 
             stat = os.statvfs(download_dir)
             available_space = stat.f_bavail*stat.f_bsize/(1024)**3
@@ -233,7 +232,6 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                                              "available_space":available_space,
                                              "required_space":_REQUIRED_SPACE})
                 if download_dir.lower() == "q":
-                    print("Exiting acloud!")
-                    sys.exit()
+                    sys.exit(constants.EXIT_BY_USER)
             else:
                 return download_dir

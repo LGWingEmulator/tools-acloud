@@ -885,8 +885,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
             continue
         # Filter out choices
         if choice == 0:
-            print("Exiting acloud.")
-            sys.exit()
+            sys.exit(constants.EXIT_BY_USER)
         if enable_choose_all and choice == max_choice:
             return answer_list
         if choice < 0 or choice > max_choice:
