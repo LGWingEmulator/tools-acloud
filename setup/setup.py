@@ -95,7 +95,7 @@ def _RunPreSetup():
     if constants.ENV_ANDROID_BUILD_TOP not in os.environ:
         print("Can't find $%s." % constants.ENV_ANDROID_BUILD_TOP)
         print("Please run '#source build/envsetup.sh && lunch <target>' first.")
-        sys.exit(1)
+        sys.exit(constants.EXIT_BY_USER)
 
     pre_setup_sh = os.path.join(os.environ.get(constants.ENV_ANDROID_BUILD_TOP),
                                 "tools",
