@@ -85,7 +85,7 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
                 while not done:
                     _, done = downloader.next_chunk()
             logger.info("Downloaded artifact: %s", local_dest)
-        except OSError as e:
+        except (OSError, apiclient.errors.HttpError) as e:
             logger.error("Downloading artifact failed: %s", str(e))
             raise errors.DriverError(str(e))
 

@@ -234,6 +234,9 @@ def CreateDevices(avd_spec=None,
         report_internal_ip = avd_spec.report_internal_ip
 
     if emulator_build_id is None:
+        logger.info("emulator_build_id not provided. "
+                    "Try to get %s from build %s/%s.", _EMULATOR_INFO_FILENAME,
+                    build_id, build_target)
         emulator_build_id = _FetchBuildIdFromFile(cfg,
                                                   build_target,
                                                   build_id,
