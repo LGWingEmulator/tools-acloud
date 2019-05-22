@@ -50,7 +50,7 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
     Cheeps is a VM that run Chrome OS which runs on GCE.
     """
     # This is the timeout for betty to start.
-    BOOT_TIMEOUT_SECS = 10*60
+    BOOT_TIMEOUT_SECS = 15*60
     # This is printed by betty.sh.
     BOOT_COMPLETED_MSG = "VM successfully started"
     # systemd prints this if betty.sh returns nonzero status code.
