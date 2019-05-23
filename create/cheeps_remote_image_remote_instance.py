@@ -100,7 +100,9 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
         Returns:
             String, the name of created instance.
         """
-        instance = self._compute_client.GenerateInstanceName(self._build_id)
+        instance = self._compute_client.GenerateInstanceName(
+            build_id=self._build_id,
+            build_target=self._avd_spec.remote_image[constants.BUILD_TARGET])
         self._compute_client.CreateInstance(
             instance=instance,
             image_name=self._cfg.stable_cheeps_host_image_name,
