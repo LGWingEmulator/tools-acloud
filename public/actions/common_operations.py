@@ -34,6 +34,7 @@ from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
 
+
 def CreateSshKeyPairIfNecessary(cfg):
     """Create ssh key pair if necessary.
 
@@ -237,9 +238,8 @@ class DevicePool(object):
 # TODO: Delete unused-argument when b/119614469 is resolved.
 # pylint: disable=unused-argument
 # pylint: disable=too-many-locals
-def CreateDevices(command, cfg, device_factory, num,
+def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
-                  vnc_port=None, adb_port=None,
                   serial_log_file=None, logcat_file=None):
     """Create a set of devices using the given factory.
 
@@ -252,10 +252,9 @@ def CreateDevices(command, cfg, device_factory, num,
         cfg: An AcloudConfig instance.
         device_factory: A factory capable of producing a single device.
         num: The number of devices to create.
+        avd_type: String, the AVD type(cuttlefish, goldfish...).
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
-        vnc_port: (int) The VNC port to use for a remote instance.
-        adb_port: (int) The ADB port to use for a remote instance.
         serial_log_file: String, the file path to tar the serial logs.
         logcat_file: String, the file path to tar the logcats.
         autoconnect: Boolean, whether to auto connect to device.
@@ -294,15 +293,18 @@ def CreateDevices(command, cfg, device_factory, num,
                 "ip": ip,
                 "instance_name": device.instance_name
             }
+            for attr in ("branch", "build_target", "build_id", "kernel_branch",
+                         "kernel_build_target", "kernel_build_id",
+                         "emulator_branch", "emulator_build_target",
+                         "emulator_build_id"):
+                if getattr(device_factory, "_%s" % attr, None):
+                    device_dict[attr] = getattr(device_factory, "_%s" % attr)
             if autoconnect:
-                if (not vnc_port) or (not adb_port):
-                    logger.error("vnc_port and adb_port must be specified to"
-                                 " use autoconnect")
-                forwarded_ports = utils.AutoConnect(ip,
-                                                    cfg.ssh_private_key_path,
-                                                    vnc_port,
-                                                    adb_port,
-                                                    getpass.getuser())
+                forwarded_ports = utils.AutoConnect(
+                    ip, cfg.ssh_private_key_path,
+                    utils.AVD_PORT_DICT[avd_type].vnc_port,
+                    utils.AVD_PORT_DICT[avd_type].adb_port,
+                    getpass.getuser())
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:

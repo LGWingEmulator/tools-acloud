@@ -21,12 +21,12 @@ Reconnect will:
 
 from __future__ import print_function
 
-from collections import namedtuple
 import getpass
 import re
 
 from acloud.delete import delete
-from acloud.internal import constants
+from acloud.internal.lib import auth
+from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 from acloud.list import list as list_instance
@@ -34,15 +34,6 @@ from acloud.public import config
 
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
-# TODO(b/122929848): merge all definition of ForwardedPorts into one spot.
-ForwardedPorts = namedtuple("ForwardedPorts",
-                            [constants.VNC_PORT, constants.ADB_PORT])
-_AVD_PORT_CLASS_DICT = {
-    constants.TYPE_GCE: ForwardedPorts(constants.DEFAULT_GCE_VNC_PORT,
-                                       constants.DEFAULT_GCE_ADB_PORT),
-    constants.TYPE_CF: ForwardedPorts(constants.CF_TARGET_VNC_PORT,
-                                      constants.CF_TARGET_ADB_PORT)
-}
 
 
 def StartVnc(vnc_port, display):
@@ -68,6 +59,26 @@ def StartVnc(vnc_port, display):
             utils.LaunchVncClient(vnc_port)
 
 
+def AddPublicSshRsaToInstance(cfg, user, instance_name):
+    """Add the public rsa key to the instance's metadata.
+
+    When the public key doesn't exist in the metadata, it will add it.
+
+    Args:
+        cfg: An AcloudConfig instance.
+        user: String, the ssh username to access instance.
+        instance_name: String, instance name.
+    """
+    credentials = auth.CreateCredentials(cfg)
+    compute_client = android_compute_client.AndroidComputeClient(
+        cfg, credentials)
+    compute_client.AddSshRsaInstanceMetadata(
+        cfg.zone,
+        user,
+        cfg.ssh_public_key_path,
+        instance_name)
+
+
 def ReconnectInstance(ssh_private_key_path, instance):
     """Reconnect adb/vnc/ssh to the specified instance.
 
@@ -88,8 +99,8 @@ def ReconnectInstance(ssh_private_key_path, instance):
         forwarded_ports = utils.AutoConnect(
             instance.ip,
             ssh_private_key_path,
-            _AVD_PORT_CLASS_DICT.get(instance.avd_type).vnc_port,
-            _AVD_PORT_CLASS_DICT.get(instance.avd_type).adb_port,
+            utils.AVD_PORT_DICT[instance.avd_type].vnc_port,
+            utils.AVD_PORT_DICT[instance.avd_type].adb_port,
             getpass.getuser())
         vnc_port = forwarded_ports.vnc_port
 
@@ -112,4 +123,5 @@ def Run(args):
     if not instances_to_reconnect:
         instances_to_reconnect = list_instance.ChooseInstances(cfg, args.all)
     for instance in instances_to_reconnect:
+        AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
         ReconnectInstance(cfg.ssh_private_key_path, instance)

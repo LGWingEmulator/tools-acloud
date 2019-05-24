@@ -32,6 +32,7 @@ from acloud.create import avd_spec
 from acloud.create import cheeps_remote_image_remote_instance
 from acloud.create import gce_local_image_remote_instance
 from acloud.create import gce_remote_image_remote_instance
+from acloud.create import goldfish_remote_image_remote_instance
 from acloud.create import local_image_local_instance
 from acloud.create import local_image_remote_instance
 from acloud.create import remote_image_remote_instance
@@ -63,6 +64,9 @@ _CREATOR_CLASS_DICT = {
     # Cheeps types
     (constants.TYPE_CHEEPS, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
         cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance,
+    # GF types
+    (constants.TYPE_GF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
+        goldfish_remote_image_remote_instance.GoldfishRemoteImageRemoteInstance,
 }
 
 
@@ -179,7 +183,7 @@ def _CheckForSetup(args):
             setup.Run(args)
         else:
             print("Please run '#acloud setup' so we can get your host setup")
-            sys.exit()
+            sys.exit(constants.EXIT_BY_USER)
 
 
 def PreRunCheck(args):

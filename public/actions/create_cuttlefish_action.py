@@ -52,7 +52,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
 
     def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
-                 avd_spec=None):
+                 avd_spec=None, kernel_branch=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
@@ -67,6 +67,9 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._kernel_build_id = kernel_build_id
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
         self._avd_spec = avd_spec
+        self._kernel_branch = kernel_branch
+        self._kernel_build_target = cfg.kernel_build_target
+        self._extra_scopes = cfg.extra_scopes
 
         # Configure clients for interaction with GCE/Build servers
         self._build_client = android_build_client.AndroidBuildClient(
@@ -75,9 +78,18 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         # Discover branches
         self._branch = self._build_client.GetBranch(build_target, build_id)
         self._kernel_branch = None
-        if kernel_build_id:
+        if kernel_branch:
+            # If no kernel_build_id is given or kernel_build_id is latest,
+            # use the last green build id in the given kernel_branch
+            if not kernel_build_id or kernel_build_id == self.LATEST:
+                self._kernel_build_id = (
+                    self._build_client.GetLKGB(self._kernel_build_target,
+                                               kernel_branch))
+        elif kernel_build_id:
             self._kernel_branch = self._build_client.GetBranch(
-                cfg.kernel_build_target, kernel_build_id)
+                self._kernel_build_target, kernel_build_id)
+        else:
+            self._kernel_build_target = None
 
     def CreateInstance(self):
         """Creates singe configured cuttlefish device.
@@ -110,7 +122,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             kernel_branch=self._kernel_branch,
             kernel_build_id=self._kernel_build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
-            avd_spec=self._avd_spec)
+            avd_spec=self._avd_spec,
+            extra_scopes=self._extra_scopes)
 
         return instance
 
@@ -120,6 +133,7 @@ def CreateDevices(avd_spec=None,
                   build_target=None,
                   build_id=None,
                   kernel_build_id=None,
+                  kernel_branch=None,
                   num=1,
                   serial_log_file=None,
                   logcat_file=None,
@@ -133,6 +147,7 @@ def CreateDevices(avd_spec=None,
         build_target: String, Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
         kernel_build_id: String, Kernel build id.
+        kernel_branch: String, Kernel branch name.
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a tar file where serial output should
                          be saved to.
@@ -161,15 +176,10 @@ def CreateDevices(avd_spec=None,
         build_id, num, serial_log_file, logcat_file, autoconnect,
         report_internal_ip)
     device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
-                                             kernel_build_id, avd_spec)
-    return common_operations.CreateDevices(
-        command="create_cf",
-        cfg=cfg,
-        device_factory=device_factory,
-        num=num,
-        report_internal_ip=report_internal_ip,
-        autoconnect=autoconnect,
-        vnc_port=constants.CF_TARGET_VNC_PORT,
-        adb_port=constants.CF_TARGET_ADB_PORT,
-        serial_log_file=serial_log_file,
-        logcat_file=logcat_file)
+                                             avd_spec=avd_spec,
+                                             kernel_build_id=kernel_build_id,
+                                             kernel_branch=kernel_branch)
+    return common_operations.CreateDevices("create_cf", cfg, device_factory,
+                                           num, constants.TYPE_CF,
+                                           report_internal_ip, autoconnect,
+                                           serial_log_file, logcat_file)

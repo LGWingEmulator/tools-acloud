@@ -11,24 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-r"""GceLocalImageRemoteInstance class.
+r"""GoldfishRemoteImageRemoteInstance class.
 
-Create class that is responsible for creating a gce remote instance AVD with a
-local image.
+Create class that is responsible for creating a goldfish remote instance AVD
+with a remote image.
 """
-
-import logging
 
 from acloud.create import base_avd_create
 from acloud.internal.lib import utils
-from acloud.public import device_driver
+from acloud.public.actions import create_goldfish_action
 
 
-logger = logging.getLogger(__name__)
-
-
-class GceLocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
-    """Create class for a gce local image remote instance AVD."""
+class GoldfishRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
+    """Create class for a remote image remote instance AVD."""
 
     @utils.TimeExecute(function_description="Total time: ",
                        print_before_call=False, print_status=False)
@@ -42,18 +37,9 @@ class GceLocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Returns:
             A Report instance.
         """
-        logger.info("GCE local image: %s", avd_spec.local_image_artifact)
-
-        report = device_driver.CreateAndroidVirtualDevices(
-            avd_spec.cfg,
-            num=avd_spec.num,
-            local_disk_image=avd_spec.local_image_artifact,
-            autoconnect=avd_spec.autoconnect,
-            report_internal_ip=avd_spec.report_internal_ip,
-            avd_spec=avd_spec)
+        report = create_goldfish_action.CreateDevices(avd_spec=avd_spec)
 
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
-
         return report

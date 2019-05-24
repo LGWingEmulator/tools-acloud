@@ -167,7 +167,8 @@ class AndroidVirtualDevicePool(object):
                       cleanup=True,
                       extra_data_disk_size_gb=None,
                       precreated_data_image=None,
-                      avd_spec=None):
+                      avd_spec=None,
+                      extra_scopes=None):
         """Creates |num| devices for given build_target and build_id.
 
         - If gce_image is provided, will use it to create an instance.
@@ -192,6 +193,7 @@ class AndroidVirtualDevicePool(object):
             extra_data_disk_size_gb: Integer, size of extra disk, or None.
             precreated_data_image: A string, the image to use for the extra disk.
             avd_spec: AVDSpec object for pass hw_property.
+            extra_scopes: A list of extra scopes given to the new instance.
 
         Raises:
             errors.DriverError: If no source is specified for image creation.
@@ -227,7 +229,8 @@ class AndroidVirtualDevicePool(object):
                     instance=instance,
                     image_name=image_name,
                     extra_disk_name=extra_disk_name,
-                    avd_spec=avd_spec)
+                    avd_spec=avd_spec,
+                    extra_scopes=extra_scopes)
                 ip = self._compute_client.GetInstanceIP(instance)
                 self.devices.append(avd.AndroidVirtualDevice(
                     ip=ip, instance_name=instance))
@@ -387,7 +390,8 @@ def CreateAndroidVirtualDevices(cfg,
             extra_data_disk_size_gb=cfg.extra_data_disk_size_gb,
             precreated_data_image=cfg.precreated_data_image_map.get(
                 cfg.extra_data_disk_size_gb),
-            avd_spec=avd_spec)
+            avd_spec=avd_spec,
+            extra_scopes=cfg.extra_scopes)
         failures = device_pool.WaitForBoot()
         # Write result to report.
         for device in device_pool.devices:
@@ -401,8 +405,8 @@ def CreateAndroidVirtualDevices(cfg,
                 forwarded_ports = utils.AutoConnect(
                     ip,
                     cfg.ssh_private_key_path,
-                    constants.DEFAULT_GCE_VNC_PORT,
-                    constants.DEFAULT_GCE_ADB_PORT,
+                    constants.GCE_VNC_PORT,
+                    constants.GCE_ADB_PORT,
                     _SSH_USER)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
@@ -569,30 +573,6 @@ def Cleanup(cfg, expiration_mins):
         # Everything succeeded, write status to report.
         if r.status == report.Status.UNKNOWN:
             r.SetStatus(report.Status.SUCCESS)
-    except errors.DriverError as e:
-        r.AddError(str(e))
-        r.SetStatus(report.Status.FAIL)
-    return r
-
-
-def AddSshRsa(cfg, user, ssh_rsa_path):
-    """Add public ssh rsa key to the project.
-
-    Args:
-        cfg: An AcloudConfig instance.
-        user: the name of the user which the key belongs to.
-        ssh_rsa_path: The absolute path to public rsa key.
-
-    Returns:
-        A Report instance.
-    """
-    r = report.Report(command="sshkey")
-    try:
-        credentials = auth.CreateCredentials(cfg)
-        compute_client = android_compute_client.AndroidComputeClient(
-            cfg, credentials)
-        compute_client.AddSshRsa(user, ssh_rsa_path)
-        r.SetStatus(report.Status.SUCCESS)
     except errors.DriverError as e:
         r.AddError(str(e))
         r.SetStatus(report.Status.FAIL)

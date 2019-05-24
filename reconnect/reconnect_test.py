@@ -74,8 +74,8 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
-                                             constants.CF_TARGET_VNC_PORT,
-                                             constants.CF_TARGET_ADB_PORT,
+                                             constants.CF_VNC_PORT,
+                                             constants.CF_ADB_PORT,
                                              "fake_user")
         utils.LaunchVncClient.assert_called_with(11111)
 
@@ -84,8 +84,8 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
-                                             constants.CF_TARGET_VNC_PORT,
-                                             constants.CF_TARGET_ADB_PORT,
+                                             constants.CF_VNC_PORT,
+                                             constants.CF_ADB_PORT,
                                              "fake_user")
         utils.LaunchVncClient.assert_called_with(11111, "999", "777")
 
@@ -117,8 +117,8 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
-                                             constants.DEFAULT_GCE_VNC_PORT,
-                                             constants.DEFAULT_GCE_ADB_PORT,
+                                             constants.GCE_VNC_PORT,
+                                             constants.GCE_ADB_PORT,
                                              "fake_user")
 
         #test reconnect remote instance when avd_type as cuttlefish.
@@ -126,8 +126,8 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
-                                             constants.CF_TARGET_VNC_PORT,
-                                             constants.CF_TARGET_ADB_PORT,
+                                             constants.CF_VNC_PORT,
+                                             constants.CF_ADB_PORT,
                                              "fake_user")
 
     def testStartVnc(self):

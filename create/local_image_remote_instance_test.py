@@ -20,6 +20,8 @@ local image.
 """
 import uuid
 
+import glob
+import os
 import subprocess
 import time
 import unittest
@@ -30,16 +32,19 @@ from acloud import errors
 from acloud.create import avd_spec
 from acloud.create import create_common
 from acloud.create import local_image_remote_instance
+from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import utils
 
 
-class LocalImageRemoteInstanceTest(unittest.TestCase):
+class LocalImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
     """Test LocalImageRemoteInstance method."""
 
     def setUp(self):
         """Initialize new LocalImageRemoteInstance."""
+        super(LocalImageRemoteInstanceTest, self).setUp()
         self.local_image_remote_instance = local_image_remote_instance.LocalImageRemoteInstance()
 
     def testVerifyHostPackageArtifactsExist(self):
@@ -49,17 +54,27 @@ class LocalImageRemoteInstanceTest(unittest.TestCase):
             exists.return_value = False
             self.assertRaises(
                 errors.GetCvdLocalHostPackageError,
-                self.local_image_remote_instance.VerifyHostPackageArtifactsExist,
-                "/fake_dirs")
+                self.local_image_remote_instance.VerifyHostPackageArtifactsExist)
 
-    def testVerifyArtifactsExist(self):
-        """test verify artifacts exist."""
+        self.Patch(os.environ, "get", return_value="/fake_dir2")
+        self.Patch(utils, "GetDistDir", return_value="/fake_dir1")
+        # First path is host out dir, 2nd path is dist dir.
+        self.Patch(os.path, "exists",
+                   side_effect=[False, True])
+
+        # Find cvd host in dist dir.
+        self.assertEqual(
+            self.local_image_remote_instance.VerifyHostPackageArtifactsExist(),
+            "/fake_dir1/cvd-host_package.tar.gz")
+
+        # Find cvd host in host out dir.
+        self.Patch(os.environ, "get", return_value="/fake_dir2")
+        self.Patch(utils, "GetDistDir", return_value=None)
         with mock.patch("os.path.exists") as exists:
             exists.return_value = True
-            self.local_image_remote_instance.VerifyArtifactsExist("/fake_dirs")
             self.assertEqual(
-                self.local_image_remote_instance.cvd_host_package_artifact,
-                "/fake_dirs/cvd-host_package.tar.gz")
+                self.local_image_remote_instance.VerifyHostPackageArtifactsExist(),
+                "/fake_dir2/cvd-host_package.tar.gz")
 
 
 class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
@@ -88,16 +103,19 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(factory._ShellCmdWithRetry("fake cmd"), True)
 
     # pylint: disable=protected-access
-    @mock.patch.object(create_common, "VerifyLocalImageArtifactsExist")
-    def testCreateGceInstanceName(self, mock_image):
+    def testCreateGceInstanceName(self):
         """test create gce instance."""
+        self.Patch(utils, "GetBuildEnvironmentVariable",
+                   return_value="test_environ")
+        self.Patch(glob, "glob", return_vale=["fake.img"])
+        self.Patch(create_common, "ZipCFImageFiles",
+                   return_value="/fake/aosp_cf_x86_phone-img-eng.username.zip")
         # Mock uuid
         args = mock.MagicMock()
-        args.local_image = "/tmp/path"
         args.config_file = ""
-        args.avd_type = "cf"
+        args.avd_type = constants.TYPE_CF
         args.flavor = "phone"
-        mock_image.return_value = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+        args.local_image = None
         fake_avd_spec = avd_spec.AVDSpec(args)
 
         fake_uuid = mock.MagicMock(hex="1234")

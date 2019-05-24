@@ -48,6 +48,7 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
     DPI = 160
     X_RES = 720
     Y_RES = 1280
+    EXTRA_SCOPES = None
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -67,6 +68,7 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
         fake_cfg.orientation = self.ORIENTATION
         fake_cfg.resolution = self.DEVICE_RESOLUTION
         fake_cfg.metadata_variable = {self.METADATA[0]: self.METADATA[1]}
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         return fake_cfg
 
     def setUp(self):
@@ -137,7 +139,7 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
                   instance_name, self.IMAGE, self.MACHINE_TYPE,
                   expected_metadata, self.NETWORK, self.ZONE,
                   expected_disk_args, image_project, gpu, extra_disk_name,
-                  labels=labels)
+                  labels=labels, extra_scopes=self.EXTRA_SCOPES)
 
     # pylint: disable=invalid-name
     def testCheckMachineSizeMeetsRequirement(self):

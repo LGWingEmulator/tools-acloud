@@ -61,21 +61,23 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
     def CreateInstance(self, instance, image_name, image_project,
                        build_target=None, branch=None, build_id=None,
                        kernel_branch=None, kernel_build_id=None,
-                       blank_data_disk_size_gb=None, avd_spec=None):
+                       blank_data_disk_size_gb=None, avd_spec=None,
+                       extra_scopes=None):
         """Create a cuttlefish instance given stable host image and build id.
 
         Args:
             instance: instance name.
             image_name: A string, the name of the GCE image.
-            image_project: A string, name of the project where the image belongs.
+            image_project: A string, name of the project where the image lives.
                            Assume the default project if None.
             build_target: Target name, e.g. "aosp_cf_x86_phone-userdebug"
             branch: Branch name, e.g. "aosp-master"
             build_id: Build id, a string, e.g. "2263051", "P2804227"
-            kernel_branch: Kernel branch name, e.g. "kernel-android-cf-4.4-x86_64"
-            kernel_build_id: Kernel build id, a string, e.g. "2263051", "P2804227"
+            kernel_branch: Kernel branch name, e.g. "kernel-common-android-4.14"
+            kernel_build_id: Kernel build id, a string, e.g. "223051", "P280427"
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             avd_spec: An AVDSpec instance.
+            extra_scopes: A list of extra scopes to be passed to the instance.
         """
         self._CheckMachineSize()
 
@@ -100,7 +102,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_branch and kernel_build_id:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
-        metadata["cvd_01_launch"] = "1"
+        metadata["cvd_01_launch"] = (self._launch_args
+                                     if self._launch_args else "1")
 
         # The cuttlefish-google tools changed the usage of this cvd_01_launch
         # variable. For the local image, we remove the cvd_01_launch from
@@ -168,4 +171,5 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
-            labels=labels)
+            labels=labels,
+            extra_scopes=extra_scopes)

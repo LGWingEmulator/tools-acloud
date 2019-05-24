@@ -34,29 +34,36 @@ def GetDeleteArgParser(subparser):
     delete_parser = subparser.add_parser(CMD_DELETE)
     delete_parser.required = False
     delete_parser.set_defaults(which=CMD_DELETE)
-    delete_parser.add_argument(
+    delete_group = delete_parser.add_mutually_exclusive_group()
+    delete_group.add_argument(
         "--instance-names",
         dest="instance_names",
         nargs="+",
         required=False,
         help="The names of the remote instances that need to delete, "
         "separated by spaces, e.g. --instance-names instance-1 instance-2")
-    delete_parser.add_argument(
+    delete_group.add_argument(
         "--all",
         action="store_true",
         dest="all",
         required=False,
         help="If more than 1 AVD instance is found, delete them all.")
-    delete_parser.add_argument(
+    delete_group.add_argument(
         "--local-instance",
         action="store_true",
         dest="local_instance",
         required=False,
         help="Only delete the local instance.")
+    delete_group.add_argument(
+        "--adb-port", "-p",
+        type=int,
+        dest="adb_port",
+        required=False,
+        help="Delete instance with specified adb-port.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
-    delete_parser.add_argument(
+    delete_group.add_argument(
         "--instance_names",
         dest="instance_names",
         nargs="+",

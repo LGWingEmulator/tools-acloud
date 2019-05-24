@@ -19,6 +19,7 @@ Create class that is responsible for creating a local instance AVD with a
 remote image.
 """
 from __future__ import print_function
+import glob
 import logging
 import os
 import subprocess
@@ -46,9 +47,8 @@ _CONFIRM_DOWNLOAD_DIR = ("Download dir %(download_dir)s does not have enough "
 # Let's add an extra buffer (~2G) to make sure user has enough disk space
 # for the downloaded image artifacts.
 _REQUIRED_SPACE = 10
-_CF_IMAGES = ["cache.img", "cmdline", "kernel", "ramdisk.img", "system.img",
-              "userdata.img", "vendor.img"]
 _BOOT_IMAGE = "boot.img"
+# TODO(b/129009852):UnpackBootImage and setfacl are deprecated.
 UNPACK_BOOTIMG_CMD = "%s -boot_img %s" % (
     os.path.join(_CUTTLEFISH_COMMON_BIN_PATH, "unpack_boot_image.py"),
     "%s -dest %s")
@@ -113,7 +113,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
 
         extract_path = os.path.join(
             avd_spec.image_download_dir,
-            "acloud_image_artifacts",
+            constants.TEMP_ARTIFACTS_FOLDER,
             build_id)
 
         logger.debug("Extract path: %s", extract_path)
@@ -192,18 +192,12 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
 
         Args:
             extract_path: String, a path include extracted files.
-
-        Raises:
-            errors.CheckPathError: Path doesn't exist.
         """
-        logger.info("Start to acl files: %s", ",".join(_CF_IMAGES))
-        for image in _CF_IMAGES:
-            image_path = os.path.join(extract_path, image)
-            if not os.path.exists(image_path):
-                raise errors.CheckPathError(
-                    "Specified file doesn't exist: %s" % image_path)
+        image_list = glob.glob(os.path.join(extract_path, "*.img"))
+        logger.info("Start to set ACLs on files: %s", ",".join(image_list))
+        for image_path in image_list:
             subprocess.check_call(ACL_CMD % image_path, shell=True)
-        logger.info("ACL files completed!")
+        logger.info("The ACLs have set completed!")
 
     @staticmethod
     def _ConfirmDownloadRemoteImageDir(download_dir):
@@ -228,8 +222,7 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                 if answer.lower() == "y":
                     os.makedirs(download_dir)
                 else:
-                    print("Exiting acloud!")
-                    sys.exit()
+                    sys.exit(constants.EXIT_BY_USER)
 
             stat = os.statvfs(download_dir)
             available_space = stat.f_bavail*stat.f_bsize/(1024)**3
@@ -239,7 +232,6 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                                              "available_space":available_space,
                                              "required_space":_REQUIRED_SPACE})
                 if download_dir.lower() == "q":
-                    print("Exiting acloud!")
-                    sys.exit()
+                    sys.exit(constants.EXIT_BY_USER)
             else:
                 return download_dir

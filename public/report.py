@@ -159,12 +159,12 @@ class Report(object):
             status=self.status,
             errors=self.errors,
             data=self.data)
-        logger.info("Report: %s", json.dumps(result, indent=2))
+        logger.info("Report: %s", json.dumps(result, indent=2, sort_keys=True))
         if not report_file:
             return
         try:
             with open(report_file, "w") as f:
-                json.dump(result, f, indent=2)
+                json.dump(result, f, indent=2, sort_keys=True)
             logger.info("Report file generated at %s",
                         os.path.abspath(report_file))
         except OSError as e:
