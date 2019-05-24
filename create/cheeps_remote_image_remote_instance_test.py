@@ -24,6 +24,7 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
     CHEEPS_HOST_IMAGE_NAME = "fake-stable-host-image-name"
     CHEEPS_HOST_IMAGE_PROJECT = "fake-stable-host-image-project"
     ANDROID_BUILD_ID = 12345
+    ANDROID_BUILD_TARGET = "fake-target"
 
     def setUp(self):
         """Set up the test."""
@@ -70,7 +71,8 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
         # Call CreateDevices
         avd_spec = mock.MagicMock()
         avd_spec.cfg = self._CreateCfg()
-        avd_spec.remote_image = {constants.BUILD_ID: self.ANDROID_BUILD_ID}
+        avd_spec.remote_image = {constants.BUILD_ID: self.ANDROID_BUILD_ID,
+                                 constants.BUILD_TARGET: self.ANDROID_BUILD_TARGET}
         avd_spec.autoconnect = False
         avd_spec.report_internal_ip = False
         instance = cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance()
