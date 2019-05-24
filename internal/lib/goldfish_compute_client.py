@@ -135,7 +135,8 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                        blank_data_disk_size_gb=None,
                        gpu=None,
                        avd_spec=None,
-                       extra_scopes=None):
+                       extra_scopes=None,
+                       tags=None):
         """Create a goldfish instance given a stable host image and a build id.
 
         Args:
@@ -153,6 +154,8 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                  acceleration is needed. e.g. "nvidia-tesla-k80"
             avd_spec: An AVDSpec instance.
             extra_scopes: A list of extra scopes to be passed to the instance.
+            tags: A list of tags to associate with the instance. e.g.
+                 ["http-server", "https-server"]
         """
         self._CheckMachineSize()
 
@@ -223,5 +226,6 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             network=self._network,
             zone=self._zone,
             gpu=gpu,
+            tags=tags,
             labels=labels,
             extra_scopes=extra_scopes)

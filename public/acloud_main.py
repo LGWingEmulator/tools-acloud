@@ -206,6 +206,13 @@ def _ParseArgs(args):
         help="Name of the goldfish base image to be used to create the instance. "
         "This will override stable_goldfish_host_image_name from config. "
         "e.g. emu-dev-cts-061118")
+    create_gf_parser.add_argument(
+        "--tags",
+        dest="tags",
+        nargs="*",
+        required=False,
+        default=None,
+        help="Tags to be set on to the created instance. e.g. https-server.")
 
     create_args.AddCommonCreateArgs(create_gf_parser)
     subparser_list.append(create_gf_parser)
@@ -384,6 +391,7 @@ def main(argv=None):
             logcat_file=args.logcat_file,
             autoconnect=args.autoconnect,
             branch=args.branch,
+            tags=args.tags,
             report_internal_ip=args.report_internal_ip)
     elif args.which == delete_args.CMD_DELETE:
         report = delete.Run(args)
