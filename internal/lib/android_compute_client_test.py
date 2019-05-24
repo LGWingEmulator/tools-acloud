@@ -139,7 +139,7 @@ class AndroidComputeClientTest(driver_test_lib.BaseDriverTest):
                   instance_name, self.IMAGE, self.MACHINE_TYPE,
                   expected_metadata, self.NETWORK, self.ZONE,
                   expected_disk_args, image_project, gpu, extra_disk_name,
-                  labels=labels, extra_scopes=self.EXTRA_SCOPES)
+                  labels=labels, extra_scopes=self.EXTRA_SCOPES, tags=None)
 
     # pylint: disable=invalid-name
     def testCheckMachineSizeMeetsRequirement(self):

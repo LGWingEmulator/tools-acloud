@@ -577,6 +577,78 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             operation_scope=gcompute_client.OperationScope.ZONE,
             scope_name=self.ZONE)
 
+
+    @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetNetworkUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetSubnetworkUrl")
+    @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
+    @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    def testCreateInstanceWithTags(self, mock_wait, mock_get_mach_type,
+                           mock_get_subnetwork_url, mock_get_network_url,
+                           mock_get_image):
+        """Test CreateInstance."""
+        mock_get_mach_type.return_value = {"selfLink": self.MACHINE_TYPE_URL}
+        mock_get_network_url.return_value = self.NETWORK_URL
+        mock_get_subnetwork_url.return_value = self.SUBNETWORK_URL
+        mock_get_image.return_value = {"selfLink": self.IMAGE_URL}
+        resource_mock = mock.MagicMock()
+        self.compute_client._service.instances = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.insert = mock.MagicMock()
+        self.Patch(
+            self.compute_client,
+            "_GetExtraDiskArgs",
+            return_value=[{"fake_extra_arg": "fake_extra_value"}])
+        extra_disk_name = "gce-x86-userdebug-2345-abcd-data"
+        expected_disk_args = [self._disk_args]
+        expected_disk_args.extend([{"fake_extra_arg": "fake_extra_value"}])
+        expected_scope = []
+        expected_scope.extend(self.compute_client.DEFAULT_INSTANCE_SCOPE)
+        expected_scope.extend(self.EXTRA_SCOPES)
+
+        expected_body = {
+            "machineType": self.MACHINE_TYPE_URL,
+            "name": self.INSTANCE,
+            "networkInterfaces": [
+                {
+                    "network": self.NETWORK_URL,
+                    "subnetwork": self.SUBNETWORK_URL,
+                    "accessConfigs": [
+                        {"name": "External NAT",
+                         "type": "ONE_TO_ONE_NAT"}
+                    ],
+                }
+            ],
+            'tags': {'items': ['https-server']},
+            "disks": expected_disk_args,
+            "serviceAccounts": [
+                {"email": "default",
+                 "scopes": expected_scope}
+            ],
+            "metadata": {
+                "items": [{"key": self.METADATA[0],
+                           "value": self.METADATA[1]}],
+            },
+        }
+
+        self.compute_client.CreateInstance(
+            instance=self.INSTANCE,
+            image_name=self.IMAGE,
+            machine_type=self.MACHINE_TYPE,
+            metadata={self.METADATA[0]: self.METADATA[1]},
+            network=self.NETWORK,
+            zone=self.ZONE,
+            extra_disk_name=extra_disk_name,
+            tags=["https-server"],
+            extra_scopes=self.EXTRA_SCOPES)
+
+        resource_mock.insert.assert_called_with(
+            project=PROJECT, zone=self.ZONE, body=expected_body)
+        mock_wait.assert_called_with(
+            mock.ANY,
+            operation_scope=gcompute_client.OperationScope.ZONE,
+            scope_name=self.ZONE)
+
     @mock.patch.object(gcompute_client.ComputeClient, "GetAcceleratorUrl")
     @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
     @mock.patch.object(gcompute_client.ComputeClient, "GetNetworkUrl")
