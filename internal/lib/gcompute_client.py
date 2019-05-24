@@ -1084,7 +1084,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                        gpu=None,
                        extra_disk_name=None,
                        labels=None,
-                       extra_scopes=None):
+                       extra_scopes=None,
+                       tags=None):
         """Create a gce instance with a gce image.
 
         Args:
@@ -1106,6 +1107,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             extra_disk_name: String,the name of the extra disk to attach.
             labels: Dict, will be added to the instance's labels.
             extra_scopes: A list of extra scopes to be provided to the instance.
+            tags: A list of tags to associate with the instance. e.g.
+                  ["http-server", "https-server"]
         """
         disk_args = (disk_args
                      or self._GetDiskArgs(instance, image_name, image_project))
@@ -1131,6 +1134,8 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
 
         if labels is not None:
             body["labels"] = labels
+        if tags:
+            body["tags"] = { "items": tags }
         if gpu:
             body["guestAccelerators"] = [{
                 "acceleratorType": self.GetAcceleratorUrl(gpu, zone),
