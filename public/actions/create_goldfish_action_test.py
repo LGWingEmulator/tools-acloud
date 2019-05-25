@@ -128,7 +128,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
         self.assertEquals(report.data, {
             "devices": [
@@ -165,7 +166,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
     def testCreateDevicesWithoutBuildId(self):
         """Test CreateDevices when emulator sys image build id is not provided."""
@@ -215,7 +217,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
         self.assertEquals(report.data, {
             "devices": [{
@@ -250,7 +253,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
     #pylint: disable=invalid-name
     def testCreateDevicesWithoutEmulatorBuildId(self):
@@ -296,7 +300,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
         self.assertEquals(report.data, {
             "devices": [{
@@ -331,7 +336,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            tags=None)
 
 
 if __name__ == "__main__":
