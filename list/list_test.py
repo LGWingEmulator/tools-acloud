@@ -61,6 +61,22 @@ class ListTest(driver_test_lib.BaseDriverTest):
             cfg=cfg,
             instance_names=instance_names)
 
+    # pylint: disable=attribute-defined-outside-init
+    def testGetInstanceFromAdbPort(self):
+        """test GetInstanceFromAdbPort."""
+        cfg = mock.MagicMock()
+        alive_instance1 = InstanceObject("alive_instance1")
+        alive_instance1.forwarding_adb_port = 1111
+        alive_instance1.fullname = "device serial: 127.0.0.1:1111 alive_instance1"
+        expected_instance = [alive_instance1]
+        self.Patch(list_instance, "GetInstances", return_value=[alive_instance1])
+        # Test to find instance by adb port number.
+        self.assertEqual(expected_instance,
+                         list_instance.GetInstanceFromAdbPort(cfg, 1111))
+        # Test for instance can't be found by adb port number.
+        with self.assertRaises(errors.NoInstancesFound):
+            list_instance.GetInstanceFromAdbPort(cfg, 2222)
+
 
 if __name__ == "__main__":
     unittest.main()

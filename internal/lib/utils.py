@@ -61,6 +61,17 @@ _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 # Store the ports that vnc/adb are forwarded to, both are integers.
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
                                                            constants.ADB_PORT])
+AVD_PORT_DICT = {
+    constants.TYPE_GCE: ForwardedPorts(constants.GCE_VNC_PORT,
+                                       constants.GCE_ADB_PORT),
+    constants.TYPE_CF: ForwardedPorts(constants.CF_VNC_PORT,
+                                      constants.CF_ADB_PORT),
+    constants.TYPE_GF: ForwardedPorts(constants.GF_VNC_PORT,
+                                      constants.GF_ADB_PORT),
+    constants.TYPE_CHEEPS: ForwardedPorts(constants.CHEEPS_VNC_PORT,
+                                          constants.CHEEPS_ADB_PORT)
+}
+
 _VNC_BIN = "ssvnc"
 _CMD_KILL = ["pkill", "-9", "-f"]
 _CMD_PGREP = "pgrep"
@@ -68,7 +79,7 @@ _CMD_SG = "sg "
 _CMD_START_VNC = "%(bin)s vnc://127.0.0.1:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
 _ENV_DISPLAY = "DISPLAY"
-_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto"}
+_SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto", "VNCVIEWER_X11CURSOR": "1"}
 _DEFAULT_DISPLAY_SCALE = 1.0
 _DIST_DIR = "DIST_DIR"
 
@@ -81,6 +92,7 @@ _EvaluatedResult = collections.namedtuple("EvaluatedResult",
 # dict of supported system and their distributions.
 _SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 _DEFAULT_TIMEOUT_ERR = "Function did not complete within %d secs."
+
 
 class TempDir(object):
     """A context manager that ceates a temporary directory.
@@ -436,6 +448,7 @@ def VerifyRsaPubKey(rsa):
         raise errors.DriverError(
             "rsa key is invalid: %s, error: %s" % (rsa, str(e)))
 
+
 def Decompress(sourcefile, dest=None):
     """Decompress .zip or .tar.gz.
 
@@ -458,6 +471,7 @@ def Decompress(sourcefile, dest=None):
         raise errors.UnsupportedCompressionFileType(
             "Sorry, we could only support compression file type "
             "for zip or tar.gz.")
+
 
 # pylint: disable=old-style-class,no-init
 class TextColors:
@@ -845,6 +859,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
 
     Args:
         answer_list: list of the answers to choose from.
+        enable_choose_all: True to choose all items from answer list.
 
     Return:
         List holding the answer(s).
@@ -870,8 +885,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
             continue
         # Filter out choices
         if choice == 0:
-            print("Exiting acloud.")
-            sys.exit()
+            sys.exit(constants.EXIT_BY_USER)
         if enable_choose_all and choice == max_choice:
             return answer_list
         if choice < 0 or choice > max_choice:
@@ -898,8 +912,8 @@ def LaunchVNCFromReport(report, avd_spec, no_prompts=False):
             PrintColorString("No VNC port specified, skipping VNC startup.",
                              TextColors.FAIL)
 
-def LaunchVncClient(port=constants.DEFAULT_VNC_PORT, avd_width=None,
-                    avd_height=None, no_prompts=False):
+
+def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
     """Launch ssvnc.
 
     Args:
@@ -1169,3 +1183,25 @@ def TimeoutException(timeout_secs, timeout_error=_DEFAULT_TIMEOUT_ERR):
         return _FunctionWrapper
 
     return _Wrapper
+
+
+def GetBuildEnvironmentVariable(variable_name):
+    """Get build environment variable.
+
+    Args:
+        variable_name: String of variable name.
+
+    Returns:
+        String, the value of the variable.
+
+    Raises:
+        errors.GetAndroidBuildEnvVarError: No environment variable found.
+    """
+    try:
+        return os.environ[variable_name]
+    except KeyError:
+        raise errors.GetAndroidBuildEnvVarError(
+            "Could not get environment var: %s\n"
+            "Try to run 'source build/envsetup.sh && lunch <target>'"
+            % variable_name
+        )

@@ -43,6 +43,7 @@ import getpass
 import logging
 
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 
@@ -132,7 +133,9 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                        emulator_branch=None,
                        emulator_build_id=None,
                        blank_data_disk_size_gb=None,
-                       gpu=None):
+                       gpu=None,
+                       avd_spec=None,
+                       extra_scopes=None):
         """Create a goldfish instance given a stable host image and a build id.
 
         Args:
@@ -148,6 +151,8 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             blank_data_disk_size_gb: Integer, size of the blank data disk in GB.
             gpu: String, GPU that should be attached to the instance, or None of no
                  acceleration is needed. e.g. "nvidia-tesla-k80"
+            avd_spec: An AVDSpec instance.
+            extra_scopes: A list of extra scopes to be passed to the instance.
         """
         self._CheckMachineSize()
 
@@ -161,10 +166,10 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
         # Goldfish instances are metadata compatible with cuttlefish devices.
         # See details goto/goldfish-deployment
         metadata = self._metadata.copy()
-        resolution = self._resolution.split("x")
+        metadata["user"] = getpass.getuser()
+        metadata[constants.INS_KEY_AVD_TYPE] = constants.TYPE_GF
 
         # Note that we use the same metadata naming conventions as cuttlefish
-        metadata["cvd_01_dpi"] = resolution[3]
         metadata["cvd_01_fetch_android_build_target"] = build_target
         metadata["cvd_01_fetch_android_bid"] = "{branch}/{build_id}".format(
             branch=branch, build_id=build_id)
@@ -173,8 +178,28 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                 "cvd_01_fetch_emulator_bid"] = "{branch}/{build_id}".format(
                     branch=emulator_branch, build_id=emulator_build_id)
         metadata["cvd_01_launch"] = "1"
-        metadata["cvd_01_x_res"] = resolution[0]
-        metadata["cvd_01_y_res"] = resolution[1]
+
+        # Update metadata by avd_spec
+        # for legacy create_gf cmd, we will keep using resolution.
+        # And always use avd_spec for acloud create cmd.
+        if avd_spec:
+            metadata[constants.INS_KEY_AVD_FLAVOR] = avd_spec.flavor
+            metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
+            metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
+            metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
+            metadata[constants.INS_KEY_DISPLAY] = ("%sx%s (%s)" % (
+                avd_spec.hw_property[constants.HW_X_RES],
+                avd_spec.hw_property[constants.HW_Y_RES],
+                avd_spec.hw_property[constants.HW_ALIAS_DPI]))
+        else:
+            resolution = self._resolution.split("x")
+            metadata["cvd_01_x_res"] = resolution[0]
+            metadata["cvd_01_y_res"] = resolution[1]
+            metadata["cvd_01_dpi"] = resolution[3]
+
+        # Add labels for giving the instances ability to be filter for
+        # acloud list/delete cmds.
+        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
 
         # Add per-instance ssh key
         if self._ssh_public_key_path:
@@ -197,4 +222,6 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
-            gpu=gpu)
+            gpu=gpu,
+            labels=labels,
+            extra_scopes=extra_scopes)

@@ -48,10 +48,10 @@ Try $acloud [cmd] --help for further details.
 
 from __future__ import print_function
 import argparse
-import getpass
 import logging
 import platform
 import sys
+import traceback
 
 # TODO: Remove this once we switch over to embedded launcher.
 # Exit out if python version is < 2.7.13 due to b/120883119.
@@ -73,13 +73,14 @@ if (sys.version_info.major == 2
         print("  POSIXLY_CORRECT=1 port -N install python27")
     sys.exit(1)
 
-# Needed to silence oauth2client.
-# This is a workaround to get rid of below warning message:
+# By Default silence root logger's stream handler since 3p lib may initial
+# root logger no matter what level we're using. The acloud logger behavior will
+# be defined in _SetupLogging(). This also could workaround to get rid of below
+# oauth2client warning:
 # 'No handlers could be found for logger "oauth2client.contrib.multistore_file'
-# TODO(b/112803893): Remove this code once bug is fixed.
-OAUTH2_LOGGER = logging.getLogger('oauth2client.contrib.multistore_file')
-OAUTH2_LOGGER.setLevel(logging.CRITICAL)
-OAUTH2_LOGGER.addHandler(logging.FileHandler("/dev/null"))
+DEFAULT_STREAM_HANDLER = logging.StreamHandler()
+DEFAULT_STREAM_HANDLER.setLevel(logging.CRITICAL)
+logging.getLogger().addHandler(DEFAULT_STREAM_HANDLER)
 
 # pylint: disable=wrong-import-position
 from acloud import errors
@@ -87,6 +88,7 @@ from acloud.create import create
 from acloud.create import create_args
 from acloud.delete import delete
 from acloud.delete import delete_args
+from acloud.internal import constants
 from acloud.reconnect import reconnect
 from acloud.reconnect import reconnect_args
 from acloud.list import list as list_instances
@@ -107,7 +109,6 @@ ACLOUD_LOGGER = "acloud"
 CMD_CREATE_CUTTLEFISH = "create_cf"
 CMD_CREATE_GOLDFISH = "create_gf"
 CMD_CLEANUP = "cleanup"
-CMD_SSHKEY = "project_sshkey"
 
 
 # pylint: disable=too-many-statements
@@ -145,13 +146,26 @@ def _ParseArgs(args):
         help="Android branch, e.g. git_master")
     create_cf_parser.add_argument(
         "--kernel_build_id",
+        "--kernel-build-id",
         type=str,
         dest="kernel_build_id",
         required=False,
         help="Android kernel build id, e.g. 4586590. This is to test a new"
-        " kernel build with a particular Android build (--build_id). If not"
-        " specified, the kernel that's bundled with the Android build would"
-        " be used.")
+        " kernel build with a particular Android build (--build_id). If neither"
+        " kernel_branch nor kernel_build_id are specified, the kernel that's"
+        " bundled with the Android build would be used.")
+    create_cf_parser.add_argument(
+        "--kernel_branch",
+        "--kernel-branch",
+        type=str,
+        dest="kernel_branch",
+        required=False,
+        help="Android kernel build branch name, e.g."
+        " kernel-common-android-4.14. This is to test a new kernel build with a"
+        " particular Android build (--build-id). If specified without"
+        " specifying kernel_build_id, the last green build in the branch will"
+        " be used. If neither kernel_branch nor kernel_build_id are specified,"
+        " the kernel that's bundled with the Android build would be used.")
 
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
@@ -208,26 +222,6 @@ def _ParseArgs(args):
         help="Garbage collect all gce instances, gce images, cached disk "
         "images that are older than |expiration_mins|.")
     subparser_list.append(cleanup_parser)
-
-    # Command "project_sshkey"
-    sshkey_parser = subparsers.add_parser(CMD_SSHKEY)
-    sshkey_parser.required = False
-    sshkey_parser.set_defaults(which=CMD_SSHKEY)
-    sshkey_parser.add_argument(
-        "--user",
-        type=str,
-        dest="user",
-        default=getpass.getuser(),
-        help="The user name which the sshkey belongs to, default to: %s." %
-        getpass.getuser())
-    sshkey_parser.add_argument(
-        "--ssh_rsa_path",
-        type=str,
-        dest="ssh_rsa_path",
-        required=True,
-        help="Absolute path to the file that contains the public rsa key "
-        "that will be added as project-wide ssh key.")
-    subparser_list.append(sshkey_parser)
 
     # Command "create"
     subparser_list.append(create_args.GetCreateArgParser(subparsers))
@@ -363,7 +357,6 @@ def main(argv=None):
     # Check access.
     # device_driver.CheckAccess(cfg)
 
-    metrics.LogUsage()
     report = None
     if args.which == create_args.CMD_CREATE:
         create.Run(args)
@@ -373,6 +366,7 @@ def main(argv=None):
             build_target=args.build_target,
             build_id=args.build_id,
             kernel_build_id=args.kernel_build_id,
+            kernel_branch=args.kernel_branch,
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
@@ -399,8 +393,6 @@ def main(argv=None):
         list_instances.Run(args)
     elif args.which == reconnect_args.CMD_RECONNECT:
         reconnect.Run(args)
-    elif args.which == CMD_SSHKEY:
-        report = device_driver.AddSshRsa(cfg, args.user, args.ssh_rsa_path)
     elif args.which == setup_args.CMD_SETUP:
         setup.Run(args)
     else:
@@ -417,4 +409,19 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    EXIT_CODE = None
+    EXCEPTION_STACKTRACE = None
+    EXCEPTION_LOG = None
+    metrics.LogUsage(sys.argv[1:])
+    try:
+        EXIT_CODE = main(sys.argv[1:])
+    except Exception as e:
+        EXIT_CODE = constants.EXIT_BY_ERROR
+        EXCEPTION_STACKTRACE = traceback.format_exc()
+        EXCEPTION_LOG = str(e)
+        raise
+    finally:
+        # Log Exit event here to calculate the consuming time.
+        metrics.LogExitEvent(EXIT_CODE,
+                             stacktrace=EXCEPTION_STACKTRACE,
+                             logs=EXCEPTION_LOG)

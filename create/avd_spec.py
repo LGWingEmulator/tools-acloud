@@ -20,6 +20,7 @@ get passed into the create classes. The inferring magic will happen within
 initialization of AVDSpec (like LKGB build id, image branch, etc).
 """
 
+import glob
 import logging
 import os
 import re
@@ -31,6 +32,7 @@ from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
+from acloud.internal.lib import utils
 from acloud.public import config
 
 # Default values for build target.
@@ -39,10 +41,16 @@ _BUILD_TARGET = "build_target"
 _BUILD_BRANCH = "build_branch"
 _BUILD_ID = "build_id"
 _COMMAND_REPO_INFO = ["repo", "info"]
+_CF_ZIP_PATTERN = "*img*.zip"
 _DEFAULT_BUILD_BITNESS = "x86"
 _DEFAULT_BUILD_TYPE = "userdebug"
 _ENV_ANDROID_PRODUCT_OUT = "ANDROID_PRODUCT_OUT"
 _ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
+_GCE_LOCAL_IMAGE_CANDIDATES = ["avd-system.tar.gz",
+                               "android_system_disk_syslinux.img"]
+_LOCAL_ZIP_WARNING_MSG = "'adb sync' will take a long time if using images " \
+                         "built with `m dist`. Building with just `m` will " \
+                         "enable a faster 'adb sync' process."
 _RE_ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
 _RE_FLAVOR = re.compile(r"^.+_(?P<flavor>.+)-img.+")
 _RE_GBSIZE = re.compile(r"^(?P<gb_size>\d+)g$", re.IGNORECASE)
@@ -107,6 +115,9 @@ class AVDSpec(object):
         # Reporting args.
         self._serial_log_file = None
         self._logcat_file = None
+        # gpu and emulator_build_id is only used for goldfish avd_type.
+        self._gpu = None
+        self._emulator_build_id = None
 
         self._ProcessArgs(args)
 
@@ -248,88 +259,128 @@ class AVDSpec(object):
         self._kernel_build_id = args.kernel_build_id
         self._serial_log_file = args.serial_log_file
         self._logcat_file = args.logcat_file
+        self._emulator_build_id = args.emulator_build_id
+        self._gpu = args.gpu
 
     @staticmethod
-    def _GetFlavorFromLocalImage(image_path):
-        """Get flavor name from local image file name.
+    def _GetFlavorFromString(flavor_string):
+        """Get flavor name from flavor string.
 
-        If the user didn't specify a flavor, we can infer it from the image
-        name, e.g. cf_x86_tv-img-eng.zip should be created with a flavor of tv.
-
-        Args:
-            image_path: String of image path.
-
-        Returns:
-            String of flavor name, None if flavor can't be determined.
-        """
-        local_image_name = os.path.basename(image_path)
-        match = _RE_FLAVOR.match(local_image_name)
-        if match:
-            image_flavor = match.group("flavor")
-            if image_flavor in constants.ALL_FLAVORS:
-                logger.debug("Get flavor[%s] from local image name(%s).",
-                             image_flavor, local_image_name)
-                return image_flavor
-            else:
-                logger.debug("Flavor[%s] from image name is not supported.",
-                             image_flavor)
-
-        return None
-
-    @staticmethod
-    def _GetFlavorFromTarget(build_target):
-        """Get flavor name from build target name.
-
-        If the user didn't specify a flavor, we can infer it from the target
-        name, e.g. cf_x86_phone-userdebug should be created with a flavor of
-        phone.
+        Flavor string can come from the zipped image name or the lunch target.
+        e.g.
+        If flavor_string come from zipped name:aosp_cf_x86_phone-img-5455843.zip
+        , then "phone" is the flavor.
+        If flavor_string come from a lunch'd target:aosp_cf_x86_auto-userdebug,
+        then "auto" is the flavor.
 
         Args:
-            build_target: String of build target name.
+            flavor_string: String which contains flavor.It can be a
+                           build target or filename.
 
         Returns:
             String of flavor name. None if flavor can't be determined.
         """
         for flavor in constants.ALL_FLAVORS:
-            if re.match(r"(.*_)?%s-" % flavor, build_target):
+            if re.match(r"(.*_)?%s" % flavor, flavor_string):
                 return flavor
 
         logger.debug("Unable to determine flavor from build target: %s",
-                     build_target)
+                     flavor_string)
         return None
 
     def _ProcessLocalImageArgs(self, args):
         """Get local image path.
 
-        -Specified local_image with no arg: Set $ANDROID_PRODUCT_OUT.
-        -Specified local_image with an arg: Set user specified path.
-
         Args:
             args: Namespace object from argparse.parse_args.
+        """
+        if self._avd_type == constants.TYPE_CF:
+            self._ProcessCFLocalImageArgs(args.local_image, args.flavor)
+        elif self._avd_type == constants.TYPE_GCE:
+            self._local_image_artifact = self._GetGceLocalImagePath(
+                args.local_image)
+        else:
+            raise errors.CreateError(
+                "Local image doesn't support the AVD type: %s" % self._avd_type
+            )
+
+    @staticmethod
+    def _GetGceLocalImagePath(local_image_dir):
+        """Get gce local image path.
+
+        Choose image file in local_image_dir over $ANDROID_PRODUCT_OUT.
+        There are various img files so we prioritize returning the one we find
+        first based in the specified order in _GCE_LOCAL_IMAGE_CANDIDATES.
+
+        Args:
+            local_image_dir: A string to specify local image dir.
+
+        Returns:
+            String, image file path if exists.
 
         Raises:
-            errors.CreateError: Can't get $ANDROID_PRODUCT_OUT.
+            errors.BootImgDoesNotExist if image doesn't exist.
         """
-        if args.local_image:
-            self._local_image_dir = args.local_image
-        else:
-            try:
-                self._local_image_dir = os.environ[_ENV_ANDROID_PRODUCT_OUT]
-            except KeyError:
-                raise errors.GetAndroidBuildEnvVarError(
-                    "Could not get environment var: %s\n"
-                    "Try to run '#source build/envsetup.sh && lunch <target>'"
-                    % _ENV_ANDROID_PRODUCT_OUT
-                )
+        # IF the user specified a file, return it
+        if local_image_dir and os.path.isfile(local_image_dir):
+            return local_image_dir
 
-        self._local_image_artifact = create_common.VerifyLocalImageArtifactsExist(
-            self.local_image_dir)
-        # Overwrite flavor by local image name
-        local_image_flavor = self._GetFlavorFromLocalImage(
-            self._local_image_artifact)
-        if local_image_flavor and not args.flavor:
-            self._flavor = local_image_flavor
-            self._cfg.OverrideHwPropertyWithFlavor(local_image_flavor)
+        # If the user didn't specify a dir, assume $ANDROID_PRODUCT_OUT
+        if not local_image_dir:
+            local_image_dir = utils.GetBuildEnvironmentVariable(
+                _ENV_ANDROID_PRODUCT_OUT)
+
+        for img_name in _GCE_LOCAL_IMAGE_CANDIDATES:
+            full_file_path = os.path.join(local_image_dir, img_name)
+            if os.path.exists(full_file_path):
+                return full_file_path
+
+        raise errors.BootImgDoesNotExist("Could not find any GCE images (%s), "
+                                         "you can build them via \"m dist\"" %
+                                         ", ".join(_GCE_LOCAL_IMAGE_CANDIDATES))
+
+    def _ProcessCFLocalImageArgs(self, local_image_arg, flavor_arg):
+        """Get local built image path for cuttlefish-type AVD.
+
+        Two scenarios of using --local-image:
+        - Without a following argument
+          Set flavor string if the required images are in $ANDROID_PRODUCT_OUT,
+        - With a following filename/dirname
+          Set flavor string from the specified image/dir name.
+
+        Args:
+            local_image_arg: String of local image args.
+            flavor_arg: String of flavor arg
+
+        """
+        flavor_from_build_string = None
+        local_image_path = local_image_arg or utils.GetBuildEnvironmentVariable(
+            _ENV_ANDROID_PRODUCT_OUT)
+
+        if os.path.isfile(local_image_path):
+            self._local_image_artifact = local_image_arg
+            flavor_from_build_string = self._GetFlavorFromString(
+                self._local_image_artifact)
+            # Since file is provided and I assume it's a zip, so print the
+            # warning message.
+            utils.PrintColorString(_LOCAL_ZIP_WARNING_MSG,
+                                   utils.TextColors.WARNING)
+        else:
+            self._local_image_dir = local_image_path
+            # Since dir is provided, so checking that any images exist to ensure
+            # user didn't forget to 'make' before launch AVD.
+            image_list = glob.glob(os.path.join(self.local_image_dir, "*.img"))
+            if not image_list:
+                raise errors.GetLocalImageError(
+                    "No image found(Did you choose a lunch target and run `m`?)"
+                    ": %s.\n " % self.local_image_dir)
+
+            flavor_from_build_string = self._GetFlavorFromString(
+                utils.GetBuildEnvironmentVariable(constants.ENV_BUILD_TARGET))
+
+        if flavor_from_build_string and not flavor_arg:
+            self._flavor = flavor_from_build_string
+            self._cfg.OverrideHwPropertyWithFlavor(flavor_from_build_string)
 
     def _ProcessRemoteBuildArgs(self, args):
         """Get the remote build args.
@@ -351,7 +402,7 @@ class AVDSpec(object):
         else:
             # If flavor isn't specified, try to infer it from build target,
             # if we can't, just default to phone flavor.
-            self._flavor = args.flavor or self._GetFlavorFromTarget(
+            self._flavor = args.flavor or self._GetFlavorFromString(
                 self._remote_image[_BUILD_TARGET]) or constants.FLAVOR_PHONE
             # infer avd_type from build_target.
             for avd_type, avd_type_abbr in constants.AVD_TYPES_MAPPING.items():
@@ -516,3 +567,13 @@ class AVDSpec(object):
     def logcat_file(self):
         """Return logcat file path."""
         return self._logcat_file
+
+    @property
+    def gpu(self):
+        """Return gpu."""
+        return self._gpu
+
+    @property
+    def emulator_build_id(self):
+        """Return emulator_build_id."""
+        return self._emulator_build_id

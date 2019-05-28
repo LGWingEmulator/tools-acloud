@@ -22,8 +22,8 @@ import logging
 import os
 
 from acloud import errors
-from acloud.public.actions import common_operations
 from acloud.public.actions import base_device_factory
+from acloud.public.actions import common_operations
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
@@ -64,7 +64,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  build_id,
                  emulator_build_target,
                  emulator_build_id,
-                 gpu=None):
+                 gpu=None,
+                 avd_spec=None):
 
         """Initialize.
 
@@ -75,6 +76,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             emulator_build_target: String, the emulator build target, e.g. aosp_x86-eng.
             emulator_build_id: String, emulator build id.
             gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
+            avd_spec: An AVDSpec instance.
         """
 
         self.credentials = auth.CreateCredentials(cfg)
@@ -90,7 +92,9 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._emulator_build_id = emulator_build_id
         self._emulator_build_target = emulator_build_target
         self._gpu = gpu
+        self._avd_spec = avd_spec
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
+        self._extra_scopes = cfg.extra_scopes
 
         # Configure clients
         self._build_client = android_build_client.AndroidBuildClient(
@@ -109,7 +113,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         Returns:
             String, the name of the created instance.
         """
-        instance = self._compute_client.GenerateInstanceName(self._build_id)
+        instance = self._compute_client.GenerateInstanceName(
+            build_id=self._build_id, build_target=self._build_target)
 
         self._compute_client.CreateInstance(
             instance=instance,
@@ -121,7 +126,9 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             emulator_branch=self._emulator_branch,
             emulator_build_id=self._emulator_build_id,
             gpu=self._gpu,
-            blank_data_disk_size_gb=self._blank_data_disk_size_gb)
+            blank_data_disk_size_gb=self._blank_data_disk_size_gb,
+            avd_spec=self._avd_spec,
+            extra_scopes=self._extra_scopes)
 
         return instance
 
@@ -180,7 +187,8 @@ def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
         return ParseBuildInfo(temp_filename, pattern)
 
 
-def CreateDevices(cfg,
+def CreateDevices(avd_spec=None,
+                  cfg=None,
                   build_target=None,
                   build_id=None,
                   emulator_build_id=None,
@@ -194,6 +202,7 @@ def CreateDevices(cfg,
     """Create one or multiple Goldfish devices.
 
     Args:
+        avd_spec: An AVDSpec instance.
         cfg: An AcloudConfig instance.
         build_target: String, the build target, e.g. aosp_x86-eng.
         build_id: String, Build id, e.g. "2263051", "P2804227"
@@ -211,7 +220,23 @@ def CreateDevices(cfg,
     Returns:
         A Report instance.
     """
+    if avd_spec:
+        cfg = avd_spec.cfg
+        build_target = avd_spec.remote_image[constants.BUILD_TARGET]
+        build_id = avd_spec.remote_image[constants.BUILD_ID]
+        branch = avd_spec.remote_image[constants.BUILD_BRANCH]
+        num = avd_spec.num
+        emulator_build_id = avd_spec.emulator_build_id
+        gpu = avd_spec.gpu
+        serial_log_file = avd_spec.serial_log_file
+        logcat_file = avd_spec.logcat_file
+        autoconnect = avd_spec.autoconnect
+        report_internal_ip = avd_spec.report_internal_ip
+
     if emulator_build_id is None:
+        logger.info("emulator_build_id not provided. "
+                    "Try to get %s from build %s/%s.", _EMULATOR_INFO_FILENAME,
+                    build_id, build_target)
         emulator_build_id = _FetchBuildIdFromFile(cfg,
                                                   build_target,
                                                   build_id,
@@ -242,15 +267,9 @@ def CreateDevices(cfg,
 
     device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
                                            cfg.emulator_build_target,
-                                           emulator_build_id, gpu)
+                                           emulator_build_id, gpu, avd_spec)
 
-    return common_operations.CreateDevices(
-        command="create_gf",
-        cfg=cfg,
-        device_factory=device_factory,
-        num=num,
-        report_internal_ip=report_internal_ip,
-        vnc_port=constants.DEFAULT_GOLDFISH_VNC_PORT,
-        adb_port=constants.DEFAULT_GOLDFISH_ADB_PORT,
-        serial_log_file=serial_log_file,
-        logcat_file=logcat_file)
+    return common_operations.CreateDevices("create_gf", cfg, device_factory,
+                                           num, constants.TYPE_GF,
+                                           report_internal_ip, autoconnect,
+                                           serial_log_file, logcat_file)

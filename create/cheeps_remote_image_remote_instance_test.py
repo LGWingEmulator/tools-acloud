@@ -72,6 +72,7 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
         avd_spec.cfg = self._CreateCfg()
         avd_spec.remote_image = {constants.BUILD_ID: self.ANDROID_BUILD_ID}
         avd_spec.autoconnect = False
+        avd_spec.report_internal_ip = False
         instance = cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance()
         report = instance.Create(avd_spec, no_prompts=False)
 
@@ -80,10 +81,12 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
             instance=self.INSTANCE,
             image_name=self.CHEEPS_HOST_IMAGE_NAME,
             image_project=self.CHEEPS_HOST_IMAGE_PROJECT,
-            build_id=self.ANDROID_BUILD_ID)
+            build_id=self.ANDROID_BUILD_ID,
+            avd_spec=avd_spec)
 
         self.assertEquals(report.data, {
             "devices": [{
+                "build_id": self.ANDROID_BUILD_ID,
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
             },],

@@ -47,7 +47,6 @@ logger = logging.getLogger(__name__)
 
 class AndroidComputeClient(gcompute_client.ComputeClient):
     """Client that manages Anadroid Virtual Device."""
-    INSTANCE_NAME_FMT = "ins-{uuid}-{build_id}-{build_target}"
     IMAGE_NAME_FMT = "img-{uuid}-{build_id}-{build_target}"
     DATA_DISK_NAME_FMT = "data-{instance}"
     BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
@@ -78,6 +77,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._resolution = acloud_config.resolution
         self._metadata = acloud_config.metadata_variable.copy()
         self._ssh_public_key_path = acloud_config.ssh_public_key_path
+        self._launch_args = acloud_config.launch_args
+        self._instance_name_pattern = acloud_config.instance_name_pattern
 
     @classmethod
     def _FormalizeName(cls, name):
@@ -149,8 +150,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         name = cls.DATA_DISK_NAME_FMT.format(instance=instance)
         return cls._FormalizeName(name)
 
-    @classmethod
-    def GenerateInstanceName(cls, build_target=None, build_id=None):
+    def GenerateInstanceName(self, build_target=None, build_id=None):
         """Generate an instance name given build_target, build_id.
 
         Target is not used as instance name has a length limit.
@@ -162,13 +162,10 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         Returns:
             A string, representing instance name.
         """
-        if not build_target and not build_id:
-            return "instance-" + uuid.uuid4().hex
-        name = cls.INSTANCE_NAME_FMT.format(
-            build_target=build_target,
-            build_id=build_id,
-            uuid=uuid.uuid4().hex[:8]).replace("_", "-")
-        return cls._FormalizeName(name)
+        name = self._instance_name_pattern.format(build_target=build_target,
+                                                  build_id=build_id,
+                                                  uuid=uuid.uuid4().hex[:8])
+        return self._FormalizeName(name)
 
     def CreateDisk(self,
                    disk_name,
@@ -241,8 +238,10 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                        gpu=None,
                        extra_disk_name=None,
                        labels=None,
-                       avd_spec=None):
+                       avd_spec=None,
+                       extra_scopes=None):
         """Create a gce instance with a gce image.
+
         Args:
             instance: String, instance name.
             image_name: String, source image used to create this disk.
@@ -262,6 +261,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             extra_disk_name: String,the name of the extra disk to attach.
             labels: Dict, will be added to the instance's labels.
             avd_spec: AVDSpec object that tells us what we're going to create.
+            extra_scopes: List, extra scopes (strings) to be passed to the
+                          instance.
         """
         self._CheckMachineSize()
         disk_args = self._GetDiskArgs(instance, image_name)
@@ -296,7 +297,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         super(AndroidComputeClient, self).CreateInstance(
             instance, image_name, self._machine_type, metadata, self._network,
             self._zone, disk_args, image_project, gpu, extra_disk_name,
-            labels=labels)
+            labels=labels, extra_scopes=extra_scopes)
 
     def CheckBootFailure(self, serial_out, instance):
         """Determine if serial output has indicated any boot failure.

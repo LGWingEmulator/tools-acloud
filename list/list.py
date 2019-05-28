@@ -142,10 +142,10 @@ def ChooseInstances(cfg, select_all_instances=False):
     """
     instances_list = GetInstances(cfg)
     if (len(instances_list) > 1) and not select_all_instances:
-        print("Multiple instance detected, choose 1 to proceed:")
-        instances_to_delete = utils.GetAnswerFromList(instances_list,
-                                                      enable_choose_all=True)
-        return instances_to_delete
+        print("Multiple instances detected, choose any one to proceed:")
+        instances = utils.GetAnswerFromList(instances_list,
+                                            enable_choose_all=True)
+        return instances
 
     return instances_list
 
@@ -182,6 +182,34 @@ def GetInstancesFromInstanceNames(cfg, instance_names):
         raise errors.NoInstancesFound("Did not find the following instances: %s" %
                                       ' '.join(missing_instances))
     return instance_list
+
+
+def GetInstanceFromAdbPort(cfg, adb_port):
+    """Get instance from adb port.
+
+    Args:
+        cfg: AcloudConfig object.
+        adb_port: int, adb port of instance.
+
+    Returns:
+        List of list.Instance() object.
+
+    Raises:
+        errors.NoInstancesFound: No instances found.
+    """
+    all_instance_info = []
+    for instance_object in GetInstances(cfg):
+        if instance_object.forwarding_adb_port == adb_port:
+            return [instance_object]
+        all_instance_info.append(instance_object.fullname)
+
+    # Show devices information to user when user provides wrong adb port.
+    if all_instance_info:
+        hint_message = ("No instance with adb port %d, available instances:\n%s"
+                        % (adb_port, "\n".join(all_instance_info)))
+    else:
+        hint_message = "No instances to delete."
+    raise errors.NoInstancesFound(hint_message)
 
 
 def Run(args):

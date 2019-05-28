@@ -85,7 +85,7 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
                 while not done:
                     _, done = downloader.next_chunk()
             logger.info("Downloaded artifact: %s", local_dest)
-        except OSError as e:
+        except (OSError, apiclient.errors.HttpError) as e:
             logger.error("Downloading artifact failed: %s", str(e))
             raise errors.DriverError(str(e))
 
@@ -170,6 +170,7 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
             maxResults=self.ONE_RESULT,
             successful=self.BUILD_SUCCESSFUL)
         build = self.Execute(api)
+        logger.info("GetLKGB build API response: %s", build)
         if build:
             return str(build.get("builds")[0].get("buildId"))
         raise errors.GetBuildIDError(

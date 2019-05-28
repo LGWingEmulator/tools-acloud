@@ -91,31 +91,29 @@ HW_Y_RES = "y_res"
 USER_ANSWER_YES = {"y", "yes", "Y"}
 
 # Cuttlefish groups
-LIST_CF_USER_GROUPS = ["kvm", "libvirt", "cvdnetwork"]
-#For the cuttlefish remote instances: adb port is 6520 and vnc is 6444.
-CF_TARGET_ADB_PORT = 6520
-CF_TARGET_VNC_PORT = 6444
+LIST_CF_USER_GROUPS = ["kvm", "cvdnetwork"]
 
-# For gce_x86_phones remote instances
-DEFAULT_GCE_VNC_PORT = 6444
-DEFAULT_GCE_ADB_PORT = 5555
-# For goldfish remote instances
-DEFAULT_GOLDFISH_VNC_PORT = 6444
-DEFAULT_GOLDFISH_ADB_PORT = 5555
-# For cuttlefish remote instances
-DEFAULT_VNC_PORT = 6444
-DEFAULT_ADB_PORT = 6520
-VNC_PORT = "vnc_port"
 ADB_PORT = "adb_port"
-
-# For cheeps remote instances.
-DEFAULT_CHEEPS_TARGET_ADB_PORT = 9222
-DEFAULT_CHEEPS_TARGET_VNC_PORT = 5900
+VNC_PORT = "vnc_port"
+# For cuttlefish remote instances
+CF_ADB_PORT = 6520
+CF_VNC_PORT = 6444
+# For cheeps remote instances
+CHEEPS_ADB_PORT = 9222
+CHEEPS_VNC_PORT = 5900
+# For gce_x86_phones remote instances
+GCE_ADB_PORT = 5555
+GCE_VNC_PORT = 6444
+# For goldfish remote instances
+GF_ADB_PORT = 5555
+GF_VNC_PORT = 6444
 
 COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"
 CMD_STOP_CVD = "stop_cvd"
 ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
+ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
+ENV_BUILD_TARGET = "TARGET_PRODUCT"
 
 LOCALHOST = "127.0.0.1"
 LOCALHOST_ADB_SERIAL = LOCALHOST + ":%d"
@@ -139,3 +137,8 @@ INS_KEY_AVD_FLAVOR = "flavor"
 INS_KEY_IS_LOCAL = "remote"
 INS_STATUS_RUNNING = "RUNNING"
 LOCAL_INS_NAME = "local-instance"
+
+TEMP_ARTIFACTS_FOLDER = "acloud_image_artifacts"
+TOOL_NAME = "acloud"
+EXIT_BY_USER = 1
+EXIT_BY_ERROR = -99

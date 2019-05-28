@@ -36,12 +36,26 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
     IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     CMD = "test-cmd"
+    AVD_TYPE = "fake-type"
+    BRANCH = "fake-branch"
+    BUILD_TARGET = "fake-target"
+    BUILD_ID = "fake-build-id"
 
+    # pylint: disable=protected-access
     def setUp(self):
         """Set up the test."""
         super(CommonOperationsTest, self).setUp()
         self.build_client = mock.MagicMock()
         self.device_factory = mock.MagicMock()
+        self.device_factory._branch = self.BRANCH
+        self.device_factory._build_target = self.BUILD_TARGET
+        self.device_factory._build_id = self.BUILD_ID
+        self.device_factory._kernel_branch = None
+        self.device_factory._kernel_build_id = None
+        self.device_factory._kernel_build_target = None
+        self.device_factory._emulator_branch = None
+        self.device_factory._emulator_build_id = None
+        self.device_factory._emulator_build_target = None
         self.Patch(
             android_build_client,
             "AndroidBuildClient",
@@ -84,14 +98,18 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         """Test Create Devices."""
         cfg = self._CreateCfg()
         _report = common_operations.CreateDevices(self.CMD, cfg,
-                                                  self.device_factory, 1)
+                                                  self.device_factory, 1,
+                                                  self.AVD_TYPE)
         self.assertEqual(_report.command, self.CMD)
         self.assertEqual(_report.status, report.Status.SUCCESS)
         self.assertEqual(
             _report.data,
             {"devices": [{
                 "ip": self.IP.external,
-                "instance_name": self.INSTANCE
+                "instance_name": self.INSTANCE,
+                "branch": self.BRANCH,
+                "build_id": self.BUILD_ID,
+                "build_target": self.BUILD_TARGET,
             }]})
 
     def testCreateDevicesInternalIP(self):
@@ -99,6 +117,7 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         cfg = self._CreateCfg()
         _report = common_operations.CreateDevices(self.CMD, cfg,
                                                   self.device_factory, 1,
+                                                  self.AVD_TYPE,
                                                   report_internal_ip=True)
         self.assertEqual(_report.command, self.CMD)
         self.assertEqual(_report.status, report.Status.SUCCESS)
@@ -106,7 +125,10 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
             _report.data,
             {"devices": [{
                 "ip": self.IP.internal,
-                "instance_name": self.INSTANCE
+                "instance_name": self.INSTANCE,
+                "branch": self.BRANCH,
+                "build_id": self.BUILD_ID,
+                "build_target": self.BUILD_TARGET,
             }]})
 
 if __name__ == "__main__":
