@@ -97,6 +97,7 @@ class AVDSpec(object):
         """
         # Let's define the private class vars here and then process the user
         # args afterwards.
+        self._client_adb_port = args.adb_port
         self._autoconnect = None
         self._report_internal_ip = None
         self._avd_type = None
@@ -577,3 +578,8 @@ class AVDSpec(object):
     def emulator_build_id(self):
         """Return emulator_build_id."""
         return self._emulator_build_id
+
+    @property
+    def client_adb_port(self):
+        """Return the client adb port."""
+        return self._client_adb_port

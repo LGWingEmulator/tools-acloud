@@ -790,6 +790,24 @@ def PickFreePort():
     return port
 
 
+def CheckPortFree(port):
+    """Check the availablity of the tcp port.
+
+    Args:
+        Integer, a port number.
+
+    Raises:
+        PortOccupied: This port is not available.
+    """
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        tcp_socket.bind(("", port))
+    except socket.error:
+        raise errors.PortOccupied("Port (%d) is taken, please choose another "
+                                  "port." % port)
+    tcp_socket.close()
+
+
 def _ExecuteCommand(cmd, args):
     """Execute command.
 
@@ -810,7 +828,8 @@ def _ExecuteCommand(cmd, args):
 
 
 # pylint: disable=too-many-locals
-def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_user):
+def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
+                ssh_user, client_adb_port=None):
     """Autoconnect to an AVD instance.
 
     Args:
@@ -821,18 +840,19 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_use
         target_vnc_port: Integer of target vnc port number.
         target_adb_port: Integer of target adb port number.
         ssh_user: String of user login into the instance.
+        client_adb_port: Integer, Specified adb port to establish connection.
 
     Returns:
         NamedTuple of (vnc_port, adb_port) SSHTUNNEL of the connect, both are
         integers.
     """
     local_free_vnc_port = PickFreePort()
-    local_free_adb_port = PickFreePort()
+    local_adb_port = client_adb_port or PickFreePort()
     try:
         ssh_tunnel_args = _SSH_TUNNEL_ARGS % {
             "rsa_key_file": rsa_key_file,
             "vnc_port": local_free_vnc_port,
-            "adb_port": local_free_adb_port,
+            "adb_port": local_adb_port,
             "target_vnc_port": target_vnc_port,
             "target_adb_port": target_adb_port,
             "ssh_user": ssh_user,
@@ -844,14 +864,14 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port, ssh_use
         return ForwardedPorts(vnc_port=None, adb_port=None)
 
     try:
-        adb_connect_args = _ADB_CONNECT_ARGS % {"adb_port": local_free_adb_port}
+        adb_connect_args = _ADB_CONNECT_ARGS % {"adb_port": local_adb_port}
         _ExecuteCommand(constants.ADB_BIN, adb_connect_args.split())
     except subprocess.CalledProcessError:
         PrintColorString("Failed to adb connect, retry with "
                          "'#acloud reconnect'", TextColors.FAIL)
 
     return ForwardedPorts(vnc_port=local_free_vnc_port,
-                          adb_port=local_free_adb_port)
+                          adb_port=local_adb_port)
 
 
 def GetAnswerFromList(answer_list, enable_choose_all=False):

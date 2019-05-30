@@ -38,6 +38,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.args.local_image = ""
         self.args.config_file = ""
         self.args.build_target = "fake_build_target"
+        self.args.adb_port = None
         self.AvdSpec = avd_spec.AVDSpec(self.args)
 
     # pylint: disable=protected-access
