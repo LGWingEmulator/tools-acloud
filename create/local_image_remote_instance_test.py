@@ -116,6 +116,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         args.avd_type = constants.TYPE_CF
         args.flavor = "phone"
         args.local_image = None
+        args.adb_port = None
         fake_avd_spec = avd_spec.AVDSpec(args)
 
         fake_uuid = mock.MagicMock(hex="1234")
