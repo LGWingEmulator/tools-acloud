@@ -40,11 +40,14 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
     IMAGE = "fake-image"
     BUILD_TARGET = "fake-build-target"
     BUILD_ID = "12345"
+    KERNEL_BRANCH = "fake-kernel-branch"
     KERNEL_BUILD_ID = "54321"
+    KERNEL_BUILD_TARGET = "kernel"
     BRANCH = "fake-branch"
     STABLE_HOST_IMAGE_NAME = "fake-stable-host-image-name"
     STABLE_HOST_IMAGE_PROJECT = "fake-stable-host-image-project"
     EXTRA_DATA_DISK_GB = 4
+    EXTRA_SCOPES = ["scope1", "scope2"]
 
     def setUp(self):
         """Set up the test."""
@@ -78,6 +81,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         cfg.stable_host_image_name = self.STABLE_HOST_IMAGE_NAME
         cfg.stable_host_image_project = self.STABLE_HOST_IMAGE_PROJECT
         cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_GB
+        cfg.kernel_build_target = self.KERNEL_BUILD_TARGET
+        cfg.extra_scopes = self.EXTRA_SCOPES
         return cfg
 
     def testCreateDevices(self):
@@ -94,7 +99,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
 
         # Mock build client method
-        self.build_client.GetBranch.return_value = self.BRANCH
+        self.build_client.GetBranch.side_effect = [self.BRANCH,
+                                                   self.KERNEL_BRANCH]
 
         # Setup avd_spec as None to use cfg to create devices
         none_avd_spec = None
@@ -111,14 +117,21 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             build_target=self.BUILD_TARGET,
             branch=self.BRANCH,
             build_id=self.BUILD_ID,
-            kernel_branch=self.BRANCH,
+            kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
             blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
-            avd_spec=none_avd_spec)
+            avd_spec=none_avd_spec,
+            extra_scopes=self.EXTRA_SCOPES)
 
         self.assertEquals(report.data, {
             "devices": [
                 {
+                    "branch": self.BRANCH,
+                    "build_id": self.BUILD_ID,
+                    "build_target": self.BUILD_TARGET,
+                    "kernel_branch": self.KERNEL_BRANCH,
+                    "kernel_build_id": self.KERNEL_BUILD_ID,
+                    "kernel_build_target": self.KERNEL_BUILD_TARGET,
                     "instance_name": self.INSTANCE,
                     "ip": self.IP.external,
                 },

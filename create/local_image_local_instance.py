@@ -82,8 +82,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         result_report.SetStatus(report.Status.SUCCESS)
         result_report.AddData(
             key="devices",
-            value={"adb_port": constants.DEFAULT_ADB_PORT,
-                   constants.VNC_PORT: constants.DEFAULT_VNC_PORT})
+            value={constants.ADB_PORT: constants.CF_ADB_PORT,
+                   constants.VNC_PORT: constants.CF_VNC_PORT})
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
@@ -132,7 +132,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         launch_cvd_w_args = launch_cvd_path + _CMD_LAUNCH_CVD_ARGS % (
             hw_property["cpu"], hw_property["x_res"], hw_property["y_res"],
             hw_property["dpi"], hw_property["memory"], hw_property["disk"],
-            system_image_dir, constants.DEFAULT_VNC_PORT)
+            system_image_dir, constants.CF_VNC_PORT)
 
         launch_cmd = utils.AddUserGroupsToCmd(launch_cvd_w_args,
                                               constants.LIST_CF_USER_GROUPS)
@@ -165,11 +165,10 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                         stderr=dev_null, stdout=dev_null, shell=True)
 
                 # Delete ssvnc viewer
-                delete.CleanupSSVncviewer(constants.CF_TARGET_VNC_PORT)
+                delete.CleanupSSVncviewer(constants.CF_VNC_PORT)
 
             else:
-                print("Exiting out")
-                sys.exit()
+                sys.exit(constants.EXIT_BY_USER)
         self._LaunchCvd(cmd)
 
     @staticmethod

@@ -26,7 +26,6 @@ The details include:
 - and more!
 """
 
-import collections
 import datetime
 import logging
 import re
@@ -60,9 +59,6 @@ _RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
                             r"((.*\s*-blank_data_image_mb\s)(?P<disk>\d+))?")
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
-
-ForwardedPorts = collections.namedtuple("ForwardedPorts",
-                                        [constants.VNC_PORT, constants.ADB_PORT])
 
 
 def _GetElapsedTime(start_time):
@@ -225,14 +221,14 @@ class LocalInstance(Instance):
                 local_instance._elapsed_time = _GetElapsedTime(date_str)
                 local_instance._fullname = (_FULL_NAME_STRING %
                                             {"device_serial": "127.0.0.1:%d" %
-                                                              constants.DEFAULT_ADB_PORT,
+                                                              constants.CF_ADB_PORT,
                                              "instance_name": local_instance._name,
                                              "elapsed_time": local_instance._elapsed_time})
                 local_instance._avd_type = constants.TYPE_CF
                 local_instance._ip = "127.0.0.1"
                 local_instance._status = constants.INS_STATUS_RUNNING
-                local_instance._adb_port = constants.DEFAULT_ADB_PORT
-                local_instance._vnc_port = constants.DEFAULT_VNC_PORT
+                local_instance._adb_port = constants.CF_ADB_PORT
+                local_instance._vnc_port = constants.CF_VNC_PORT
                 local_instance._display = ("%sx%s (%s)" % (x_res, y_res, dpi))
                 local_instance._is_local = True
                 local_instance._ssh_tunnel_is_connected = True
@@ -336,12 +332,8 @@ class RemoteInstance(Instance):
             used in the ssh forwarded call. Both fields are integers.
         """
         process_output = subprocess.check_output(constants.COMMAND_PS)
-        default_vnc_port = (constants.DEFAULT_GCE_VNC_PORT
-                            if avd_type == constants.TYPE_GCE
-                            else constants.DEFAULT_VNC_PORT)
-        default_adb_port = (constants.DEFAULT_GCE_ADB_PORT
-                            if avd_type == constants.TYPE_GCE
-                            else constants.DEFAULT_ADB_PORT)
+        default_vnc_port = utils.AVD_PORT_DICT[avd_type].vnc_port
+        default_adb_port = utils.AVD_PORT_DICT[avd_type].adb_port
         re_pattern = re.compile(_RE_SSH_TUNNEL_PATTERN %
                                 (_RE_GROUP_VNC, default_vnc_port,
                                  _RE_GROUP_ADB, default_adb_port, ip))
@@ -359,4 +351,4 @@ class RemoteInstance(Instance):
                       "IP:%s, forwarding (adb:%d, vnc:%d)"), ip, adb_port,
                      vnc_port)
 
-        return ForwardedPorts(vnc_port=vnc_port, adb_port=adb_port)
+        return utils.ForwardedPorts(vnc_port=vnc_port, adb_port=adb_port)

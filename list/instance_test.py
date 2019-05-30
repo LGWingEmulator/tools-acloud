@@ -57,7 +57,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         self.assertEqual("1080x1920 (480)", local_instance.display)
         self.assertEqual("Sat Nov 10 21:55:10 2018", local_instance.createtime)
         expected_full_name = "device serial: 127.0.0.1:%s (%s) elapsed time: %s" % (
-            constants.DEFAULT_ADB_PORT, constants.LOCAL_INS_NAME, "fake_time")
+            constants.CF_ADB_PORT, constants.LOCAL_INS_NAME, "fake_time")
         self.assertEqual(expected_full_name, local_instance.fullname)
 
         # test return None if no launch_cvd process found
@@ -95,7 +95,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
         forwarded_ports = instance.RemoteInstance(
             mock.MagicMock()).GetAdbVncPortFromSSHTunnel(
-                "fake_ip", "fake_avd_type")
+                "fake_ip", constants.TYPE_CF)
         self.assertEqual(54321, forwarded_ports.adb_port)
         self.assertEqual(12345, forwarded_ports.vnc_port)
 

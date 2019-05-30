@@ -173,8 +173,8 @@ def DeleteLocalInstance():
     except subprocess.CalledProcessError as e:
         delete_report.AddError(str(e))
         delete_report.SetStatus(report.Status.FAIL)
-
-    CleanupSSVncviewer(constants.DEFAULT_VNC_PORT)
+    # Only CF supports local instances so assume it's a CF VNC port.
+    CleanupSSVncviewer(constants.CF_VNC_PORT)
     return delete_report
 
 
@@ -201,6 +201,10 @@ def Run(args):
             return DeleteLocalInstance()
         print("There is no local instance AVD to delete.")
         return report.Report(command="delete")
+
+    if args.adb_port:
+        return DeleteInstances(
+            cfg, list_instances.GetInstanceFromAdbPort(cfg, args.adb_port))
 
     # Provide instances list to user and let user choose what to delete if user
     # didn't specific instance name in args.

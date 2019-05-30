@@ -57,6 +57,15 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     OPERATION_NAME = "fake-op"
     IMAGE_FINGERPRINT = "L_NWHuz7wTY="
     GPU = "fancy-graphics"
+    SSHKEY = (
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBkTOTRze9v2VOqkkf7RG"
+        "jSkg6Z2kb9Q9UHsDGatvend3fmjIw1Tugg0O7nnjlPkskmlgyd4a/j99WOeLL"
+        "CPk6xPyoVjrPUVBU/pAk09ORTC4Zqk6YjlW7LOfzvqmXhmIZfYu6Q4Yt50pZzhl"
+        "lllfu26nYjY7Tg12D019nJi/kqPX5+NKgt0LGXTu8T1r2Gav/q4V7QRWQrB8Eiu"
+        "pxXR7I2YhynqovkEt/OXG4qWgvLEXGsWtSQs0CtCzqEVxz0Y9ECr7er4VdjSQxV"
+        "AaeLAsQsK9ROae8hMBFZ3//8zLVapBwpuffCu+fUoql9qeV9xagZcc9zj8XOUOW"
+        "ApiihqNL1111 test@test1.org")
+    EXTRA_SCOPES = ["scope1"]
 
     def setUp(self):
         """Set up test."""
@@ -64,6 +73,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(gcompute_client.ComputeClient, "InitResourceHandle")
         fake_cfg = mock.MagicMock()
         fake_cfg.project = PROJECT
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         self.compute_client = gcompute_client.ComputeClient(
             fake_cfg, mock.MagicMock())
         self.compute_client._service = mock.MagicMock()
@@ -522,6 +532,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         extra_disk_name = "gce-x86-userdebug-2345-abcd-data"
         expected_disk_args = [self._disk_args]
         expected_disk_args.extend([{"fake_extra_arg": "fake_extra_value"}])
+        expected_scope = []
+        expected_scope.extend(self.compute_client.DEFAULT_INSTANCE_SCOPE)
+        expected_scope.extend(self.EXTRA_SCOPES)
 
         expected_body = {
             "machineType": self.MACHINE_TYPE_URL,
@@ -539,7 +552,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             "disks": expected_disk_args,
             "serviceAccounts": [
                 {"email": "default",
-                 "scopes": self.compute_client.DEFAULT_INSTANCE_SCOPE}
+                 "scopes": expected_scope}
             ],
             "metadata": {
                 "items": [{"key": self.METADATA[0],
@@ -554,7 +567,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata={self.METADATA[0]: self.METADATA[1]},
             network=self.NETWORK,
             zone=self.ZONE,
-            extra_disk_name=extra_disk_name)
+            extra_disk_name=extra_disk_name,
+            extra_scopes=self.EXTRA_SCOPES)
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
@@ -624,7 +638,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata={self.METADATA[0]: self.METADATA[1]},
             network=self.NETWORK,
             zone=self.ZONE,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            extra_scopes=None)
 
         resource_mock.insert.assert_called_with(
             project=PROJECT, zone=self.ZONE, body=expected_body)
@@ -1026,25 +1041,192 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(ip_name_map, {"172.22.22.22": "instance_1",
                                        "172.22.22.23": None})
 
-    def testAddSshRsa(self):
-        """Test AddSshRsa.."""
+    def testRsaNotInMetadata(self):
+        """Test rsa not in metadata."""
         fake_user = "fake_user"
-        sshkey = (
-            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBkTOTRze9v2VOqkkf7RG"
-            "jSkg6Z2kb9Q9UHsDGatvend3fmjIw1Tugg0O7nnjlPkskmlgyd4a/j99WOeLL"
-            "CPk6xPyoVjrPUVBU/pAk09ORTC4Zqk6YjlW7LOfzvqmXhmIZfYu6Q4Yt50pZzhl"
-            "lllfu26nYjY7Tg12D019nJi/kqPX5+NKgt0LGXTu8T1r2Gav/q4V7QRWQrB8Eiu"
-            "pxXR7I2YhynqovkEt/OXG4qWgvLEXGsWtSQs0CtCzqEVxz0Y9ECr7er4VdjSQxV"
-            "AaeLAsQsK9ROae8hMBFZ3//8zLVapBwpuffCu+fUoql9qeV9xagZcc9zj8XOUOW"
-            "ApiihqNL1111 test@test1.org")
-        project = {
-            "commonInstanceMetadata": {
+        fake_ssh_key = "fake_ssh"
+        metadata = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "sshKeys",
+                    "value": "%s:%s" % (fake_user, self.SSHKEY)
+                }
+            ]
+        }
+        # Test rsa doesn't exist in metadata.
+        new_entry = "%s:%s" % (fake_user, fake_ssh_key)
+        self.assertEqual(True, gcompute_client.RsaNotInMetadata(metadata, new_entry))
+
+        # Test rsa exists in metadata.
+        exist_entry = "%s:%s" %(fake_user, self.SSHKEY)
+        self.assertEqual(False, gcompute_client.RsaNotInMetadata(metadata, exist_entry))
+
+    def testGetSshKeyFromMetadata(self):
+        """Test get ssh key from metadata."""
+        fake_user = "fake_user"
+        metadata_key_exist_value_is_empty = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "sshKeys",
+                    "value": ""
+                }
+            ]
+        }
+        metadata_key_exist = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "sshKeys",
+                    "value": "%s:%s" % (fake_user, self.SSHKEY)
+                }
+            ]
+        }
+        metadata_key_not_exist = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                }
+            ]
+        }
+        expected_key_exist_value_is_empty = {
+            "key": "sshKeys",
+            "value": ""
+        }
+        expected_key_exist = {
+            "key": "sshKeys",
+            "value": "%s:%s" % (fake_user, self.SSHKEY)
+        }
+        self.assertEqual(expected_key_exist_value_is_empty,
+                         gcompute_client.GetSshKeyFromMetadata(metadata_key_exist_value_is_empty))
+        self.assertEqual(expected_key_exist,
+                         gcompute_client.GetSshKeyFromMetadata(metadata_key_exist))
+        self.assertEqual(None,
+                         gcompute_client.GetSshKeyFromMetadata(metadata_key_not_exist))
+
+
+    def testGetRsaKeyPathExistsFalse(self):
+        """Test the rsa key path not exists."""
+        fake_ssh_rsa_path = "/path/to/test_rsa.pub"
+        self.Patch(os.path, "exists", return_value=False)
+        self.assertRaisesRegexp(errors.DriverError,
+                                "RSA file %s does not exist." % fake_ssh_rsa_path,
+                                gcompute_client.GetRsaKey,
+                                ssh_rsa_path=fake_ssh_rsa_path)
+
+    def testGetRsaKey(self):
+        """Test get the rsa key."""
+        fake_ssh_rsa_path = "/path/to/test_rsa.pub"
+        self.Patch(os.path, "exists", return_value=True)
+        m = mock.mock_open(read_data=self.SSHKEY)
+        with mock.patch("__builtin__.open", m):
+            result = gcompute_client.GetRsaKey(fake_ssh_rsa_path)
+            self.assertEqual(self.SSHKEY, result)
+
+    def testUpdateRsaInMetadata(self):
+        """Test update rsa in metadata."""
+        fake_ssh_key = "fake_ssh"
+        fake_metadata_sshkeys_not_exist = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "not_sshKeys",
+                    "value": ""
+                }
+            ]
+        }
+        new_entry = "new_user:%s" % fake_ssh_key
+        expected = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "not_sshKeys",
+                    "value": ""
+                },
+                {
+                    "key": "sshKeys",
+                    "value": new_entry
+                }
+            ]
+        }
+        self.Patch(os.path, "exists", return_value=True)
+        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        resource_mock = mock.MagicMock()
+        self.compute_client.SetInstanceMetadata = mock.MagicMock(
+            return_value=resource_mock)
+        # Test the key item not exists in the metadata.
+        self.compute_client.UpdateRsaInMetadata(
+            "fake_zone",
+            "fake_instance",
+            fake_metadata_sshkeys_not_exist,
+            new_entry)
+        self.compute_client.SetInstanceMetadata.assert_called_with(
+            "fake_zone",
+            "fake_instance",
+            expected)
+
+        # Test the key item exists in the metadata.
+        fake_metadata_ssh_keys_exists = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "sshKeys",
+                    "value": "old_user:%s" % self.SSHKEY
+                }
+            ]
+        }
+        expected_ssh_keys_exists = {
+            "kind": "compute#metadata",
+            "fingerprint": "a-23icsyx4E=",
+            "items": [
+                {
+                    "key": "sshKeys",
+                    "value": "old_user:%s\n%s" % (self.SSHKEY, new_entry)
+                }
+            ]
+        }
+
+        self.compute_client.UpdateRsaInMetadata(
+            "fake_zone",
+            "fake_instance",
+            fake_metadata_ssh_keys_exists,
+            new_entry)
+        self.compute_client.SetInstanceMetadata.assert_called_with(
+            "fake_zone",
+            "fake_instance",
+            expected_ssh_keys_exists)
+
+    def testAddSshRsaToInstance(self):
+        """Test add ssh rsa key to instance."""
+        fake_user = "fake_user"
+        instance_metadata_key_not_exist = {
+            "metadata": {
                 "kind": "compute#metadata",
                 "fingerprint": "a-23icsyx4E=",
                 "items": [
                     {
                         "key": "sshKeys",
-                        "value": "user:key"
+                        "value": ""
+                    }
+                ]
+            }
+        }
+        instance_metadata_key_exist = {
+            "metadata": {
+                "kind": "compute#metadata",
+                "fingerprint": "a-23icsyx4E=",
+                "items": [
+                    {
+                        "key": "sshKeys",
+                        "value": "%s:%s" % (fake_user, self.SSHKEY)
                     }
                 ]
             }
@@ -1055,51 +1237,47 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             "items": [
                 {
                     "key": "sshKeys",
-                    "value": "user:key\n%s:%s" % (fake_user, sshkey)
+                    "value": "%s:%s" % (fake_user, self.SSHKEY)
                 }
             ]
         }
 
         self.Patch(os.path, "exists", return_value=True)
-        m = mock.mock_open(read_data=sshkey)
+        m = mock.mock_open(read_data=self.SSHKEY)
         self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
-        self.Patch(
-            gcompute_client.ComputeClient, "GetProject", return_value=project)
         resource_mock = mock.MagicMock()
-        self.compute_client._service.projects = mock.MagicMock(
+        self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
-        resource_mock.setCommonInstanceMetadata = mock.MagicMock()
+        resource_mock.setMetadata = mock.MagicMock()
 
-        with mock.patch("__builtin__.open", m):
-            self.compute_client.AddSshRsa(fake_user, "/path/to/test_rsa.pub")
-            resource_mock.setCommonInstanceMetadata.assert_called_with(
-                project=PROJECT, body=expected)
-
-    def testAddSshRsaInvalidKey(self):
-        """Test AddSshRsa.."""
-        fake_user = "fake_user"
-        sshkey = "ssh-rsa v2VOqkkf7RGL1111 test@test1.org"
-        project = {
-            "commonInstanceMetadata": {
-                "kind": "compute#metadata",
-                "fingerprint": "a-23icsyx4E=",
-                "items": [
-                    {
-                        "key": "sshKeys",
-                        "value": "user:key"
-                    }
-                ]
-            }
-        }
-        self.Patch(os.path, "exists", return_value=True)
-        m = mock.mock_open(read_data=sshkey)
-        self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        # Test the key not exists in the metadata.
         self.Patch(
-            gcompute_client.ComputeClient, "GetProject", return_value=project)
+            gcompute_client.ComputeClient, "GetInstance",
+            return_value=instance_metadata_key_not_exist)
         with mock.patch("__builtin__.open", m):
-            self.assertRaisesRegexp(errors.DriverError, "rsa key is invalid:*",
-                                    self.compute_client.AddSshRsa, fake_user,
-                                    "/path/to/test_rsa.pub")
+            self.compute_client.AddSshRsaInstanceMetadata(
+                "fake_zone",
+                fake_user,
+                "/path/to/test_rsa.pub",
+                "fake_instance")
+            resource_mock.setMetadata.assert_called_with(
+                project=PROJECT,
+                zone="fake_zone",
+                instance="fake_instance",
+                body=expected)
+
+        # Test the key already exists in the metadata.
+        resource_mock.setMetadata.call_count = 0
+        self.Patch(
+            gcompute_client.ComputeClient, "GetInstance",
+            return_value=instance_metadata_key_exist)
+        with mock.patch("__builtin__.open", m):
+            self.compute_client.AddSshRsaInstanceMetadata(
+                "fake_zone",
+                fake_user,
+                "/path/to/test_rsa.pub",
+                "fake_instance")
+            resource_mock.setMetadata.assert_not_called()
 
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
     def testDeleteDisks(self, mock_wait):

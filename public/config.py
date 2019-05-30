@@ -94,6 +94,7 @@ class AcloudConfig(object):
         "disk_image_name", "disk_image_mime_type"
     ]
 
+    # pylint: disable=too-many-statements
     def __init__(self, usr_cfg, internal_cfg):
         """Initialize.
 
@@ -168,6 +169,9 @@ class AcloudConfig(object):
             if "cfg_sta_ephemeral_data_size_mb" in self.metadata_variable:
                 del self.metadata_variable["cfg_sta_ephemeral_data_size_mb"]
 
+        # Additional scopes to be passed to the created instance
+        self.extra_scopes = usr_cfg.extra_scopes
+
         # Fields that can be overriden by args
         self.orientation = usr_cfg.orientation
         self.resolution = usr_cfg.resolution
@@ -197,6 +201,12 @@ class AcloudConfig(object):
 
         self.common_hw_property_map = internal_cfg.common_hw_property_map
         self.hw_property = usr_cfg.hw_property
+
+        self.launch_args = usr_cfg.launch_args
+        self.instance_name_pattern = (
+            usr_cfg.instance_name_pattern or
+            internal_cfg.default_usr_cfg.instance_name_pattern)
+
 
         # Verify validity of configurations.
         self.Verify()

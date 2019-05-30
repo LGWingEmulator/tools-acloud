@@ -44,6 +44,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
     EXTRA_DATA_DISK_SIZE_GB = 4
     BOOT_DISK_SIZE_GB = 10
     GPU = "nvidia-tesla-k80"
+    EXTRA_SCOPES = "scope1"
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -60,6 +61,7 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             x=self.X_RES, y=self.Y_RES, dpi=self.DPI)
         fake_cfg.metadata_variable = self.METADATA
         fake_cfg.extra_data_disk_size_gb = self.EXTRA_DATA_DISK_SIZE_GB
+        fake_cfg.extra_scopes = self.EXTRA_SCOPES
         return fake_cfg
 
     def setUp(self):
@@ -86,34 +88,34 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
                 "fake_arg": "fake_value"
             }])
 
-    def testCreateInstance(self):
+    @mock.patch("getpass.getuser", return_value="fake_user")
+    def testCreateInstance(self, _mock_user):
         """Test CreateInstance."""
 
         expected_metadata = {
-            "cvd_01_dpi":
-            str(self.DPI),
-            "cvd_01_fetch_android_build_target":
-            self.TARGET,
+            "user": "fake_user",
+            "avd_type": "goldfish",
+            "cvd_01_fetch_android_build_target": self.TARGET,
             "cvd_01_fetch_android_bid":
             "{branch}/{build_id}".format(
                 branch=self.BRANCH, build_id=self.BUILD_ID),
             "cvd_01_fetch_emulator_bid":
             "{branch}/{build_id}".format(
                 branch=self.EMULATOR_BRANCH, build_id=self.EMULATOR_BUILD_ID),
-            "cvd_01_launch":
-            "1",
-            "cvd_01_x_res":
-            str(self.X_RES),
-            "cvd_01_y_res":
-            str(self.Y_RES),
+            "cvd_01_launch": "1",
+            "cvd_01_dpi": str(self.DPI),
+            "cvd_01_x_res": str(self.X_RES),
+            "cvd_01_y_res": str(self.Y_RES),
         }
         expected_metadata.update(self.METADATA)
         expected_disk_args = [{"fake_arg": "fake_value"}]
+        expected_labels = {'created_by': "fake_user"}
 
         self.goldfish_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
             self.BRANCH, self.BUILD_ID, self.EMULATOR_BRANCH,
-            self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU)
+            self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU,
+            extra_scopes=self.EXTRA_SCOPES)
 
         # pylint: disable=no-member
         gcompute_client.ComputeClient.CreateInstance.assert_called_with(
@@ -126,7 +128,9 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            labels=expected_labels,
+            extra_scopes=self.EXTRA_SCOPES)
 
 
 if __name__ == "__main__":

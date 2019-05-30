@@ -18,6 +18,7 @@
 import unittest
 import mock
 
+from acloud.internal import constants
 from acloud.internal.lib import cheeps_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
@@ -36,6 +37,9 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
     METADATA = {"metadata_key": "metadata_value"}
     BOOT_DISK_SIZE_GB = 10
     ANDROID_BUILD_ID = 123
+    DPI = 320
+    X_RES = 720
+    Y_RES = 1280
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -49,6 +53,8 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
         fake_cfg.machine_type = self.MACHINE_TYPE
         fake_cfg.network = self.NETWORK
         fake_cfg.zone = self.ZONE
+        fake_cfg.resolution = "{x}x{y}x32x{dpi}".format(
+            x=self.X_RES, y=self.Y_RES, dpi=self.DPI)
         fake_cfg.metadata_variable = self.METADATA
         return fake_cfg
 
@@ -69,14 +75,34 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             return_value={"diskSizeGb": self.BOOT_DISK_SIZE_GB})
         self.Patch(gcompute_client.ComputeClient, "CreateInstance")
 
-    def testCreateInstance(self):
+    @mock.patch("getpass.getuser", return_value="fake_user")
+    def testCreateInstance(self, _mock_user):
         """Test CreateInstance."""
 
-        expected_metadata = {'android_build_id': self.ANDROID_BUILD_ID}
+        expected_metadata = {
+            'android_build_id': self.ANDROID_BUILD_ID,
+            'avd_type': "cheeps",
+            'cvd_01_dpi': str(self.DPI),
+            'cvd_01_x_res': str(self.X_RES),
+            'cvd_01_y_res': str(self.Y_RES),
+            'display': "%sx%s (%s)"%(
+                str(self.X_RES),
+                str(self.Y_RES),
+                str(self.DPI))}
         expected_metadata.update(self.METADATA)
+        expected_labels = {'created_by': "fake_user"}
+
+        avd_spec = mock.MagicMock()
+        avd_spec.hw_property = {constants.HW_X_RES: str(self.X_RES),
+                                constants.HW_Y_RES: str(self.Y_RES),
+                                constants.HW_ALIAS_DPI: str(self.DPI)}
 
         self.cheeps_compute_client.CreateInstance(
-            self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.ANDROID_BUILD_ID)
+            self.INSTANCE,
+            self.IMAGE,
+            self.IMAGE_PROJECT,
+            self.ANDROID_BUILD_ID,
+            avd_spec)
         # pylint: disable=no-member
         gcompute_client.ComputeClient.CreateInstance.assert_called_with(
             self.cheeps_compute_client,
@@ -87,7 +113,8 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata=expected_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
-            zone=self.ZONE)
+            zone=self.ZONE,
+            labels=expected_labels)
 
 if __name__ == "__main__":
     unittest.main()
