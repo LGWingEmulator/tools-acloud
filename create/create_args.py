@@ -22,6 +22,7 @@ import os
 from acloud import errors
 from acloud.create import create_common
 from acloud.internal import constants
+from acloud.internal.lib import utils
 
 
 CMD_CREATE = "create"
@@ -133,6 +134,13 @@ def GetCreateArgParser(subparser):
         required=False,
         help="Create a local instance of the AVD.")
     create_parser.add_argument(
+        "--adb-port", "-p",
+        type=int,
+        default=None,
+        dest="adb_port",
+        required=False,
+        help="Specify port for adb forwarding.")
+    create_parser.add_argument(
         "--avd-type",
         type=str,
         dest="avd_type",
@@ -242,6 +250,7 @@ def VerifyArgs(args):
     Raises:
         errors.CheckPathError: Zipped image path doesn't exist.
         errors.UnsupportedFlavor: Flavor doesn't support.
+        errors.UnsupportedMultiAdbPort: multi adb port doesn't support.
     """
     # Verify that user specified flavor name is in support list.
     # We don't use argparse's builtin validation because we need to be able to
@@ -250,6 +259,13 @@ def VerifyArgs(args):
         raise errors.UnsupportedFlavor(
             "Flavor[%s] isn't in support list: %s" % (args.flavor,
                                                       constants.ALL_FLAVORS))
+
+    if args.num > 1 and args.adb_port:
+        raise errors.UnsupportedMultiAdbPort(
+            "--adb-port is not supported for multi-devices.")
+
+    if args.adb_port:
+        utils.CheckPortFree(args.adb_port)
 
     if args.local_image and not os.path.exists(args.local_image):
         raise errors.CheckPathError(

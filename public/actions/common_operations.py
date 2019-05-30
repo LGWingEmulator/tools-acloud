@@ -240,7 +240,8 @@ class DevicePool(object):
 # pylint: disable=too-many-locals
 def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
-                  serial_log_file=None, logcat_file=None):
+                  serial_log_file=None, logcat_file=None,
+                  client_adb_port=None):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -258,6 +259,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         serial_log_file: String, the file path to tar the serial logs.
         logcat_file: String, the file path to tar the logcats.
         autoconnect: Boolean, whether to auto connect to device.
+        client_adb_port: Integer, Specify port for adb forwarding.
 
     Raises:
         errors: Create instance fail.
@@ -304,7 +306,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                     ip, cfg.ssh_private_key_path,
                     utils.AVD_PORT_DICT[avd_type].vnc_port,
                     utils.AVD_PORT_DICT[avd_type].adb_port,
-                    getpass.getuser())
+                    getpass.getuser(), client_adb_port)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
