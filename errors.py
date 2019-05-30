@@ -87,6 +87,10 @@ class DeviceConnectionError(DriverError):
     """To catch device connection errors."""
 
 
+class PortOccupied(DriverError):
+    """Raised when open port fail."""
+
+
 class DeviceBootTimeoutError(DeviceBootError):
     """Raised when an AVD defice failed to boot within timeout."""
 
@@ -141,6 +145,10 @@ class UnsupportedInstanceImageType(CreateError):
 
 class UnsupportedFlavor(CreateError):
     """Unsupported create action for given flavor name."""
+
+
+class UnsupportedMultiAdbPort(CreateError):
+    """Unsupported create action for multi AVDs and specify adb port."""
 
 
 class GetBuildIDError(CreateError):

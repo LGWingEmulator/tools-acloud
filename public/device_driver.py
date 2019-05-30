@@ -158,6 +158,7 @@ class AndroidVirtualDevicePool(object):
                                         disk_image_id)
         return image_name
 
+    # pylint: disable=too-many-locals
     def CreateDevices(self,
                       num,
                       build_target=None,
@@ -403,11 +404,8 @@ def CreateAndroidVirtualDevices(cfg,
             }
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
-                    ip,
-                    cfg.ssh_private_key_path,
-                    constants.GCE_VNC_PORT,
-                    constants.GCE_ADB_PORT,
-                    _SSH_USER)
+                    ip, cfg.ssh_private_key_path, constants.GCE_VNC_PORT,
+                    constants.GCE_ADB_PORT, _SSH_USER, avd_spec.adb_port)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
