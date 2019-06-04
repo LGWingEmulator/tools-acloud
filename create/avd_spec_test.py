@@ -20,7 +20,6 @@ import mock
 
 from acloud import errors
 from acloud.create import avd_spec
-from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
@@ -45,8 +44,6 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
     # pylint: disable=protected-access
     def testProcessLocalImageArgs(self):
         """Test process args.local_image."""
-        self.Patch(create_common, "ZipCFImageFiles",
-                   return_value="/path/cf_x86_phone-img-eng.user.zip")
         self.Patch(glob, "glob", return_value=["fake.img"])
         expected_image_artifact = "/path/cf_x86_phone-img-eng.user.zip"
         expected_image_dir = "/path-to-image-dir"
