@@ -48,6 +48,23 @@ class AndroidVirtualDevice(object):
         self._ip = ip
         self._instance_name = instance_name
 
+        # Build info that the AVD device is created with. It will be assigned
+        # by the inherited AndroidVirtualDevice. For example:
+        # {"branch": "git_master-release",
+        #  "build_id": "5325535",
+        #  "build_target": "cf_x86_phone-userdebug",
+        #  "gcs_bucket_build_id": "AAAA.190220.001-5325535"}
+        # It can alo have mixed builds' info. For example:
+        # {"branch": "git_master-release",
+        #  "build_id": "5325535",
+        #  "build_target": "cf_x86_phone-userdebug",
+        #  "gcs_bucket_build_id": "AAAA.190220.001-5325535",
+        #  "system_branch": "git_master",
+        #  "system_build_id": "12345",
+        #  "system_build_target": "cf_x86_phone-userdebug",
+        #  "system_gcs_bucket_build_id": "12345"}
+        self._build_info = {}
+
     @property
     def ip(self):
         """Getter of _ip."""
@@ -64,6 +81,15 @@ class AndroidVirtualDevice(object):
     def instance_name(self):
         """Getter of _instance_name."""
         return self._instance_name
+
+    @property
+    def build_info(self):
+        """Getter of _build_info."""
+        return self._build_info
+
+    @build_info.setter
+    def build_info(self, value):
+        self._build_info = value
 
     def __str__(self):
         """Return a string representation."""

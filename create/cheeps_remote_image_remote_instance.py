@@ -95,6 +95,14 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._build_id = build_id
         self._avd_spec = avd_spec
 
+    def GetBuildInfoDict(self):
+        """Get build info dictionary.
+
+        Returns:
+          A build info dictionary.
+        """
+        return {"build_id": self._build_id}
+
     def CreateInstance(self):
         """Creates single configured cheeps device.
 

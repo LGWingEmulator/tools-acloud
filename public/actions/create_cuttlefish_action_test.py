@@ -102,9 +102,15 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
 
         # Mock build client method
-        self.build_client.GetBranch.side_effect = [self.BRANCH,
-                                                   self.KERNEL_BRANCH,
-                                                   self.SYSTEM_BRANCH]
+        self.build_client.GetBuildInfo.side_effect = [
+            android_build_client.BuildInfo(
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.SYSTEM_BRANCH, self.SYSTEM_BUILD_ID,
+                self.SYSTEM_BUILD_TARGET, self.SYSTEM_BUILD_ID)]
 
         # Setup avd_spec as None to use cfg to create devices
         none_avd_spec = None
@@ -140,12 +146,15 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
                     "branch": self.BRANCH,
                     "build_id": self.BUILD_ID,
                     "build_target": self.BUILD_TARGET,
+                    "gcs_bucket_build_id": self.BUILD_ID,
                     "kernel_branch": self.KERNEL_BRANCH,
                     "kernel_build_id": self.KERNEL_BUILD_ID,
                     "kernel_build_target": self.KERNEL_BUILD_TARGET,
+                    "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID,
                     "system_branch": self.SYSTEM_BRANCH,
                     "system_build_id": self.SYSTEM_BUILD_ID,
                     "system_build_target": self.SYSTEM_BUILD_TARGET,
+                    "system_gcs_bucket_build_id": self.SYSTEM_BUILD_ID,
                     "instance_name": self.INSTANCE,
                     "ip": self.IP.external,
                 },
