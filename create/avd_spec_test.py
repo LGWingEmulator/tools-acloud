@@ -18,11 +18,12 @@ import os
 import unittest
 import mock
 
-
 from acloud import errors
 from acloud.create import avd_spec
 from acloud.create import create_common
 from acloud.internal import constants
+from acloud.internal.lib import android_build_client
+from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 
@@ -123,6 +124,27 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         mock_repo.return_value = "Manifest branch:"
         with self.assertRaises(errors.GetBranchFromRepoInfoError):
             self.AvdSpec._GetBranchFromRepo()
+
+    def testGetBuildBranch(self):
+        """Test GetBuildBranch function"""
+        # Test infer branch from build_id and build_target.
+        build_client = mock.MagicMock()
+        build_id = "fake_build_id"
+        build_target = "fake_build_target"
+        expected_branch = "fake_build_branch"
+        self.Patch(android_build_client, "AndroidBuildClient",
+                   return_value=build_client)
+        self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
+        self.Patch(build_client, "GetBranch", return_value=expected_branch)
+        self.assertEqual(self.AvdSpec._GetBuildBranch(build_id, build_target),
+                         expected_branch)
+        # Infer branch from "repo info" when build_id and build_target is None.
+        self.Patch(self.AvdSpec, "_GetBranchFromRepo", return_value="repo_branch")
+        build_id = None
+        build_target = None
+        expected_branch = "repo_branch"
+        self.assertEqual(self.AvdSpec._GetBuildBranch(build_id, build_target),
+                         expected_branch)
 
     # pylint: disable=protected-access
     def testGetBuildTarget(self):
