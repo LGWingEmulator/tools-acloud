@@ -395,7 +395,8 @@ class AVDSpec(object):
         self._remote_image = {}
         self._remote_image[_BUILD_BRANCH] = args.branch
         if not self._remote_image[_BUILD_BRANCH]:
-            self._remote_image[_BUILD_BRANCH] = self._GetBranchFromRepo()
+            self._remote_image[_BUILD_BRANCH] = self._GetBuildBranch(
+                args.build_id, args.build_target)
 
         self._remote_image[_BUILD_TARGET] = args.build_target
         if not self._remote_image[_BUILD_TARGET]:
@@ -414,8 +415,8 @@ class AVDSpec(object):
 
         self._remote_image[_BUILD_ID] = args.build_id
         if not self._remote_image[_BUILD_ID]:
-            credentials = auth.CreateCredentials(self._cfg)
-            build_client = android_build_client.AndroidBuildClient(credentials)
+            build_client = android_build_client.AndroidBuildClient(
+                auth.CreateCredentials(self._cfg))
             self._remote_image[constants.BUILD_ID] = build_client.GetLKGB(
                 self._remote_image[constants.BUILD_TARGET],
                 self._remote_image[constants.BUILD_BRANCH])
@@ -442,6 +443,24 @@ class AVDSpec(object):
         acloud_project = os.path.join(android_build_top, "tools", "acloud")
         return EscapeAnsi(subprocess.check_output(_COMMAND_GIT_REMOTE,
                                                   cwd=acloud_project).strip())
+
+    def _GetBuildBranch(self, build_id, build_target):
+        """Infer build branch if user didn't specify branch name.
+
+        Args:
+            build_id: String, Build id, e.g. "2263051", "P2804227"
+            build_target: String, the build target, e.g. cf_x86_phone-userdebug
+
+        Returns:
+            String, name of build branch.
+        """
+        # Infer branch from build_target and build_id
+        if build_id and build_target:
+            build_client = android_build_client.AndroidBuildClient(
+                auth.CreateCredentials(self._cfg))
+            return build_client.GetBranch(build_target, build_id)
+
+        return self._GetBranchFromRepo()
 
     def _GetBranchFromRepo(self):
         """Get branch information from command "repo info".
