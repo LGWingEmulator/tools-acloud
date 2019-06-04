@@ -123,5 +123,6 @@ def Run(args):
     if not instances_to_reconnect:
         instances_to_reconnect = list_instance.ChooseInstances(cfg, args.all)
     for instance in instances_to_reconnect:
-        AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
+        if not instance.islocal:
+            AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
         ReconnectInstance(cfg.ssh_private_key_path, instance)
