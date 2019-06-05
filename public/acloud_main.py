@@ -166,6 +166,28 @@ def _ParseArgs(args):
         " specifying kernel_build_id, the last green build in the branch will"
         " be used. If neither kernel_branch nor kernel_build_id are specified,"
         " the kernel that's bundled with the Android build would be used.")
+    create_cf_parser.add_argument(
+        "--system_branch",
+        type=str,
+        dest="system_branch",
+        help="Branch to consume the system image (system.img) from, will "
+        "default to what is defined by --branch. "
+        "That feature allows to (automatically) test various combinations "
+        "of vendor.img (CF, e.g.) and system images (GSI, e.g.). ",
+        required=False)
+    create_cf_parser.add_argument(
+        "--system_build_id",
+        type=str,
+        dest="system_build_id",
+        help="System image build id, e.g. 2145099, P2804227",
+        required=False)
+    create_cf_parser.add_argument(
+        "--system_build_target",
+        type=str,
+        dest="system_build_target",
+        help="System image build target, specify if different from "
+        "--build_target",
+        required=False)
 
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
@@ -374,6 +396,9 @@ def main(argv=None):
             build_id=args.build_id,
             kernel_build_id=args.kernel_build_id,
             kernel_branch=args.kernel_branch,
+            system_branch=args.system_branch,
+            system_build_id=args.system_build_id,
+            system_build_target=args.system_build_target,
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
