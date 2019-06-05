@@ -52,7 +52,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
 
     def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
-                 avd_spec=None, kernel_branch=None):
+                 avd_spec=None, kernel_branch=None, system_branch=None,
+                 system_build_id=None, system_build_target=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
@@ -68,6 +69,9 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
         self._avd_spec = avd_spec
         self._kernel_branch = kernel_branch
+        self._system_branch = system_branch
+        self._system_build_id = system_build_id
+        self._system_build_target = system_build_target or build_target
         self._kernel_build_target = cfg.kernel_build_target
         self._extra_scopes = cfg.extra_scopes
 
@@ -90,6 +94,18 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                 self._kernel_build_target, kernel_build_id)
         else:
             self._kernel_build_target = None
+
+        if system_branch:
+            # If no system_build_id is given or system_build_id is latest,
+            # use the last green build id in the given system_branch
+            if not system_build_id or system_build_id == self.LATEST:
+                self._system_build_id = self._build_client.GetLKGB(
+                    self._system_build_target, system_branch)
+        elif system_build_id:
+            self._system_branch = self._build_client.GetBranch(
+                self._system_build_target, system_build_id)
+        else:
+            self._system_build_target = None
 
     def CreateInstance(self):
         """Creates singe configured cuttlefish device.
@@ -123,7 +139,10 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             kernel_build_id=self._kernel_build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
             avd_spec=self._avd_spec,
-            extra_scopes=self._extra_scopes)
+            extra_scopes=self._extra_scopes,
+            system_build_target=self._system_build_target,
+            system_branch=self._system_branch,
+            system_build_id=self._system_build_id)
 
         return instance
 
@@ -134,6 +153,9 @@ def CreateDevices(avd_spec=None,
                   build_id=None,
                   kernel_build_id=None,
                   kernel_branch=None,
+                  system_branch=None,
+                  system_build_id=None,
+                  system_build_target=None,
                   num=1,
                   serial_log_file=None,
                   logcat_file=None,
@@ -148,6 +170,9 @@ def CreateDevices(avd_spec=None,
         build_id: String, Build id, e.g. "2263051", "P2804227"
         kernel_build_id: String, Kernel build id.
         kernel_branch: String, Kernel branch name.
+        system_branch: Branch name to consume the system.img from, a string.
+        system_build_id: System branch build id, a string.
+        system_build_target: System image build target, a string.
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a tar file where serial output should
                          be saved to.
@@ -172,15 +197,27 @@ def CreateDevices(avd_spec=None,
         logcat_file = avd_spec.logcat_file
         client_adb_port = avd_spec.client_adb_port
     logger.info(
-        "Creating a cuttlefish device in project %s, build_target: %s, "
-        "build_id: %s, num: %s, serial_log_file: %s, logcat_file: %s, "
-        "autoconnect: %s, report_internal_ip: %s", cfg.project, build_target,
-        build_id, num, serial_log_file, logcat_file, autoconnect,
-        report_internal_ip)
-    device_factory = CuttlefishDeviceFactory(cfg, build_target, build_id,
-                                             avd_spec=avd_spec,
-                                             kernel_build_id=kernel_build_id,
-                                             kernel_branch=kernel_branch)
+        "Creating a cuttlefish device in project %s, "
+        "build_target: %s, "
+        "build_id: %s, "
+        "kernel_build_id: %s, "
+        "kernel_branch: %s, "
+        "system_branch: %s, "
+        "system_build_id: %s, "
+        "system_build_target: %s, "
+        "num: %s, "
+        "serial_log_file: %s, "
+        "logcat_file: %s, "
+        "autoconnect: %s, "
+        "report_internal_ip: %s", cfg.project, build_target,
+        build_id, kernel_build_id, kernel_branch, system_branch,
+        system_build_id, system_build_target, num, serial_log_file,
+        logcat_file, autoconnect, report_internal_ip)
+    device_factory = CuttlefishDeviceFactory(
+        cfg, build_target, build_id, avd_spec=avd_spec,
+        kernel_build_id=kernel_build_id, kernel_branch=kernel_branch,
+        system_branch=system_branch, system_build_id=system_build_id,
+        system_build_target=system_build_target)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
