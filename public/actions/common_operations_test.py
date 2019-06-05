@@ -53,6 +53,9 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         self.device_factory._kernel_branch = None
         self.device_factory._kernel_build_id = None
         self.device_factory._kernel_build_target = None
+        self.device_factory._system_branch = None
+        self.device_factory._system_build_id = None
+        self.device_factory._system_build_target = None
         self.device_factory._emulator_branch = None
         self.device_factory._emulator_build_id = None
         self.device_factory._emulator_build_target = None

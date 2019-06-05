@@ -62,7 +62,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                        build_target=None, branch=None, build_id=None,
                        kernel_branch=None, kernel_build_id=None,
                        blank_data_disk_size_gb=None, avd_spec=None,
-                       extra_scopes=None):
+                       extra_scopes=None, system_build_target=None,
+                       system_branch=None, system_build_id=None):
         """Create a cuttlefish instance given stable host image and build id.
 
         Args:
@@ -78,6 +79,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             avd_spec: An AVDSpec instance.
             extra_scopes: A list of extra scopes to be passed to the instance.
+            system_build_target: Target name for the system image,
+                           e.g. "cf_x86_phone-userdebug"
+            system_branch: A String, branch name for the system image.
+            system_build_id: A string, build id for the system image.
         """
         self._CheckMachineSize()
 
@@ -102,6 +107,11 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_branch and kernel_build_id:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
+        if system_build_target:
+            metadata["cvd_01_fetch_system_build_target"] = system_build_target
+        if system_branch and system_build_id:
+            metadata["cvd_01_fetch_system_bid"] = "{branch}/{build_id}".format(
+                branch=system_branch, build_id=system_build_id)
         metadata["cvd_01_launch"] = (self._launch_args
                                      if self._launch_args else "1")
 
