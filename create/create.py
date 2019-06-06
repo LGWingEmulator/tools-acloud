@@ -151,18 +151,17 @@ def _CheckForSetup(args):
     Args:
         args: Namespace object from argparse.parse_args.
     """
-    run_setup = False
     # Need to set all these so if we need to run setup, it won't barf on us
     # because of some missing fields.
     args.gcp_init = False
     args.host = False
+    args.host_base = False
     args.force = False
     # Remote image/instance requires the GCP config setup.
     if not args.local_instance or args.local_image == "":
         gcp_setup = gcp_setup_runner.GcpTaskRunner(args.config_file)
         if gcp_setup.ShouldRun():
             args.gcp_init = True
-            run_setup = True
 
     # Local instance requires host to be setup. We'll assume that if the
     # packages were installed, then the user was added into the groups. This
@@ -174,7 +173,13 @@ def _CheckForSetup(args):
         host_pkg_setup = host_setup_runner.AvdPkgInstaller()
         if host_pkg_setup.ShouldRun():
             args.host = True
-            run_setup = True
+
+    # Install base packages if we haven't already.
+    host_base_setup = host_setup_runner.HostBasePkgInstaller()
+    if host_base_setup.ShouldRun():
+        args.host_base = True
+
+    run_setup = args.force or args.gcp_init or args.host or args.host_base
 
     if run_setup:
         answer = utils.InteractWithQuestion("Missing necessary acloud setup, "
