@@ -33,23 +33,22 @@ logger = logging.getLogger(__name__)
 
 # Install cuttlefish-common will probably not work now.
 # TODO: update this to pull from the proper repo.
-_AVD_REQUIRED_PKGS = ["cuttlefish-common", "ssvnc",
+_AVD_REQUIRED_PKGS = ["cuttlefish-common",
                       # TODO(b/117613492): This is all qemu related, take this
                       # out once they are added back in as deps for
                       # cuttlefish-common.
                       "qemu-kvm", "qemu-system-common", "qemu-system-x86",
                       "qemu-utils", "libvirt-clients", "libvirt-daemon-system"]
+_BASE_REQUIRED_PKGS = ["ssvnc", "lzop"]
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
 
 
-class AvdPkgInstaller(base_task_runner.BaseTaskRunner):
-    """Subtask runner class for installing required packages."""
+class BasePkgInstaller(base_task_runner.BaseTaskRunner):
+    """Subtask base runner class for installing packages."""
 
-    WELCOME_MESSAGE_TITLE = "Install required package for host setup"
-    WELCOME_MESSAGE = (
-        "This step will walk you through the required packages installation for "
-        "running Android cuttlefish devices and vnc on your host.")
+    # List of packages for child classes to override.
+    PACKAGES = []
 
     def ShouldRun(self):
         """Check if required packages are all installed.
@@ -62,23 +61,43 @@ class AvdPkgInstaller(base_task_runner.BaseTaskRunner):
 
         # Any required package is not installed or not up-to-date will need to
         # run installation task.
-        for pkg_name in _AVD_REQUIRED_PKGS:
+        for pkg_name in self.PACKAGES:
             if not setup_common.PackageInstalled(pkg_name):
                 return True
 
         return False
 
     def _Run(self):
-        """Install Cuttlefish-common package."""
+        """Install specified packages."""
 
-        logger.info("Start to install required package: %s ",
-                    _AVD_REQUIRED_PKGS)
+        logger.info("Start to install package(s): %s ",
+                    self.PACKAGES)
 
         setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
-        for pkg in _AVD_REQUIRED_PKGS:
+        for pkg in self.PACKAGES:
             setup_common.InstallPackage(pkg)
 
-        logger.info("All required package are installed now.")
+        logger.info("All package(s) installed now.")
+
+
+class AvdPkgInstaller(BasePkgInstaller):
+    """Subtask runner class for installing packages for local instances."""
+
+    WELCOME_MESSAGE_TITLE = ("Install required packages for host setup for "
+                             "local instances")
+    WELCOME_MESSAGE = ("This step will walk you through the required packages "
+                       "installation for running Android cuttlefish devices "
+                       "on your host.")
+    PACKAGES = _AVD_REQUIRED_PKGS
+
+
+class HostBasePkgInstaller(BasePkgInstaller):
+    """Subtask runner class for installing base host packages."""
+
+    WELCOME_MESSAGE_TITLE = "Install base packages on the host"
+    WELCOME_MESSAGE = ("This step will walk you through the base packages "
+                       "installation for your host.")
+    PACKAGES = _BASE_REQUIRED_PKGS
 
 
 class CuttlefishHostSetup(base_task_runner.BaseTaskRunner):
