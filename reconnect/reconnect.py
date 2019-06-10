@@ -24,6 +24,7 @@ from __future__ import print_function
 import getpass
 import re
 
+from acloud import errors
 from acloud.delete import delete
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_compute_client
@@ -86,7 +87,16 @@ def ReconnectInstance(ssh_private_key_path, instance):
         ssh_private_key_path: Path to the private key file.
                               e.g. ~/.ssh/acloud_rsa
         instance: list.Instance() object.
+
+    Raises:
+        errors.UnknownAvdType: Unable to reconnect to instance of unknown avd
+                               type.
     """
+    if instance.avd_type not in utils.AVD_PORT_DICT:
+        raise errors.UnknownAvdType("Unable to reconnect to instance (%s) of "
+                                    "unknown avd type: %s" %
+                                    (instance.name, instance.avd_type))
+
     adb_cmd = AdbTools(instance.forwarding_adb_port)
     vnc_port = instance.forwarding_vnc_port
     # ssh tunnel is up but device is disconnected on adb
@@ -123,6 +133,12 @@ def Run(args):
     if not instances_to_reconnect:
         instances_to_reconnect = list_instance.ChooseInstances(cfg, args.all)
     for instance in instances_to_reconnect:
+        if instance.avd_type not in utils.AVD_PORT_DICT:
+            utils.PrintColorString("Skipping reconnect of instance %s due to "
+                                   "unknown avd type (%s)." %
+                                   (instance.name, instance.avd_type),
+                                   utils.TextColors.WARNING)
+            continue
         if not instance.islocal:
             AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
         ReconnectInstance(cfg.ssh_private_key_path, instance)
