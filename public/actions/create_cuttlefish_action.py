@@ -51,9 +51,10 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  "/home/vsoc-01/cuttlefish_runtime/logcat",
                  "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
 
-    def __init__(self, cfg, build_target, build_id, kernel_build_id=None,
-                 avd_spec=None, kernel_branch=None, system_branch=None,
-                 system_build_id=None, system_build_target=None):
+    def __init__(self, cfg, build_target, build_id, branch=None,
+                 kernel_build_id=None, avd_spec=None, kernel_branch=None,
+                 system_branch=None, system_build_id=None,
+                 system_build_target=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
@@ -65,6 +66,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._cfg = cfg
         self._build_target = build_target
         self._build_id = build_id
+        self._branch = branch
         self._kernel_build_id = kernel_build_id
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
         self._avd_spec = avd_spec
@@ -79,33 +81,65 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._build_client = android_build_client.AndroidBuildClient(
             self.credentials)
 
-        # Discover branches
-        self._branch = self._build_client.GetBranch(build_target, build_id)
-        self._kernel_branch = None
-        if kernel_branch:
-            # If no kernel_build_id is given or kernel_build_id is latest,
-            # use the last green build id in the given kernel_branch
-            if not kernel_build_id or kernel_build_id == self.LATEST:
-                self._kernel_build_id = (
-                    self._build_client.GetLKGB(self._kernel_build_target,
-                                               kernel_branch))
-        elif kernel_build_id:
-            self._kernel_branch = self._build_client.GetBranch(
-                self._kernel_build_target, kernel_build_id)
-        else:
-            self._kernel_build_target = None
+        # Discover branches by given build id or LKGB build id by given branch
+        self._build_target, self._build_id, self._branch = self._GetBuildInfo(
+            self._build_target, self._build_id, self._branch)
 
-        if system_branch:
-            # If no system_build_id is given or system_build_id is latest,
-            # use the last green build id in the given system_branch
-            if not system_build_id or system_build_id == self.LATEST:
-                self._system_build_id = self._build_client.GetLKGB(
-                    self._system_build_target, system_branch)
-        elif system_build_id:
-            self._system_branch = self._build_client.GetBranch(
-                self._system_build_target, system_build_id)
-        else:
-            self._system_build_target = None
+        self._kernel_build_target, self._kernel_build_id, self._kernel_branch = (
+            self._GetBuildInfo(self._kernel_build_target, self._kernel_build_id,
+                               self._kernel_branch))
+
+        self._system_build_target, self._system_build_id, self._system_branch = (
+            self._GetBuildInfo(self._system_build_target, self._system_build_id,
+                               self._system_branch))
+
+    def _GetBuildInfo(self, build_target, build_id, branch):
+        """Get build info tuple with (build_target, build_id, branch).
+
+        Args:
+          build_target: Target name.
+          build_id: Build id, a string or None, e.g. "2263051", "P2804227"
+                    If None or latest, the last green build id will be returned.
+          branch: Branch name, a string or None, e.g. git_master. If None, the
+                  returned branch will be searched by given build_id.
+
+        Returns:
+          A tuple of build_target, build_id, branch
+        """
+        if build_id and build_id != self.LATEST:
+            return build_target, build_id, self._build_client.GetBranch(
+                build_target, build_id)
+        elif branch:
+            return (build_target,
+                    str(self._build_client.GetLKGB(branch, build_target)),
+                    branch)
+
+        return None, None, None
+
+    def _GcsBuildIdFormatter(self, branch, build_id):
+        """Get GCS bucket build id format.
+
+        Args:
+          branch: Branch name, a string, e.g. git_master. If None, the returned
+                  build_id will be None
+          build_id: Build id, a string, e.g. "2263051", "P2804227". If None, the
+                    returned build_id will be None
+
+        Returns:
+          The build_id format that can be searched in GCS bucket.
+        """
+        if not build_id:
+            return build_id
+        if branch and self.RELEASE_BRANCH_SUFFIX in branch:
+            # For release branch, GCS bucket export includes not only the build
+            # number, but also the build name concatenated in path name, which
+            # breaks the assumption of cuttlefish instance bringup script.
+            # This workaround basically inserts a path glob into "build id", so
+            # that it can accommodate release branch build path such as
+            # "PPR1.180605.002-4822275"
+            return self.RELEASE_BRANCH_PATH_GLOB_PATTERN % build_id
+
+        return build_id
 
     def CreateInstance(self):
         """Creates singe configured cuttlefish device.
@@ -123,18 +157,13 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             build_id=self._build_id, build_target=self._build_target)
 
         # Create an instance from Stable Host Image
-        if self.RELEASE_BRANCH_SUFFIX in self._branch:
-            # Workaround for release branch builds.
-            bid = self.RELEASE_BRANCH_PATH_GLOB_PATTERN % self._build_id
-        else:
-            bid = self._build_id
         self._compute_client.CreateInstance(
             instance=instance,
             image_name=self._cfg.stable_host_image_name,
             image_project=self._cfg.stable_host_image_project,
             build_target=self._build_target,
             branch=self._branch,
-            build_id=bid,
+            build_id=self._GcsBuildIdFormatter(self._branch, self._build_id),
             kernel_branch=self._kernel_branch,
             kernel_build_id=self._kernel_build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
@@ -142,7 +171,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             extra_scopes=self._extra_scopes,
             system_build_target=self._system_build_target,
             system_branch=self._system_branch,
-            system_build_id=self._system_build_id)
+            system_build_id=self._GcsBuildIdFormatter(self._system_branch,
+                                                      self._system_build_id))
 
         return instance
 
@@ -151,6 +181,7 @@ def CreateDevices(avd_spec=None,
                   cfg=None,
                   build_target=None,
                   build_id=None,
+                  branch=None,
                   kernel_build_id=None,
                   kernel_branch=None,
                   system_branch=None,
@@ -168,6 +199,7 @@ def CreateDevices(avd_spec=None,
         cfg: An AcloudConfig instance.
         build_target: String, Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
+        branch: Branch name, a string, e.g. aosp_master
         kernel_build_id: String, Kernel build id.
         kernel_branch: String, Kernel branch name.
         system_branch: Branch name to consume the system.img from, a string.
@@ -200,6 +232,7 @@ def CreateDevices(avd_spec=None,
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "
         "build_id: %s, "
+        "branch: %s, "
         "kernel_build_id: %s, "
         "kernel_branch: %s, "
         "system_branch: %s, "
@@ -210,11 +243,11 @@ def CreateDevices(avd_spec=None,
         "logcat_file: %s, "
         "autoconnect: %s, "
         "report_internal_ip: %s", cfg.project, build_target,
-        build_id, kernel_build_id, kernel_branch, system_branch,
+        build_id, branch, kernel_build_id, kernel_branch, system_branch,
         system_build_id, system_build_target, num, serial_log_file,
         logcat_file, autoconnect, report_internal_ip)
     device_factory = CuttlefishDeviceFactory(
-        cfg, build_target, build_id, avd_spec=avd_spec,
+        cfg, build_target, build_id, branch=branch, avd_spec=avd_spec,
         kernel_build_id=kernel_build_id, kernel_branch=kernel_branch,
         system_branch=system_branch, system_build_id=system_build_id,
         system_build_target=system_build_target)
