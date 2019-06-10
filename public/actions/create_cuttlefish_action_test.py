@@ -112,7 +112,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         # Call CreateDevices
         report = create_cuttlefish_action.CreateDevices(
             none_avd_spec, cfg, self.BUILD_TARGET, self.BUILD_ID,
-            self.KERNEL_BUILD_ID, system_build_target=self.SYSTEM_BUILD_TARGET,
+            branch=self.BRANCH, kernel_build_id=self.KERNEL_BUILD_ID,
+            system_build_target=self.SYSTEM_BUILD_TARGET,
             system_branch=self.SYSTEM_BRANCH,
             system_build_id=self.SYSTEM_BUILD_ID)
 

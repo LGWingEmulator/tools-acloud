@@ -394,6 +394,7 @@ def main(argv=None):
             cfg=cfg,
             build_target=args.build_target,
             build_id=args.build_id,
+            branch=args.branch,
             kernel_build_id=args.kernel_build_id,
             kernel_branch=args.kernel_branch,
             system_branch=args.system_branch,
