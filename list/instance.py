@@ -331,15 +331,17 @@ class RemoteInstance(Instance):
             NamedTuple ForwardedPorts(vnc_port, adb_port) holding the ports
             used in the ssh forwarded call. Both fields are integers.
         """
-        process_output = subprocess.check_output(constants.COMMAND_PS)
+        if avd_type not in utils.AVD_PORT_DICT:
+            return utils.ForwardedPorts(vnc_port=None, adb_port=None)
+
         default_vnc_port = utils.AVD_PORT_DICT[avd_type].vnc_port
         default_adb_port = utils.AVD_PORT_DICT[avd_type].adb_port
         re_pattern = re.compile(_RE_SSH_TUNNEL_PATTERN %
                                 (_RE_GROUP_VNC, default_vnc_port,
                                  _RE_GROUP_ADB, default_adb_port, ip))
-
         adb_port = None
         vnc_port = None
+        process_output = subprocess.check_output(constants.COMMAND_PS)
         for line in process_output.splitlines():
             match = re_pattern.match(line)
             if match:

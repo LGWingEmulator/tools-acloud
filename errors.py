@@ -217,3 +217,7 @@ class FunctionTimeoutError(Exception):
 
 class ZipImageError(Exception):
     """Zip image error."""
+
+
+class UnknownAvdType(Exception):
+    """Unknow AVD type."""
