@@ -26,12 +26,14 @@ import re
 
 from acloud import errors
 from acloud.delete import delete
+from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 from acloud.list import list as list_instance
 from acloud.public import config
+from acloud.public import report
 
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
@@ -80,13 +82,21 @@ def AddPublicSshRsaToInstance(cfg, user, instance_name):
         instance_name)
 
 
-def ReconnectInstance(ssh_private_key_path, instance):
-    """Reconnect adb/vnc/ssh to the specified instance.
+@utils.TimeExecute(function_description="Reconnect instances")
+def ReconnectInstance(ssh_private_key_path, instance, reconnect_report):
+    """Reconnect to the specified instance.
+
+    It will:
+     - re-establish ssh tunnels for adb/vnc port forwarding
+     - re-establish adb connection
+     - restart vnc client
+     - update device information in reconnect_report
 
     Args:
         ssh_private_key_path: Path to the private key file.
                               e.g. ~/.ssh/acloud_rsa
         instance: list.Instance() object.
+        reconnect_report: Report object.
 
     Raises:
         errors.UnknownAvdType: Unable to reconnect to instance of unknown avd
@@ -99,6 +109,7 @@ def ReconnectInstance(ssh_private_key_path, instance):
 
     adb_cmd = AdbTools(instance.forwarding_adb_port)
     vnc_port = instance.forwarding_vnc_port
+    adb_port = instance.forwarding_adb_port
     # ssh tunnel is up but device is disconnected on adb
     if instance.ssh_tunnel_is_connected and not adb_cmd.IsAdbConnectionAlive():
         adb_cmd.DisconnectAdb()
@@ -113,9 +124,26 @@ def ReconnectInstance(ssh_private_key_path, instance):
             utils.AVD_PORT_DICT[instance.avd_type].adb_port,
             getpass.getuser())
         vnc_port = forwarded_ports.vnc_port
+        adb_port = forwarded_ports.adb_port
 
     if vnc_port:
         StartVnc(vnc_port, instance.display)
+
+    device_dict = {
+        constants.IP: instance.ip,
+        constants.INSTANCE_NAME: instance.name,
+        constants.VNC_PORT: vnc_port,
+        constants.ADB_PORT: adb_port
+    }
+
+    if vnc_port and adb_port:
+        reconnect_report.AddData(key="devices", value=device_dict)
+    else:
+        # We use 'ps aux' to grep adb/vnc fowarding port from ssh tunnel
+        # command. Therefore we report failure here if no vnc_port and
+        # adb_port found.
+        reconnect_report.AddData(key="device_failing_reconnect", value=device_dict)
+        reconnect_report.AddError(instance.name)
 
 
 def Run(args):
@@ -132,6 +160,8 @@ def Run(args):
             cfg, args.instance_names)
     if not instances_to_reconnect:
         instances_to_reconnect = list_instance.ChooseInstances(cfg, args.all)
+
+    reconnect_report = report.Report(command="reconnect")
     for instance in instances_to_reconnect:
         if instance.avd_type not in utils.AVD_PORT_DICT:
             utils.PrintColorString("Skipping reconnect of instance %s due to "
@@ -141,4 +171,6 @@ def Run(args):
             continue
         if not instance.islocal:
             AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
-        ReconnectInstance(cfg.ssh_private_key_path, instance)
+        ReconnectInstance(cfg.ssh_private_key_path, instance, reconnect_report)
+
+    utils.PrintDeviceSummary(reconnect_report)
