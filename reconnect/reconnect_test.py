@@ -38,6 +38,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
     def testReconnectInstance(self):
         """Test Reconnect Instances."""
         ssh_private_key_path = "/fake/acloud_rea"
+        fake_report = mock.MagicMock()
         instance_object = mock.MagicMock()
         instance_object.ip = "1.1.1.1"
         instance_object.islocal = False
@@ -55,13 +56,13 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.forwarding_vnc_port = 6666
         instance_object.display = ""
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_not_called()
         utils.LaunchVncClient.assert_called_with(6666)
 
         instance_object.display = "888x777 (99)"
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_not_called()
         utils.LaunchVncClient.assert_called_with(6666, "888", "777")
 
@@ -72,7 +73,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.forwarding_vnc_port = 5555
         self.Patch(utils, "AutoConnect",
                    return_value=ForwardedPorts(vnc_port=11111, adb_port=22222))
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
                                              constants.CF_VNC_PORT,
@@ -82,7 +83,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
 
         instance_object.display = "999x777 (99)"
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
                                              constants.CF_VNC_PORT,
@@ -96,13 +97,14 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.forwarding_vnc_port = 5555
         instance_object.ssh_tunnel_is_connected = False
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_not_called()
         utils.LaunchVncClient.assert_called_with(5555)
 
     def testReconnectInstanceAvdtype(self):
         """Test Reconnect Instances of avd_type."""
         ssh_private_key_path = "/fake/acloud_rea"
+        fake_report = mock.MagicMock()
         instance_object = mock.MagicMock()
         instance_object.ip = "1.1.1.1"
         instance_object.forwarding_vnc_port = 9999
@@ -115,7 +117,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
 
         #test reconnect remote instance when avd_type as gce.
         instance_object.avd_type = "gce"
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
                                              constants.GCE_VNC_PORT,
@@ -124,7 +126,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
 
         #test reconnect remote instance when avd_type as cuttlefish.
         instance_object.avd_type = "cuttlefish"
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object)
+        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
         utils.AutoConnect.assert_called_with(instance_object.ip,
                                              ssh_private_key_path,
                                              constants.CF_VNC_PORT,
@@ -135,22 +137,26 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
     def testReconnectInstanceUnknownAvdType(self):
         """Test reconnect instances of unknown avd type."""
         ssh_private_key_path = "/fake/acloud_rea"
+        fake_report = mock.MagicMock()
         instance_object = mock.MagicMock()
         instance_object.avd_type = "unknown"
         self.assertRaises(errors.UnknownAvdType,
                           reconnect.ReconnectInstance,
                           ssh_private_key_path,
-                          instance_object)
+                          instance_object,
+                          fake_report)
 
 
     def testReconnectInstanceNoAvdType(self):
         """Test reconnect instances with no avd type."""
         ssh_private_key_path = "/fake/acloud_rea"
+        fake_report = mock.MagicMock()
         instance_object = mock.MagicMock()
         self.assertRaises(errors.UnknownAvdType,
                           reconnect.ReconnectInstance,
                           ssh_private_key_path,
-                          instance_object)
+                          instance_object,
+                          fake_report)
 
 
     def testStartVnc(self):
