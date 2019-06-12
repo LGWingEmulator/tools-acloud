@@ -976,9 +976,9 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
 
 
 def PrintDeviceSummary(report):
-    """Display summary of devices created.
+    """Display summary of devices.
 
-    -Display created device details from the report instance.
+    -Display device details from the report instance.
         report example:
             'data': [{'devices':[{'instance_name': 'ins-f6a397-none-53363',
                                   'ip': u'35.234.10.162'}]}]
@@ -988,7 +988,7 @@ def PrintDeviceSummary(report):
         report: A Report instance.
     """
     PrintColorString("\n")
-    PrintColorString("Device(s) created:")
+    PrintColorString("Device(s) summary:")
     for device in report.data.get("devices", []):
         adb_serial = "(None)"
         adb_port = device.get("adb_port")

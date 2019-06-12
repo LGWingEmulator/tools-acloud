@@ -93,8 +93,10 @@ USER_ANSWER_YES = {"y", "yes", "Y"}
 # Cuttlefish groups
 LIST_CF_USER_GROUPS = ["kvm", "cvdnetwork"]
 
-ADB_PORT = "adb_port"
+IP = "ip"
+INSTANCE_NAME = "instance_name"
 VNC_PORT = "vnc_port"
+ADB_PORT = "adb_port"
 # For cuttlefish remote instances
 CF_ADB_PORT = 6520
 CF_VNC_PORT = 6444
