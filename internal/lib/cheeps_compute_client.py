@@ -89,6 +89,10 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
                 avd_spec.hw_property[constants.HW_Y_RES],
                 avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
+            if avd_spec.username:
+                metadata["user"] = avd_spec.username
+                metadata["password"] = avd_spec.password
+
         # Add per-instance ssh key
         if self._ssh_public_key_path:
             rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
