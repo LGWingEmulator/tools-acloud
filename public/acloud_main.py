@@ -242,6 +242,24 @@ def _ParseArgs(args):
         required=False,
         default=None,
         help="Tags to be set on to the created instance. e.g. https-server.")
+    create_gf_parser.add_argument(
+        "--kernel_build_id",
+        type=str,
+        dest="kernel_build_id",
+        help="Android kernel build id, e.g. 4586590. This is to test a new"
+        " kernel build with a particular Android build (--build_id). If neither"
+        " kernel_branch nor kernel_build_id are specified, the kernel that's"
+        " bundled with the Android build would be used.")
+    create_gf_parser.add_argument(
+        "--kernel_branch",
+        type=str,
+        dest="kernel_branch",
+        help="Android kernel build branch name, "
+        "e.g. kernel-common-android-4.14. This is to test a new kernel build "
+        "with a particular Android build (--build_id). If specified without "
+        "specifying kernel_build_id, the last green build in the branch will "
+        "be used. If neither kernel_branch nor kernel_build_id are specified, "
+        "the kernel that's bundled with the Android build would be used.")
 
     create_args.AddCommonCreateArgs(create_gf_parser)
     subparser_list.append(create_gf_parser)
@@ -422,6 +440,8 @@ def main(argv=None):
             emulator_build_id=args.emulator_build_id,
             branch=args.branch,
             emulator_branch=args.emulator_branch,
+            kernel_build_id=args.kernel_build_id,
+            kernel_branch=args.kernel_branch,
             gpu=args.gpu,
             num=args.num,
             serial_log_file=args.serial_log_file,
