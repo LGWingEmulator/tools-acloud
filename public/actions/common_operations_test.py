@@ -47,18 +47,6 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
         super(CommonOperationsTest, self).setUp()
         self.build_client = mock.MagicMock()
         self.device_factory = mock.MagicMock()
-        self.device_factory._branch = self.BRANCH
-        self.device_factory._build_target = self.BUILD_TARGET
-        self.device_factory._build_id = self.BUILD_ID
-        self.device_factory._kernel_branch = None
-        self.device_factory._kernel_build_id = None
-        self.device_factory._kernel_build_target = None
-        self.device_factory._system_branch = None
-        self.device_factory._system_build_id = None
-        self.device_factory._system_build_target = None
-        self.device_factory._emulator_branch = None
-        self.device_factory._emulator_build_id = None
-        self.device_factory._emulator_build_target = None
         self.Patch(
             android_build_client,
             "AndroidBuildClient",
@@ -76,6 +64,16 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
             self.device_factory,
             "GetComputeClient",
             return_value=self.compute_client)
+        self.Patch(self.device_factory, "GetBuildInfoDict",
+                   return_value={"branch": self.BRANCH,
+                                 "build_id": self.BUILD_ID,
+                                 "build_target": self.BUILD_TARGET,
+                                 "gcs_bucket_build_id": self.BUILD_ID})
+        self.Patch(self.device_factory, "GetBuildInfoDict",
+                   return_value={"branch": self.BRANCH,
+                                 "build_id": self.BUILD_ID,
+                                 "build_target": self.BUILD_TARGET,
+                                 "gcs_bucket_build_id": self.BUILD_ID})
 
     @staticmethod
     def _CreateCfg():
@@ -113,6 +111,7 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
                 "branch": self.BRANCH,
                 "build_id": self.BUILD_ID,
                 "build_target": self.BUILD_TARGET,
+                "gcs_bucket_build_id": self.BUILD_ID,
             }]})
 
     def testCreateDevicesInternalIP(self):
@@ -132,6 +131,7 @@ class CommonOperationsTest(driver_test_lib.BaseDriverTest):
                 "branch": self.BRANCH,
                 "build_id": self.BUILD_ID,
                 "build_target": self.BUILD_TARGET,
+                "gcs_bucket_build_id": self.BUILD_ID,
             }]})
 
 if __name__ == "__main__":

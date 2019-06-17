@@ -20,6 +20,7 @@ emulator.
 """
 import logging
 import os
+import re
 
 from acloud import errors
 from acloud.public.actions import base_device_factory
@@ -33,9 +34,8 @@ from acloud.internal.lib import utils
 logger = logging.getLogger(__name__)
 
 _EMULATOR_INFO_FILENAME = "emulator-info.txt"
-_EMULATOR_VERSION_PATTERN = "version-emulator"
 _SYSIMAGE_INFO_FILENAME = "android-info.txt"
-_SYSIMAGE_VERSION_PATTERN = "version-sysimage-{}-{}"
+_VERSION_PATTERN = r"version-.*=(\d+)"
 
 
 class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
@@ -66,7 +66,9 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  emulator_build_id,
                  gpu=None,
                  avd_spec=None,
-                 tags=None):
+                 tags=None,
+                 branch=None,
+                 emulator_branch=None):
 
         """Initialize.
 
@@ -80,6 +82,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             avd_spec: An AVDSpec instance.
             tags: A list of tags to associate with the instance. e.g.
                   ["http-server", "https-server"]
+            branch: String, branch of the emulator build target.
+            emulator_branch: String, branch of the emulator.
         """
 
         self.credentials = auth.CreateCredentials(cfg)
@@ -90,10 +94,6 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
         # Private creation parameters
         self._cfg = cfg
-        self._build_target = build_target
-        self._build_id = build_id
-        self._emulator_build_id = emulator_build_id
-        self._emulator_build_target = emulator_build_target
         self._gpu = gpu
         self._avd_spec = avd_spec
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
@@ -104,10 +104,26 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._build_client = android_build_client.AndroidBuildClient(
             self.credentials)
 
-        # Discover branches
-        self._branch = self._build_client.GetBranch(build_target, build_id)
-        self._emulator_branch = self._build_client.GetBranch(
-            emulator_build_target, emulator_build_id)
+        # Get build info
+        self.build_info = self._build_client.GetBuildInfo(
+            build_target, build_id, branch)
+        self.emulator_build_info = self._build_client.GetBuildInfo(
+            emulator_build_target, emulator_build_id, emulator_branch)
+
+    def GetBuildInfoDict(self):
+        """Get build info dictionary.
+
+        Returns:
+          A build info dictionary
+        """
+        build_info_dict = {
+            key: val for key, val in self.build_info.__dict__.items() if val}
+
+        build_info_dict.update(
+            {"emulator_%s" % key: val
+             for key, val in self.emulator_build_info.__dict__.items() if val}
+            )
+        return build_info_dict
 
     def CreateInstance(self):
         """Creates single configured goldfish device.
@@ -118,17 +134,18 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             String, the name of the created instance.
         """
         instance = self._compute_client.GenerateInstanceName(
-            build_id=self._build_id, build_target=self._build_target)
+            build_id=self.build_info.build_id,
+            build_target=self.build_info.build_target)
 
         self._compute_client.CreateInstance(
             instance=instance,
             image_name=self._cfg.stable_goldfish_host_image_name,
             image_project=self._cfg.stable_goldfish_host_image_project,
-            build_target=self._build_target,
-            branch=self._branch,
-            build_id=self._build_id,
-            emulator_branch=self._emulator_branch,
-            emulator_build_id=self._emulator_build_id,
+            build_target=self.build_info.build_target,
+            branch=self.build_info.branch,
+            build_id=self.build_info.build_id,
+            emulator_branch=self.emulator_build_info.branch,
+            emulator_build_id=self.emulator_build_info.gcs_bucket_build_id,
             gpu=self._gpu,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
             avd_spec=self._avd_spec,
@@ -138,19 +155,20 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
         return instance
 
 
-def ParseBuildInfo(filename, pattern):
+def ParseBuildInfo(filename):
     """Parse build id based on a substring.
 
     This will parse a file which contains build information to be used. For an
-    emulator build, the file will contain the information about the corresponding
-    stable system image build id. Similarly, for a system image build, the file
-    will contain the information about the corresponding stable emulator build id.
-    Pattern is a substring being used as a key to parse the build info. For
-    example, "version-sysimage-git_pi-dev-sdk_gphone_x86_64-userdebug".
+    emulator build, the file will contain the information about the
+    corresponding stable system image build id. In emulator-info.txt, the file
+    will contains the information about the corresponding stable emulator
+    build id, for example "require version-emulator=5292001". In
+    android-info.txt, the file will contains the information about a stable
+    system image build id, for example
+    "version-sysimage-git_pi-dev-sdk_gphone_x86_64-userdebug=4833817"
 
     Args:
         filename: Name of file to parse.
-        pattern: Substring to look for in file
 
     Returns:
         Build id parsed from the file based on pattern
@@ -158,12 +176,13 @@ def ParseBuildInfo(filename, pattern):
     """
     with open(filename) as build_info_file:
         for line in build_info_file:
-            if pattern in line:
-                return line.rstrip().split("=")[1]
+            match = re.search(_VERSION_PATTERN, line)
+            if match:
+                return match.group(1)
     return None
 
 
-def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
+def _FetchBuildIdFromFile(cfg, build_target, build_id, filename):
     """Parse and fetch build id from a file based on a pattern.
 
     Verify if one of the system image or emulator binary build id is missing.
@@ -173,7 +192,6 @@ def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
         cfg: An AcloudConfig instance.
         build_target: Target name.
         build_id: Build id, a string, e.g. "2263051", "P2804227"
-        pattern: A string to parse build info file.
         filename: Name of file containing the build info.
 
     Returns:
@@ -189,7 +207,7 @@ def _FetchBuildIdFromFile(cfg, build_target, build_id, pattern, filename):
                                       filename,
                                       temp_filename)
 
-        return ParseBuildInfo(temp_filename, pattern)
+        return ParseBuildInfo(temp_filename)
 
 
 def CreateDevices(avd_spec=None,
@@ -197,6 +215,7 @@ def CreateDevices(avd_spec=None,
                   build_target=None,
                   build_id=None,
                   emulator_build_id=None,
+                  emulator_branch=None,
                   gpu=None,
                   num=1,
                   serial_log_file=None,
@@ -212,13 +231,16 @@ def CreateDevices(avd_spec=None,
         cfg: An AcloudConfig instance.
         build_target: String, the build target, e.g. aosp_x86-eng.
         build_id: String, Build id, e.g. "2263051", "P2804227"
+        branch: String, Branch name for system image.
         emulator_build_id: String, emulator build id.
-        gpu: String, GPU to attach to the device or None. e.g. "nvidia-tesla-k80"
+        emulator_branch: String, Emulator branch name.
+        gpu: String, GPU to attach to the device or None. e.g. "nvidia-k80"
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a file where serial output should
                         be saved to.
         logcat_file: String, A path to a file where logcat logs should be saved.
-        autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
+        autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device
+                     creation.
         branch: String, Branch name for system image.
         tags: A list of tags to associate with the instance. e.g.
               ["http-server", "https-server"]
@@ -243,29 +265,32 @@ def CreateDevices(avd_spec=None,
         report_internal_ip = avd_spec.report_internal_ip
         client_adb_port = avd_spec.client_adb_port
 
-    if emulator_build_id is None:
+    # If emulator_build_id and emulator_branch is None, retrieve emulator
+    # build id from platform build emulator-info.txt artifact
+    # Example: require version-emulator=5292001
+    if not emulator_build_id and not emulator_branch:
         logger.info("emulator_build_id not provided. "
                     "Try to get %s from build %s/%s.", _EMULATOR_INFO_FILENAME,
                     build_id, build_target)
         emulator_build_id = _FetchBuildIdFromFile(cfg,
                                                   build_target,
                                                   build_id,
-                                                  _EMULATOR_VERSION_PATTERN,
                                                   _EMULATOR_INFO_FILENAME)
 
-    if emulator_build_id is None:
+    if not emulator_build_id:
         raise errors.CommandArgError("Emulator build id not found "
                                      "in %s" % _EMULATOR_INFO_FILENAME)
 
-    if build_id is None:
-        pattern = _SYSIMAGE_VERSION_PATTERN.format(branch, build_target)
+    # If build_id and branch is None, retrieve build_id from
+    # emulator build android-info.txt artifact
+    # Example: version-sysimage-git_pi-dev-sdk_gphone_x86_64-userdebug=4833817
+    if not build_id and not branch:
         build_id = _FetchBuildIdFromFile(cfg,
                                          cfg.emulator_build_target,
                                          emulator_build_id,
-                                         pattern,
                                          _SYSIMAGE_INFO_FILENAME)
 
-    if build_id is None:
+    if not build_id:
         raise errors.CommandArgError("Emulator system image build id not found "
                                      "in %s" % _SYSIMAGE_INFO_FILENAME)
     logger.info(
@@ -277,7 +302,10 @@ def CreateDevices(avd_spec=None,
 
     device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
                                            cfg.emulator_build_target,
-                                           emulator_build_id, gpu, avd_spec, tags)
+                                           emulator_build_id, gpu=gpu,
+                                           avd_spec=avd_spec, tags=tags,
+                                           branch=branch,
+                                           emulator_branch=emulator_branch)
 
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
                                            num, constants.TYPE_GF,
