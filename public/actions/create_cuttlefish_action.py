@@ -45,8 +45,6 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
     """
 
-    RELEASE_BRANCH_SUFFIX = "-release"
-    RELEASE_BRANCH_PATH_GLOB_PATTERN = "*-%s"
     LOG_FILES = ["/home/vsoc-01/cuttlefish_runtime/kernel.log",
                  "/home/vsoc-01/cuttlefish_runtime/logcat",
                  "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
@@ -70,76 +68,38 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._kernel_build_id = kernel_build_id
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
         self._avd_spec = avd_spec
-        self._kernel_branch = kernel_branch
-        self._system_branch = system_branch
-        self._system_build_id = system_build_id
-        self._system_build_target = system_build_target or build_target
-        self._kernel_build_target = cfg.kernel_build_target
         self._extra_scopes = cfg.extra_scopes
 
         # Configure clients for interaction with GCE/Build servers
         self._build_client = android_build_client.AndroidBuildClient(
             self.credentials)
 
-        # Discover branches by given build id or LKGB build id by given branch
-        self._build_target, self._build_id, self._branch = self._GetBuildInfo(
-            self._build_target, self._build_id, self._branch)
+        # Get build_info namedtuple for platform, kernel, system build
+        self.build_info = self._build_client.GetBuildInfo(
+            build_target, build_id, branch)
+        self.kernel_build_info = self._build_client.GetBuildInfo(
+            cfg.kernel_build_target, kernel_build_id, kernel_branch)
+        self.system_build_info = self._build_client.GetBuildInfo(
+            system_build_target or build_target, system_build_id, system_branch)
 
-        self._kernel_build_target, self._kernel_build_id, self._kernel_branch = (
-            self._GetBuildInfo(self._kernel_build_target, self._kernel_build_id,
-                               self._kernel_branch))
-
-        self._system_build_target, self._system_build_id, self._system_branch = (
-            self._GetBuildInfo(self._system_build_target, self._system_build_id,
-                               self._system_branch))
-
-    def _GetBuildInfo(self, build_target, build_id, branch):
-        """Get build info tuple with (build_target, build_id, branch).
-
-        Args:
-          build_target: Target name.
-          build_id: Build id, a string or None, e.g. "2263051", "P2804227"
-                    If None or latest, the last green build id will be returned.
-          branch: Branch name, a string or None, e.g. git_master. If None, the
-                  returned branch will be searched by given build_id.
+    def GetBuildInfoDict(self):
+        """Get build info dictionary.
 
         Returns:
-          A tuple of build_target, build_id, branch
+          A build info dictionary.
         """
-        if build_id and build_id != self.LATEST:
-            return build_target, build_id, self._build_client.GetBranch(
-                build_target, build_id)
-        elif branch:
-            return (build_target,
-                    str(self._build_client.GetLKGB(branch, build_target)),
-                    branch)
+        build_info_dict = {
+            key: val for key, val in self.build_info.__dict__.items() if val}
 
-        return None, None, None
-
-    def _GcsBuildIdFormatter(self, branch, build_id):
-        """Get GCS bucket build id format.
-
-        Args:
-          branch: Branch name, a string, e.g. git_master. If None, the returned
-                  build_id will be None
-          build_id: Build id, a string, e.g. "2263051", "P2804227". If None, the
-                    returned build_id will be None
-
-        Returns:
-          The build_id format that can be searched in GCS bucket.
-        """
-        if not build_id:
-            return build_id
-        if branch and self.RELEASE_BRANCH_SUFFIX in branch:
-            # For release branch, GCS bucket export includes not only the build
-            # number, but also the build name concatenated in path name, which
-            # breaks the assumption of cuttlefish instance bringup script.
-            # This workaround basically inserts a path glob into "build id", so
-            # that it can accommodate release branch build path such as
-            # "PPR1.180605.002-4822275"
-            return self.RELEASE_BRANCH_PATH_GLOB_PATTERN % build_id
-
-        return build_id
+        build_info_dict.update(
+            {"kernel_%s" % key: val
+             for key, val in self.kernel_build_info.__dict__.items() if val}
+        )
+        build_info_dict.update(
+            {"system_%s" % key: val
+             for key, val in self.system_build_info.__dict__.items() if val}
+        )
+        return build_info_dict
 
     def CreateInstance(self):
         """Creates singe configured cuttlefish device.
@@ -154,25 +114,24 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         # has one cuttlefish device. In the future, these logics should be modified
         # to support multiple cuttlefish devices per host instance.
         instance = self._compute_client.GenerateInstanceName(
-            build_id=self._build_id, build_target=self._build_target)
+            build_id=self.build_info.build_id, build_target=self._build_target)
 
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
             image_name=self._cfg.stable_host_image_name,
             image_project=self._cfg.stable_host_image_project,
-            build_target=self._build_target,
-            branch=self._branch,
-            build_id=self._GcsBuildIdFormatter(self._branch, self._build_id),
-            kernel_branch=self._kernel_branch,
-            kernel_build_id=self._kernel_build_id,
+            build_target=self.build_info.build_target,
+            branch=self.build_info.branch,
+            build_id=self.build_info.gcs_bucket_build_id,
+            kernel_branch=self.kernel_build_info.branch,
+            kernel_build_id=self.kernel_build_info.build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
             avd_spec=self._avd_spec,
             extra_scopes=self._extra_scopes,
-            system_build_target=self._system_build_target,
-            system_branch=self._system_branch,
-            system_build_id=self._GcsBuildIdFormatter(self._system_branch,
-                                                      self._system_build_id))
+            system_build_target=self.system_build_info.build_target,
+            system_branch=self.system_build_info.branch,
+            system_build_id=self.system_build_info.gcs_bucket_build_id)
 
         return instance
 

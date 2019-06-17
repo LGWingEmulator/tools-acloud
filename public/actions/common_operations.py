@@ -226,6 +226,11 @@ class DevicePool(object):
                 file_dict[file_path] = file_name
             utils.MakeTarFile(file_dict, output_file)
 
+    def SetDeviceBuildInfo(self):
+        """Add devices build info."""
+        for device in self._devices:
+            device.build_info = self._device_factory.GetBuildInfoDict()
+
     @property
     def devices(self):
         """Returns a list of devices in the pool.
@@ -272,6 +277,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         CreateSshKeyPairIfNecessary(cfg)
         device_pool = DevicePool(device_factory)
         device_pool.CreateDevices(num)
+        device_pool.SetDeviceBuildInfo()
         failures = device_pool.WaitForBoot()
         if failures:
             reporter.SetStatus(report.Status.BOOT_FAIL)
@@ -295,13 +301,8 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                 "ip": ip,
                 "instance_name": device.instance_name
             }
-            for attr in ("branch", "build_target", "build_id", "kernel_branch",
-                         "kernel_build_target", "kernel_build_id",
-                         "emulator_branch", "emulator_build_target",
-                         "emulator_build_id", "system_branch",
-                         "system_build_id", "system_build_target"):
-                if getattr(device_factory, "_%s" % attr, None):
-                    device_dict[attr] = getattr(device_factory, "_%s" % attr)
+            if device.build_info:
+                device_dict.update(device.build_info)
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
                     ip, cfg.ssh_private_key_path,
