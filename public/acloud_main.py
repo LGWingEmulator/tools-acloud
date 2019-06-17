@@ -213,6 +213,13 @@ def _ParseArgs(args):
         required=False,
         help="Emulator build used to run the images. e.g. 4669466.")
     create_gf_parser.add_argument(
+        "--emulator_branch",
+        type=str,
+        dest="emulator_branch",
+        required=False,
+        help="Emulator build branch name, e.g. aosp-emu-master-dev. If specified"
+        " without emulator_build_id, the last green build will be used.")
+    create_gf_parser.add_argument(
         "--gpu",
         type=str,
         dest="gpu",
@@ -291,9 +298,11 @@ def _VerifyArgs(parsed_args):
             raise errors.CommandArgError(
                 "Must specify --build_id and --build_target")
     if parsed_args.which == CMD_CREATE_GOLDFISH:
-        if not parsed_args.emulator_build_id and not parsed_args.build_id:
-            raise errors.CommandArgError("Must specify either "
-                                         "--emulator_build_id or --build_id")
+        if not parsed_args.emulator_build_id and not parsed_args.build_id and (
+                not parsed_args.emulator_branch and not parsed_args.branch):
+            raise errors.CommandArgError(
+                "Must specify either --build_id or --branch or "
+                "--emulator_branch or --emulator_build_id")
         if not parsed_args.build_target:
             raise errors.CommandArgError("Must specify --build_target")
 
@@ -411,12 +420,13 @@ def main(argv=None):
             build_target=args.build_target,
             build_id=args.build_id,
             emulator_build_id=args.emulator_build_id,
+            branch=args.branch,
+            emulator_branch=args.emulator_branch,
             gpu=args.gpu,
             num=args.num,
             serial_log_file=args.serial_log_file,
             logcat_file=args.logcat_file,
             autoconnect=args.autoconnect,
-            branch=args.branch,
             tags=args.tags,
             report_internal_ip=args.report_internal_ip)
     elif args.which == delete_args.CMD_DELETE:
