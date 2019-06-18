@@ -237,6 +237,22 @@ def GetCreateArgParser(subparser):
         help="'goldfish only' Emulator build used to run the images. "
         "e.g. 4669466.")
 
+    # Arguments for cheeps type.
+    create_parser.add_argument(
+        "--user",
+        type=str,
+        dest="username",
+        required=False,
+        default=None,
+        help="'cheeps only' username to log in to Chrome OS as.")
+    create_parser.add_argument(
+        "--password",
+        type=str,
+        dest="password",
+        required=False,
+        default=None,
+        help="'cheeps only' password to log in to Chrome OS with.")
+
     AddCommonCreateArgs(create_parser)
     return create_parser
 
@@ -277,3 +293,9 @@ def VerifyArgs(args):
             raise errors.InvalidHWPropertyError(
                 "[%s] is an invalid hw property, supported values are:%s. "
                 % (key, constants.HW_PROPERTIES))
+
+    if (args.username or args.password) and args.avd_type != constants.TYPE_CHEEPS:
+        raise ValueError("--username and --password are only valid with avd_type == %s"
+                         % constants.TYPE_CHEEPS)
+    if (args.username or args.password) and not (args.username and args.password):
+        raise ValueError("--username and --password must both be set")
