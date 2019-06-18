@@ -86,6 +86,7 @@ def EscapeAnsi(line):
     return _RE_ANSI_ESCAPE.sub('', line)
 
 
+# pylint: disable=too-many-public-methods
 class AVDSpec(object):
     """Class to store data on the type of AVD to create."""
 
@@ -119,6 +120,10 @@ class AVDSpec(object):
         # gpu and emulator_build_id is only used for goldfish avd_type.
         self._gpu = None
         self._emulator_build_id = None
+
+        # username and password only used for cheeps type.
+        self._username = None
+        self._password = None
 
         self._ProcessArgs(args)
 
@@ -262,6 +267,9 @@ class AVDSpec(object):
         self._logcat_file = args.logcat_file
         self._emulator_build_id = args.emulator_build_id
         self._gpu = args.gpu
+
+        self._username = args.username
+        self._password = args.password
 
     @staticmethod
     def _GetFlavorFromString(flavor_string):
@@ -602,3 +610,13 @@ class AVDSpec(object):
     def client_adb_port(self):
         """Return the client adb port."""
         return self._client_adb_port
+
+    @property
+    def username(self):
+        """Return username."""
+        return self._username
+
+    @property
+    def password(self):
+        """Return password."""
+        return self._password
