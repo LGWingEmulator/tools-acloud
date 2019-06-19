@@ -19,10 +19,8 @@ Create class that is responsible for creating a local instance AVD with a
 remote image.
 """
 from __future__ import print_function
-import glob
 import logging
 import os
-import subprocess
 import sys
 
 from acloud import errors
@@ -47,12 +45,6 @@ _CONFIRM_DOWNLOAD_DIR = ("Download dir %(download_dir)s does not have enough "
 # Let's add an extra buffer (~2G) to make sure user has enough disk space
 # for the downloaded image artifacts.
 _REQUIRED_SPACE = 10
-_BOOT_IMAGE = "boot.img"
-# TODO(b/129009852):UnpackBootImage and setfacl are deprecated.
-UNPACK_BOOTIMG_CMD = "%s -boot_img %s" % (
-    os.path.join(_CUTTLEFISH_COMMON_BIN_PATH, "unpack_boot_image.py"),
-    "%s -dest %s")
-ACL_CMD = "setfacl -m g:libvirt-qemu:rw %s"
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +114,6 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
             self._DownloadRemoteImage(cfg, build_target, build_id, extract_path)
-            self._UnpackBootImage(extract_path)
-            self._AclCfImageFiles(extract_path)
 
         return extract_path
 
@@ -156,48 +146,6 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
                 logger.debug("Deleted temporary file %s", temp_filename)
             except OSError as e:
                 logger.error("Failed to delete temporary file: %s", str(e))
-
-    @staticmethod
-    def _UnpackBootImage(extract_path):
-        """Unpack Boot.img.
-
-        Args:
-            extract_path: String, a path include extracted files.
-
-        Raises:
-            errors.BootImgDoesNotExist: boot.img doesn't exist.
-            errors.UnpackBootImageError: Unpack boot.img fail.
-        """
-        bootimg_path = os.path.join(extract_path, _BOOT_IMAGE)
-        if not os.path.exists(bootimg_path):
-            raise errors.BootImgDoesNotExist(
-                "%s does not exist in %s" % (_BOOT_IMAGE, bootimg_path))
-
-        logger.info("Start to unpack boot.img.")
-        try:
-            subprocess.check_call(
-                UNPACK_BOOTIMG_CMD % (bootimg_path, extract_path),
-                shell=True)
-        except subprocess.CalledProcessError as e:
-            raise errors.UnpackBootImageError(
-                "Failed to unpack boot.img: %s" % str(e))
-        logger.info("Unpack boot.img complete!")
-
-    @staticmethod
-    def _AclCfImageFiles(extract_path):
-        """ACL related files.
-
-        Use setfacl so that libvirt does not lose access to this file if user
-        does anything to this file at any point.
-
-        Args:
-            extract_path: String, a path include extracted files.
-        """
-        image_list = glob.glob(os.path.join(extract_path, "*.img"))
-        logger.info("Start to set ACLs on files: %s", ",".join(image_list))
-        for image_path in image_list:
-            subprocess.check_call(ACL_CMD % image_path, shell=True)
-        logger.info("The ACLs have set completed!")
 
     @staticmethod
     def _ConfirmDownloadRemoteImageDir(download_dir):
