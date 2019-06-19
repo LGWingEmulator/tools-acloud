@@ -64,6 +64,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  build_id,
                  emulator_build_target,
                  emulator_build_id,
+                 kernel_build_id=None,
+                 kernel_branch=None,
                  gpu=None,
                  avd_spec=None,
                  tags=None,
@@ -109,6 +111,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             build_target, build_id, branch)
         self.emulator_build_info = self._build_client.GetBuildInfo(
             emulator_build_target, emulator_build_id, emulator_branch)
+        self.kernel_build_info = self._build_client.GetBuildInfo(
+            cfg.kernel_build_target, kernel_build_id, kernel_branch)
 
     def GetBuildInfoDict(self):
         """Get build info dictionary.
@@ -123,6 +127,12 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             {"emulator_%s" % key: val
              for key, val in self.emulator_build_info.__dict__.items() if val}
             )
+
+        build_info_dict.update(
+            {"kernel_%s" % key: val
+             for key, val in self.kernel_build_info.__dict__.items() if val}
+            )
+
         return build_info_dict
 
     def CreateInstance(self):
@@ -146,6 +156,8 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             build_id=self.build_info.build_id,
             emulator_branch=self.emulator_build_info.branch,
             emulator_build_id=self.emulator_build_info.gcs_bucket_build_id,
+            kernel_branch=self.kernel_build_info.branch,
+            kernel_build_id=self.kernel_build_info.build_id,
             gpu=self._gpu,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
             avd_spec=self._avd_spec,
@@ -210,12 +222,15 @@ def _FetchBuildIdFromFile(cfg, build_target, build_id, filename):
         return ParseBuildInfo(temp_filename)
 
 
+#pylint: disable=too-many-locals
 def CreateDevices(avd_spec=None,
                   cfg=None,
                   build_target=None,
                   build_id=None,
                   emulator_build_id=None,
                   emulator_branch=None,
+                  kernel_build_id=None,
+                  kernel_branch=None,
                   gpu=None,
                   num=1,
                   serial_log_file=None,
@@ -235,6 +250,8 @@ def CreateDevices(avd_spec=None,
         emulator_build_id: String, emulator build id.
         emulator_branch: String, Emulator branch name.
         gpu: String, GPU to attach to the device or None. e.g. "nvidia-k80"
+        kernel_build_id: Kernel build id, a string.
+        kernel_branch: Kernel branch name, a string.
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a file where serial output should
                         be saved to.
@@ -295,17 +312,21 @@ def CreateDevices(avd_spec=None,
                                      "in %s" % _SYSIMAGE_INFO_FILENAME)
     logger.info(
         "Creating a goldfish device in project %s, build_target: %s, "
-        "build_id: %s, emulator_bid: %s, GPU: %s, num: %s, "
+        "build_id: %s, emulator_bid: %s, kernel_build_id: %s, "
+        "kernel_branh: %s, GPU: %s, num: %s, "
         "serial_log_file: %s, logcat_file: %s, "
         "autoconnect: %s", cfg.project, build_target, build_id,
-        emulator_build_id, gpu, num, serial_log_file, logcat_file, autoconnect)
+        emulator_build_id, kernel_build_id, kernel_branch, gpu, num,
+        serial_log_file, logcat_file, autoconnect)
 
     device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
                                            cfg.emulator_build_target,
                                            emulator_build_id, gpu=gpu,
                                            avd_spec=avd_spec, tags=tags,
                                            branch=branch,
-                                           emulator_branch=emulator_branch)
+                                           emulator_branch=emulator_branch,
+                                           kernel_build_id=kernel_build_id,
+                                           kernel_branch=kernel_branch)
 
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
                                            num, constants.TYPE_GF,
