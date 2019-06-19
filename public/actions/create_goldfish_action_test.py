@@ -41,6 +41,9 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
     GPU = "nvidia-tesla-k80"
     BRANCH = "fake-branch"
     EMULATOR_BRANCH = "emu-fake-branch"
+    KERNEL_BRANCH = "fake-kernel-branch"
+    KERNEL_BUILD_ID = "54321"
+    KERNEL_BUILD_TARGET = "kernel"
     GOLDFISH_HOST_IMAGE_NAME = "fake-stable-host-image-name"
     GOLDFISH_HOST_IMAGE_PROJECT = "fake-stable-host-image-project"
     EXTRA_DATA_DISK_GB = 4
@@ -109,7 +112,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         none_avd_spec = None
 
@@ -117,7 +123,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         report = create_goldfish_action.CreateDevices(
             none_avd_spec, cfg, build_target=self.BUILD_TARGET,
             build_id=self.BUILD_ID, emulator_build_id=self.EMULATOR_BUILD_ID,
-            gpu=self.GPU)
+            gpu=self.GPU, kernel_build_id=self.KERNEL_BUILD_ID)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -130,6 +136,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -148,6 +156,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                     "emulator_build_id": self.EMULATOR_BUILD_ID,
                     "emulator_build_target": self.EMULATOR_BUILD_TARGET,
                     "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
+                    "kernel_branch": self.KERNEL_BRANCH,
+                    "kernel_build_id": self.KERNEL_BUILD_ID,
+                    "kernel_build_target": self.KERNEL_BUILD_TARGET,
+                    "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID,
                 },
             ],
         })
@@ -165,7 +177,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
@@ -179,6 +194,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -203,7 +220,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         # Mock _FetchBuildIdFromFile method
         self.Patch(
@@ -221,9 +241,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             emulator_branch=None,
             gpu=self.GPU,
-            branch=None)
-            # HACK HACK HACK
-            # branch=self.BRANCH)
+            branch=None,
+            kernel_build_id=self.KERNEL_BUILD_ID)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -236,6 +255,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -253,6 +274,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "emulator_build_id": self.EMULATOR_BUILD_ID,
                 "emulator_build_target": self.EMULATOR_BUILD_TARGET,
                 "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
+                "kernel_branch": self.KERNEL_BRANCH,
+                "kernel_build_id": self.KERNEL_BUILD_ID,
+                "kernel_build_target": self.KERNEL_BUILD_TARGET,
+                "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -269,7 +294,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
@@ -283,6 +311,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -308,7 +338,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         # Mock _FetchBuildIdFromFile method
         self.Patch(
@@ -334,6 +367,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -351,6 +386,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "emulator_build_id": self.EMULATOR_BUILD_ID,
                 "emulator_build_target": self.EMULATOR_BUILD_TARGET,
                 "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
+                "kernel_branch": self.KERNEL_BRANCH,
+                "kernel_build_id": self.KERNEL_BUILD_ID,
+                "kernel_build_target": self.KERNEL_BUILD_TARGET,
+                "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID,
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -367,7 +406,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID)]
+                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+            android_build_client.BuildInfo(
+                self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
+                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
@@ -381,6 +423,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             emulator_branch=self.EMULATOR_BRANCH,
             emulator_build_id=self.EMULATOR_BUILD_ID,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
