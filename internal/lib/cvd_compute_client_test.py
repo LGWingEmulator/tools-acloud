@@ -43,6 +43,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     BUILD_ID = "2263051"
     KERNEL_BRANCH = "fake-kernel-branch"
     KERNEL_BUILD_ID = "1234567"
+    KERNEL_BUILD_TARGET = "kernel"
     DPI = 160
     X_RES = 720
     Y_RES = 1280
@@ -99,6 +100,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
                 branch=self.BRANCH, build_id=self.BUILD_ID),
             "cvd_01_fetch_kernel_bid": "{branch}/{build_id}".format(
                 branch=self.KERNEL_BRANCH, build_id=self.KERNEL_BUILD_ID),
+            "cvd_01_fetch_kernel_build_target": self.KERNEL_BUILD_TARGET,
             "cvd_01_x_res": str(self.X_RES),
             "cvd_01_y_res": str(self.Y_RES),
             "user": "fake_user",
@@ -114,8 +116,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
             self.BRANCH, self.BUILD_ID, self.KERNEL_BRANCH,
-            self.KERNEL_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB,
-            extra_scopes=self.EXTRA_SCOPES)
+            self.KERNEL_BUILD_ID, self.KERNEL_BUILD_TARGET,
+            self.EXTRA_DATA_DISK_SIZE_GB, extra_scopes=self.EXTRA_SCOPES)
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
@@ -153,8 +155,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET, self.BRANCH,
             self.BUILD_ID, self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-            self.EXTRA_DATA_DISK_SIZE_GB, fake_avd_spec,
-            extra_scopes=self.EXTRA_SCOPES)
+            self.KERNEL_BUILD_TARGET, self.EXTRA_DATA_DISK_SIZE_GB,
+            fake_avd_spec, extra_scopes=self.EXTRA_SCOPES)
 
         expected_labels = {constants.LABEL_CREATE_BY: "fake_user"}
         mock_create.assert_called_with(
