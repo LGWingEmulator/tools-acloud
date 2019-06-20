@@ -30,15 +30,11 @@ logger = logging.getLogger(__name__)
 
 # The BuildInfo namedtuple data structure.
 # It will be the data structure returned by GetBuildInfo method.
-# gcs_bucket_build_id: For release build, it will be
-# <release_build_id>-<incremental_build_id> for example: AAAA.190220.001-5325535
-# For non-release build, it will be the same as build_id or say
-# incremental_build_id
 BuildInfo = collections.namedtuple("BuildInfo", [
     "branch",  # The branch name string
     "build_id",  # The build id string
     "build_target",  # The build target string
-    "gcs_bucket_build_id"])  # The build id string used in GCS Bucket
+    "release_build_id"])  # The release build id string
 
 
 class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
@@ -228,8 +224,5 @@ class AndroidBuildClient(base_cloud_client.BaseCloudApiClient):
 
         build_id = build.get("buildId")
         build_target = build_target if build_id else None
-        release_id = build.get("releaseCandidateName")
-        gcs_bucket_build_id = "%s-%s" % (
-            release_id, build_id) if release_id else build_id
         return BuildInfo(build.get("branch"), build_id, build_target,
-                         gcs_bucket_build_id)
+                         build.get("releaseCandidateName"))
