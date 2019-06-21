@@ -101,6 +101,20 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         )
         return build_info_dict
 
+    @staticmethod
+    def _GetGcsBucketBuildId(build_id, release_id):
+        """Get GCS Bucket Build Id.
+
+        Args:
+          build_id: The incremental build id. For example 5325535.
+          release_id: The release build id, None if not a release build.
+                      For example AAAA.190220.001.
+
+        Returns:
+          GCS bucket build id. For example: AAAA.190220.001-5325535
+        """
+        return "-".join([release_id, build_id]) if release_id else build_id
+
     def CreateInstance(self):
         """Creates singe configured cuttlefish device.
 
@@ -123,7 +137,8 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             image_project=self._cfg.stable_host_image_project,
             build_target=self.build_info.build_target,
             branch=self.build_info.branch,
-            build_id=self.build_info.gcs_bucket_build_id,
+            build_id=self._GetGcsBucketBuildId(
+                self.build_info.build_id, self.build_info.release_build_id),
             kernel_branch=self.kernel_build_info.branch,
             kernel_build_id=self.kernel_build_info.build_id,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
@@ -131,11 +146,14 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             extra_scopes=self._extra_scopes,
             system_build_target=self.system_build_info.build_target,
             system_branch=self.system_build_info.branch,
-            system_build_id=self.system_build_info.gcs_bucket_build_id)
+            system_build_id=self._GetGcsBucketBuildId(
+                self.system_build_info.build_id,
+                self.system_build_info.release_build_id))
 
         return instance
 
 
+#pylint: disable=too-many-locals
 def CreateDevices(avd_spec=None,
                   cfg=None,
                   build_target=None,

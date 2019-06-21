@@ -109,13 +109,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         none_avd_spec = None
 
@@ -151,15 +151,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                     "branch": self.BRANCH,
                     "build_id": self.BUILD_ID,
                     "build_target": self.BUILD_TARGET,
-                    "gcs_bucket_build_id": self.BUILD_ID,
                     "emulator_branch": self.EMULATOR_BRANCH,
                     "emulator_build_id": self.EMULATOR_BUILD_ID,
                     "emulator_build_target": self.EMULATOR_BUILD_TARGET,
-                    "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
                     "kernel_branch": self.KERNEL_BRANCH,
                     "kernel_build_id": self.KERNEL_BUILD_ID,
                     "kernel_build_target": self.KERNEL_BUILD_TARGET,
-                    "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID,
                 },
             ],
         })
@@ -174,13 +171,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
@@ -217,13 +214,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         # Mock _FetchBuildIdFromFile method
         self.Patch(
@@ -269,15 +266,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "branch": self.BRANCH,
                 "build_id": self.BUILD_ID,
                 "build_target": self.BUILD_TARGET,
-                "gcs_bucket_build_id": self.BUILD_ID,
                 "emulator_branch": self.EMULATOR_BRANCH,
                 "emulator_build_id": self.EMULATOR_BUILD_ID,
                 "emulator_build_target": self.EMULATOR_BUILD_TARGET,
-                "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
                 "kernel_branch": self.KERNEL_BRANCH,
                 "kernel_build_id": self.KERNEL_BUILD_ID,
                 "kernel_build_target": self.KERNEL_BUILD_TARGET,
-                "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -291,13 +285,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
@@ -335,13 +329,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         # Mock _FetchBuildIdFromFile method
         self.Patch(
@@ -381,15 +375,12 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "branch": self.BRANCH,
                 "build_id": self.BUILD_ID,
                 "build_target": self.BUILD_TARGET,
-                "gcs_bucket_build_id": self.BUILD_ID,
                 "emulator_branch": self.EMULATOR_BRANCH,
                 "emulator_build_id": self.EMULATOR_BUILD_ID,
                 "emulator_build_target": self.EMULATOR_BUILD_TARGET,
-                "emulator_gcs_bucket_build_id": self.EMULATOR_BUILD_ID,
                 "kernel_branch": self.KERNEL_BRANCH,
                 "kernel_build_id": self.KERNEL_BUILD_ID,
                 "kernel_build_target": self.KERNEL_BUILD_TARGET,
-                "kernel_gcs_bucket_build_id": self.KERNEL_BUILD_ID,
             },],
         })
         self.assertEquals(report.command, "create_gf")
@@ -403,13 +394,13 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [
             android_build_client.BuildInfo(
-                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, self.BUILD_ID),
+                self.BRANCH, self.BUILD_ID, self.BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.EMULATOR_BRANCH, self.EMULATOR_BUILD_ID,
-                self.EMULATOR_BUILD_TARGET, self.EMULATOR_BUILD_ID),
+                self.EMULATOR_BUILD_TARGET, None),
             android_build_client.BuildInfo(
                 self.KERNEL_BRANCH, self.KERNEL_BUILD_ID,
-                self.KERNEL_BUILD_TARGET, self.KERNEL_BUILD_ID)]
+                self.KERNEL_BUILD_TARGET, None)]
 
         report = create_goldfish_action.CreateDevices(avd_spec=self.avd_spec)
         # Verify
