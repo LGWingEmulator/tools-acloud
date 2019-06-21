@@ -298,7 +298,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
 
         # Both _GCE_LOCAL_IMAGE_CANDIDATE could not be found then raise error.
         self.Patch(os.path, "exists", side_effect=[False, False])
-        self.assertRaises(errors.BootImgDoesNotExist,
+        self.assertRaises(errors.ImgDoesNotExist,
                           self.AvdSpec._GetGceLocalImagePath, fake_image_path)
 
 
