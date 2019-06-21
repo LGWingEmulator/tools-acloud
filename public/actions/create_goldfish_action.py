@@ -155,7 +155,7 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
             branch=self.build_info.branch,
             build_id=self.build_info.build_id,
             emulator_branch=self.emulator_build_info.branch,
-            emulator_build_id=self.emulator_build_info.gcs_bucket_build_id,
+            emulator_build_id=self.emulator_build_info.build_id,
             kernel_branch=self.kernel_build_info.branch,
             kernel_build_id=self.kernel_build_info.build_id,
             gpu=self._gpu,
