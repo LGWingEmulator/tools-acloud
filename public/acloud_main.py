@@ -167,6 +167,12 @@ def _ParseArgs(args):
         " be used. If neither kernel_branch nor kernel_build_id are specified,"
         " the kernel that's bundled with the Android build would be used.")
     create_cf_parser.add_argument(
+        "--kernel_build_target",
+        type=str,
+        dest="kernel_build_target",
+        default="kernel",
+        help="Kernel build target, specify if different from 'kernel'")
+    create_cf_parser.add_argument(
         "--system_branch",
         type=str,
         dest="system_branch",
@@ -424,6 +430,7 @@ def main(argv=None):
             branch=args.branch,
             kernel_build_id=args.kernel_build_id,
             kernel_branch=args.kernel_branch,
+            kernel_build_target=args.kernel_build_target,
             system_branch=args.system_branch,
             system_build_id=args.system_build_id,
             system_build_target=args.system_build_target,
