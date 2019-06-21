@@ -16,7 +16,6 @@
 import unittest
 from collections import namedtuple
 import os
-import subprocess
 import mock
 
 from acloud import errors
@@ -64,10 +63,8 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.RemoteImageLocalInstance.GetImageArtifactsPath(avd_spec)
         mock_proc.assert_called_once_with(avd_spec)
 
-    @mock.patch.object(RemoteImageLocalInstance, "_AclCfImageFiles")
-    @mock.patch.object(RemoteImageLocalInstance, "_UnpackBootImage")
     @mock.patch.object(RemoteImageLocalInstance, "_DownloadRemoteImage")
-    def testDownloadAndProcessImageFiles(self, mock_download, mock_unpack, mock_acl):
+    def testDownloadAndProcessImageFiles(self, mock_download):
         """Test process remote cuttlefish image."""
         avd_spec = mock.MagicMock()
         avd_spec.cfg = mock.MagicMock()
@@ -83,8 +80,6 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
             avd_spec.remote_image["build_target"],
             avd_spec.remote_image["build_id"],
             self._extract_path)
-        mock_unpack.assert_called_once_with(self._extract_path)
-        mock_acl.assert_called_once_with(self._extract_path)
 
     @mock.patch.object(utils, "Decompress")
     def testDownloadRemoteImage(self, mock_decompress):
@@ -114,18 +109,6 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
                                                             any_order=True)
         # To validate Decompress runs twice.
         self.assertEqual(mock_decompress.call_count, 2)
-
-    @mock.patch.object(subprocess, "check_call")
-    def testUnpackBootImage(self, mock_call):
-        """Test Unpack boot image."""
-        self.Patch(os.path, "exists", side_effect=[True, False])
-        self.RemoteImageLocalInstance._UnpackBootImage(self._extract_path)
-        # check_call run once when boot.img exist.
-        self.assertEqual(mock_call.call_count, 1)
-        # raise errors.BootImgDoesNotExist when boot.img doesn't exist.
-        self.assertRaises(errors.BootImgDoesNotExist,
-                          self.RemoteImageLocalInstance._UnpackBootImage,
-                          self._extract_path)
 
     def testConfirmDownloadRemoteImageDir(self):
         """Test confirm download remote image dir"""
