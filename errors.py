@@ -183,12 +183,8 @@ class NoCuttlefishCommonInstalled(SetupError):
     """Can't find cuttlefish_common lib."""
 
 
-class UnpackBootImageError(CreateError):
-    """Error related to unpack boot.img."""
-
-
-class BootImgDoesNotExist(CreateError):
-    """boot.img does not exist."""
+class ImgDoesNotExist(CreateError):
+    """Image does not exist."""
 
 
 class UnsupportedCompressionFileType(SetupError):

@@ -328,7 +328,7 @@ class AVDSpec(object):
             String, image file path if exists.
 
         Raises:
-            errors.BootImgDoesNotExist if image doesn't exist.
+            errors.ImgDoesNotExist if image doesn't exist.
         """
         # IF the user specified a file, return it
         if local_image_dir and os.path.isfile(local_image_dir):
@@ -344,9 +344,9 @@ class AVDSpec(object):
             if os.path.exists(full_file_path):
                 return full_file_path
 
-        raise errors.BootImgDoesNotExist("Could not find any GCE images (%s), "
-                                         "you can build them via \"m dist\"" %
-                                         ", ".join(_GCE_LOCAL_IMAGE_CANDIDATES))
+        raise errors.ImgDoesNotExist("Could not find any GCE images (%s), you "
+                                     "can build them via \"m dist\"" %
+                                     ", ".join(_GCE_LOCAL_IMAGE_CANDIDATES))
 
     def _ProcessCFLocalImageArgs(self, local_image_arg, flavor_arg):
         """Get local built image path for cuttlefish-type AVD.
