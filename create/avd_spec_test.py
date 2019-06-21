@@ -118,9 +118,9 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         mock_repo.return_value = "Manifest branch: master"
         self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "git_master")
 
+        # Can't get branch from repo info, set it as default branch.
         mock_repo.return_value = "Manifest branch:"
-        with self.assertRaises(errors.GetBranchFromRepoInfoError):
-            self.AvdSpec._GetBranchFromRepo()
+        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "aosp-master")
 
     def testGetBuildBranch(self):
         """Test GetBuildBranch function"""
