@@ -133,6 +133,7 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             build_id=self.BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             system_branch=self.SYSTEM_BRANCH,
             system_build_id=self.SYSTEM_BUILD_ID,
             system_build_target=self.SYSTEM_BUILD_TARGET,
