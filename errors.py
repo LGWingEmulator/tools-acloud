@@ -155,10 +155,6 @@ class GetBuildIDError(CreateError):
     """Can't get build id from Android Build."""
 
 
-class GetBranchFromRepoInfoError(CreateError):
-    """Can't get branch information from output of #'repo info'."""
-
-
 class NotSupportedHWPropertyError(CreateError):
     """An error to wrap a non-supported property issue."""
 

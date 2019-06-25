@@ -65,6 +65,7 @@ _COMMAND_GIT_REMOTE = ["git", "remote"]
 # Android Build will recognize it as aosp-master.
 _BRANCH_PREFIX = {"aosp": "aosp-"}
 _DEFAULT_BRANCH_PREFIX = "git_"
+_DEFAULT_BRANCH = "aosp-master"
 
 # The target prefix is needed to help concoct the lunch target name given a
 # the branch, avd type and device flavor:
@@ -473,23 +474,26 @@ class AVDSpec(object):
     def _GetBranchFromRepo(self):
         """Get branch information from command "repo info".
 
+        If branch can't get from "repo info", it will be set as default branch
+        "aosp-master".
+
         Returns:
             branch: String, git branch name. e.g. "aosp-master"
-
-        Raises:
-            errors.GetBranchFromRepoInfoError: Can't get branch from
-            output of "repo info".
         """
-        repo_output = subprocess.check_output(_COMMAND_REPO_INFO)
+        repo_output = ""
+        try:
+            repo_output = subprocess.check_output(_COMMAND_REPO_INFO)
+        except subprocess.CalledProcessError:
+            utils.PrintColorString(
+                "Unable to determine your repo branch, defaulting to %s"
+                % _DEFAULT_BRANCH, utils.TextColors.WARNING)
         for line in repo_output.splitlines():
             match = _BRANCH_RE.match(EscapeAnsi(line))
             if match:
                 branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
                                                    _DEFAULT_BRANCH_PREFIX)
                 return branch_prefix + match.group("branch")
-        raise errors.GetBranchFromRepoInfoError(
-            "No branch mentioned in repo info output: %s" % repo_output
-        )
+        return _DEFAULT_BRANCH
 
     def _GetBuildTarget(self, args):
         """Infer build target if user doesn't specified target name.
