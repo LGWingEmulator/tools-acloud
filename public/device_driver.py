@@ -337,19 +337,19 @@ def _FetchSerialLogsFromDevices(compute_client, instance_names, output_file,
 
 
 # pylint: disable=too-many-locals
-def CreateAndroidVirtualDevices(cfg,
-                                build_target=None,
-                                build_id=None,
-                                num=1,
-                                gce_image=None,
-                                local_disk_image=None,
-                                cleanup=True,
-                                serial_log_file=None,
-                                logcat_file=None,
-                                autoconnect=False,
-                                report_internal_ip=False,
-                                avd_spec=None):
-    """Creates one or multiple android devices.
+def CreateGCETypeAVD(cfg,
+                     build_target=None,
+                     build_id=None,
+                     num=1,
+                     gce_image=None,
+                     local_disk_image=None,
+                     cleanup=True,
+                     serial_log_file=None,
+                     logcat_file=None,
+                     autoconnect=False,
+                     report_internal_ip=False,
+                     avd_spec=None):
+    """Creates one or multiple gce android devices.
 
     Args:
         cfg: An AcloudConfig instance.
@@ -405,7 +405,7 @@ def CreateAndroidVirtualDevices(cfg,
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
                     ip, cfg.ssh_private_key_path, constants.GCE_VNC_PORT,
-                    constants.GCE_ADB_PORT, _SSH_USER, avd_spec.adb_port)
+                    constants.GCE_ADB_PORT, _SSH_USER, avd_spec.client_adb_port)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
