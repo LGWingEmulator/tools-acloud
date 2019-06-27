@@ -17,7 +17,9 @@ import logging
 
 from acloud.internal import constants
 
+
 logger = logging.getLogger(__name__)
+
 
 # pylint: disable=broad-except, import-error
 def LogUsage(argv):

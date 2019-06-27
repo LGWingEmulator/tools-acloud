@@ -25,8 +25,8 @@ import apiclient
 from acloud import errors
 from acloud.internal.lib import base_cloud_client
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 # The BuildInfo namedtuple data structure.
 # It will be the data structure returned by GetBuildInfo method.

@@ -47,6 +47,7 @@ from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gstorage_client
 from acloud.internal.lib import utils
 
+
 logger = logging.getLogger(__name__)
 
 MAX_BATCH_CLEANUP_COUNT = 100

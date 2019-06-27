@@ -24,6 +24,7 @@ from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public import device_driver
 
+
 logger = logging.getLogger(__name__)
 
 

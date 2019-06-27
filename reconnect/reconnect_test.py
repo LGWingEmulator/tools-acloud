@@ -27,6 +27,7 @@ from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 from acloud.reconnect import reconnect
 
+
 ForwardedPorts = collections.namedtuple("ForwardedPorts",
                                         [constants.VNC_PORT, constants.ADB_PORT])
 

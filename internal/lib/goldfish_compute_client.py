@@ -47,6 +47,7 @@ from acloud.internal import constants
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 
+
 logger = logging.getLogger(__name__)
 
 

@@ -33,6 +33,7 @@ from acloud.public import config
 from acloud.public import device_driver
 from acloud.public import report
 
+
 logger = logging.getLogger(__name__)
 
 _COMMAND_GET_PROCESS_ID = ["pgrep", "launch_cvd"]
