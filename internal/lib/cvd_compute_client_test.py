@@ -108,7 +108,17 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
                 self.cvd_compute_client.DATA_POLICY_CREATE_IF_MISSING,
             "cvd_01_blank_data_disk_size": str(self.EXTRA_DATA_DISK_SIZE_GB * 1024),
         }
+        expected_metadata_local_image = {
+            "cvd_01_dpi": str(self.DPI),
+            "cvd_01_x_res": str(self.X_RES),
+            "cvd_01_y_res": str(self.Y_RES),
+            "user": "fake_user",
+            "cvd_01_data_policy":
+                self.cvd_compute_client.DATA_POLICY_CREATE_IF_MISSING,
+            "cvd_01_blank_data_disk_size": str(self.EXTRA_DATA_DISK_SIZE_GB * 1024),
+        }
         expected_metadata.update(self.METADATA)
+        expected_metadata_local_image.update(self.METADATA)
         remote_image_metadata = dict(expected_metadata)
         remote_image_metadata["cvd_01_launch"] = self.LAUNCH_ARGS
         expected_disk_args = [{"fake_arg": "fake_value"}]
@@ -132,7 +142,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             extra_scopes=self.EXTRA_SCOPES)
 
         #test use local image in the remote instance.
-        local_image_metadata = dict(expected_metadata)
+        local_image_metadata = dict(expected_metadata_local_image)
         args = mock.MagicMock()
         mock_check_img.return_value = True
         args.local_image = None
