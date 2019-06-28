@@ -86,6 +86,12 @@ def AddCommonCreateArgs(parser):
         dest="network",
         required=False,
         help="Set the network the GCE instance will utilize.")
+    parser.add_argument(
+        "--skip-pre-run-check",
+        action="store_true",
+        dest="skip_pre_run_check",
+        required=False,
+        help="Skip the pre-run check.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
