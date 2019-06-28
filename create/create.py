@@ -207,7 +207,8 @@ def Run(args):
     Args:
         args: Namespace object from argparse.parse_args.
     """
-    PreRunCheck(args)
+    if not args.skip_pre_run_check:
+        PreRunCheck(args)
     spec = avd_spec.AVDSpec(args)
     avd_creator_class = GetAvdCreatorClass(spec.avd_type,
                                            spec.instance_type,
