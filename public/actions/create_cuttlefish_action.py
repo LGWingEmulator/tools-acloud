@@ -198,6 +198,7 @@ def CreateDevices(avd_spec=None,
         A Report instance.
     """
     client_adb_port = None
+    boot_timeout_secs = None
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
@@ -209,6 +210,7 @@ def CreateDevices(avd_spec=None,
         serial_log_file = avd_spec.serial_log_file
         logcat_file = avd_spec.logcat_file
         client_adb_port = avd_spec.client_adb_port
+        boot_timeout_secs = avd_spec.boot_timeout_secs
     logger.info(
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "
@@ -238,4 +240,4 @@ def CreateDevices(avd_spec=None,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
                                            serial_log_file, logcat_file,
-                                           client_adb_port)
+                                           client_adb_port, boot_timeout_secs)
