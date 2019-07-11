@@ -34,6 +34,9 @@ _RE_ADB_DEVICE_INFO = (r"%s\s*(?P<adb_status>[\S]+)? ?"
                        r"(device:(?P<device>[\S]+))? ?"
                        r"(transport_id:(?P<transport_id>[\S]+))? ?")
 _DEVICE_ATTRIBUTES = ["adb_status", "usb", "product", "model", "device", "transport_id"]
+#KEY_CODE 82 = KEY_MENU
+_UNLOCK_SCREEN_KEYEVENT = ("%(adb_bin)s -s %(device_serial)s "
+                           "shell input keyevent 82")
 
 
 class AdbTools(object):
@@ -188,6 +191,21 @@ class AdbTools(object):
             utils.PrintColorString("Failed to adb connect %s" %
                                    self._device_serial,
                                    utils.TextColors.FAIL)
+
+    def AutoUnlockScreen(self):
+        """Auto unlock screen.
+
+        Auto unlock screen after invoke vnc client.
+        """
+        try:
+            adb_unlock_args = _UNLOCK_SCREEN_KEYEVENT % {
+                "adb_bin": self._adb_command,
+                "device_serial": self._device_serial}
+            subprocess.check_call(adb_unlock_args.split())
+        except subprocess.CalledProcessError:
+            utils.PrintColorString("Failed to unlock screen."
+                                   "(adb_port: %s)" % self._adb_port,
+                                   utils.TextColors.WARNING)
 
     @property
     def device_information(self):

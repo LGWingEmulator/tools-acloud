@@ -46,6 +46,7 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gstorage_client
 from acloud.internal.lib import utils
+from acloud.internal.lib.adb_tools import AdbTools
 
 
 logger = logging.getLogger(__name__)
@@ -410,10 +411,12 @@ def CreateGCETypeAVD(cfg,
                     target_vnc_port=constants.GCE_VNC_PORT,
                     target_adb_port=constants.GCE_ADB_PORT,
                     ssh_user=_SSH_USER,
-                    client_adb_port=avd_spec.adb_port,
+                    client_adb_port=avd_spec.client_adb_port,
                     extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
+                if avd_spec.unlock_screen:
+                    AdbTools(forwarded_ports.adb_port).AutoUnlockScreen()
             if device.instance_name in failures:
                 r.AddData(key="devices_failing_boot", value=device_dict)
                 r.AddError(str(failures[device.instance_name]))
