@@ -338,21 +338,25 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                 return False
             raise
 
-    def WaitForBoot(self, instance):
+    def WaitForBoot(self, instance, boot_timeout_secs=None):
         """Wait for boot to completes or hit timeout.
 
         Args:
             instance: string, instance name.
+            boot_timeout_secs: Integer, the maximum time in seconds used to
+                               wait for the AVD to boot.
         """
-        logger.info("Waiting for instance to boot up: %s", instance)
+        boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
+        logger.info("Waiting for instance to boot up %s for %s secs",
+                    instance, boot_timeout_secs)
         timeout_exception = errors.DeviceBootTimeoutError(
             "Device %s did not finish on boot within timeout (%s secs)" %
-            (instance, self.BOOT_TIMEOUT_SECS)),
+            (instance, boot_timeout_secs)),
         utils.PollAndWait(
             func=self.CheckBoot,
             expected_return=True,
             timeout_exception=timeout_exception,
-            timeout_secs=self.BOOT_TIMEOUT_SECS,
+            timeout_secs=boot_timeout_secs,
             sleep_interval_secs=self.BOOT_CHECK_INTERVAL_SECS,
             instance=instance)
         logger.info("Instance boot completed: %s", instance)
