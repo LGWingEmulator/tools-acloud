@@ -134,8 +134,12 @@ class DevicePool(object):
 
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up",
                        result_evaluator=utils.BootEvaluator)
-    def WaitForBoot(self):
+    def WaitForBoot(self, boot_timeout_secs):
         """Waits for all devices to boot up.
+
+        Args:
+            boot_timeout_secs: Integer, the maximum time in seconds used to
+                               wait for the AVD to boot.
 
         Returns:
             A dictionary that contains all the failures.
@@ -145,7 +149,7 @@ class DevicePool(object):
         failures = {}
         for device in self._devices:
             try:
-                self._compute_client.WaitForBoot(device.instance_name)
+                self._compute_client.WaitForBoot(device.instance_name, boot_timeout_secs)
             except errors.DeviceBootError as e:
                 failures[device.instance_name] = e
         return failures
@@ -246,7 +250,7 @@ class DevicePool(object):
 def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
                   serial_log_file=None, logcat_file=None,
-                  client_adb_port=None):
+                  client_adb_port=None, boot_timeout_secs=None):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -265,6 +269,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         logcat_file: String, the file path to tar the logcats.
         autoconnect: Boolean, whether to auto connect to device.
         client_adb_port: Integer, Specify port for adb forwarding.
+        boot_timeout_secs: Integer, boot timeout secs.
 
     Raises:
         errors: Create instance fail.
@@ -278,7 +283,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         device_pool = DevicePool(device_factory)
         device_pool.CreateDevices(num)
         device_pool.SetDeviceBuildInfo()
-        failures = device_pool.WaitForBoot()
+        failures = device_pool.WaitForBoot(boot_timeout_secs)
         if failures:
             reporter.SetStatus(report.Status.BOOT_FAIL)
         else:

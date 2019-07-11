@@ -126,6 +126,9 @@ class AVDSpec(object):
         self._username = None
         self._password = None
 
+        # The maximum time in seconds used to wait for the AVD to boot.
+        self._boot_timeout_secs = None
+
         self._ProcessArgs(args)
 
     def __repr__(self):
@@ -271,6 +274,8 @@ class AVDSpec(object):
 
         self._username = args.username
         self._password = args.password
+
+        self._boot_timeout_secs = args.boot_timeout_secs
 
     @staticmethod
     def _GetFlavorFromString(flavor_string):
@@ -624,3 +629,8 @@ class AVDSpec(object):
     def password(self):
         """Return password."""
         return self._password
+
+    @property
+    def boot_timeout_secs(self):
+        """Return boot_timeout_secs."""
+        return self._boot_timeout_secs
