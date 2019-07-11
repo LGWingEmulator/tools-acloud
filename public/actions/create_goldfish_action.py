@@ -268,6 +268,7 @@ def CreateDevices(avd_spec=None,
         A Report instance.
     """
     client_adb_port = None
+    boot_timeout_secs = None
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
@@ -281,6 +282,7 @@ def CreateDevices(avd_spec=None,
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
         client_adb_port = avd_spec.client_adb_port
+        boot_timeout_secs = avd_spec.boot_timeout_secs
 
     # If emulator_build_id and emulator_branch is None, retrieve emulator
     # build id from platform build emulator-info.txt artifact
@@ -332,4 +334,4 @@ def CreateDevices(avd_spec=None,
                                            num, constants.TYPE_GF,
                                            report_internal_ip, autoconnect,
                                            serial_log_file, logcat_file,
-                                           client_adb_port)
+                                           client_adb_port, boot_timeout_secs)

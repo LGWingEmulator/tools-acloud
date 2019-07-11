@@ -92,6 +92,12 @@ def AddCommonCreateArgs(parser):
         dest="skip_pre_run_check",
         required=False,
         help="Skip the pre-run check.")
+    parser.add_argument(
+        "--boot-timeout",
+        dest="boot_timeout_secs",
+        type=int,
+        required=False,
+        help="The maximum time in seconds used to wait for the AVD to boot.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
