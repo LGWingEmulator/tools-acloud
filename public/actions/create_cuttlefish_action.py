@@ -171,7 +171,8 @@ def CreateDevices(avd_spec=None,
                   serial_log_file=None,
                   logcat_file=None,
                   autoconnect=False,
-                  report_internal_ip=False):
+                  report_internal_ip=False,
+                  boot_timeout_secs=None):
     """Create one or multiple Cuttlefish devices.
 
     Args:
@@ -193,12 +194,13 @@ def CreateDevices(avd_spec=None,
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
+        boot_timeout_secs: Integer, the maximum time in seconds used to
+                               wait for the AVD to boot.
 
     Returns:
         A Report instance.
     """
     client_adb_port = None
-    boot_timeout_secs = None
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
