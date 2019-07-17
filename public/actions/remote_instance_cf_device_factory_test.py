@@ -24,8 +24,10 @@ import mock
 
 from acloud.create import avd_spec
 from acloud.internal import constants
+from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
+from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 from acloud.public.actions import remote_instance_cf_device_factory
@@ -39,6 +41,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         super(RemoteInstanceDeviceFactoryTest, self).setUp()
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
         self.Patch(cvd_compute_client.CvdComputeClient, "InitResourceHandle")
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitResourceHandle")
 
     # pylint: disable=protected-access
     def testSSHExecuteWithRetry(self):
@@ -75,6 +78,52 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         fake_uuid = mock.MagicMock(hex="1234")
         self.Patch(uuid, "uuid4", return_value=fake_uuid)
         self.Patch(cvd_compute_client.CvdComputeClient, "CreateInstance")
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-aosp-cf-x86-phone")
+
+        # Can't get target name from zip file name.
+        fake_image_name = "/fake/aosp_cf_x86_phone.username.zip"
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-fake-target")
+
+        # No image zip path, it uses local build images.
+        fake_image_name = ""
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-fake-target")
+
+    # pylint: disable=protected-access
+    @mock.patch.dict(os.environ, {constants.ENV_BUILD_TARGET:'fake-target'})
+    def testCreateGceInstanceNameMultiStage(self):
+        """test create gce instance."""
+        self.Patch(utils, "GetBuildEnvironmentVariable",
+                   return_value="test_environ")
+        self.Patch(glob, "glob", return_vale=["fake.img"])
+        # Mock uuid
+        args = mock.MagicMock()
+        args.config_file = ""
+        args.avd_type = constants.TYPE_CF
+        args.flavor = "phone"
+        args.local_image = None
+        args.adb_port = None
+        fake_avd_spec = avd_spec.AVDSpec(args)
+        fake_avd_spec.cfg.enable_multi_stage = True
+
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "CreateInstance")
+        self.Patch(android_build_client.AndroidBuildClient, "InitResourceHandle")
         fake_host_package_name = "/fake/host_package.tar.gz"
         fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
 
