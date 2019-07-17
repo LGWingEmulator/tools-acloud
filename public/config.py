@@ -200,6 +200,8 @@ class AcloudConfig(object):
             usr_cfg.stable_cheeps_host_image_project or
             internal_cfg.default_usr_cfg.stable_cheeps_host_image_project)
 
+        self.extra_args_ssh_tunnel = usr_cfg.extra_args_ssh_tunnel
+
         self.common_hw_property_map = internal_cfg.common_hw_property_map
         self.hw_property = usr_cfg.hw_property
 

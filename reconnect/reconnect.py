@@ -84,7 +84,10 @@ def AddPublicSshRsaToInstance(cfg, user, instance_name):
 
 
 @utils.TimeExecute(function_description="Reconnect instances")
-def ReconnectInstance(ssh_private_key_path, instance, reconnect_report):
+def ReconnectInstance(ssh_private_key_path,
+                      instance,
+                      reconnect_report,
+                      extra_args_ssh_tunnel=None):
     """Reconnect to the specified instance.
 
     It will:
@@ -98,6 +101,7 @@ def ReconnectInstance(ssh_private_key_path, instance, reconnect_report):
                               e.g. ~/.ssh/acloud_rsa
         instance: list.Instance() object.
         reconnect_report: Report object.
+        extra_args_ssh_tunnel: String, extra args for ssh tunnel connection.
 
     Raises:
         errors.UnknownAvdType: Unable to reconnect to instance of unknown avd
@@ -119,11 +123,12 @@ def ReconnectInstance(ssh_private_key_path, instance, reconnect_report):
     elif not instance.ssh_tunnel_is_connected and not instance.islocal:
         adb_cmd.DisconnectAdb()
         forwarded_ports = utils.AutoConnect(
-            instance.ip,
-            ssh_private_key_path,
-            utils.AVD_PORT_DICT[instance.avd_type].vnc_port,
-            utils.AVD_PORT_DICT[instance.avd_type].adb_port,
-            getpass.getuser())
+            ip_addr=instance.ip,
+            rsa_key_file=ssh_private_key_path,
+            target_vnc_port=utils.AVD_PORT_DICT[instance.avd_type].vnc_port,
+            target_adb_port=utils.AVD_PORT_DICT[instance.avd_type].adb_port,
+            ssh_user=getpass.getuser(),
+            extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         vnc_port = forwarded_ports.vnc_port
         adb_port = forwarded_ports.adb_port
 
@@ -172,6 +177,9 @@ def Run(args):
             continue
         if not instance.islocal:
             AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
-        ReconnectInstance(cfg.ssh_private_key_path, instance, reconnect_report)
+        ReconnectInstance(cfg.ssh_private_key_path,
+                          instance,
+                          reconnect_report,
+                          cfg.extra_args_ssh_tunnel)
 
     utils.PrintDeviceSummary(reconnect_report)
