@@ -42,7 +42,7 @@ class GceRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Returns:
             A Report instance.
         """
-        report = device_driver.CreateAndroidVirtualDevices(
+        report = device_driver.CreateGCETypeAVD(
             avd_spec.cfg,
             avd_spec.remote_image[constants.BUILD_TARGET],
             avd_spec.remote_image[constants.BUILD_ID],
