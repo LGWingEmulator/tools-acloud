@@ -74,8 +74,8 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
             return_value=self.compute_client)
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
 
-    def testCreateAndroidVirtualDevices(self):
-        """Test CreateAndroidVirtualDevices."""
+    def testCreateGCETypeAVD(self):
+        """Test CreateGCETypeAVD."""
         cfg = _CreateCfg()
         fake_gs_url = "fake_gs_url"
         fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
@@ -98,7 +98,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         self.compute_client.GetDataDiskName.return_value = disk_name
 
         # Verify
-        report = device_driver.CreateAndroidVirtualDevices(
+        report = device_driver.CreateGCETypeAVD(
             cfg, fake_build_target, fake_build_id)
         self.build_client.CopyTo.assert_called_with(
             fake_build_target, fake_build_id, artifact_name=cfg.disk_image_name,
@@ -130,8 +130,8 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(report.status, "SUCCESS")
 
     # pylint: disable=invalid-name
-    def testCreateAndroidVirtualDevicesInternalIP(self):
-        """Test CreateAndroidVirtualDevices with internal IP."""
+    def testCreateGCETypeAVDInternalIP(self):
+        """Test CreateGCETypeAVD with internal IP."""
         cfg = _CreateCfg()
         fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
         fake_instance = "fake-instance"
@@ -141,7 +141,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         self.compute_client.GetInstanceIP.return_value = fake_ip
         self.compute_client.GenerateInstanceName.return_value = fake_instance
 
-        report = device_driver.CreateAndroidVirtualDevices(
+        report = device_driver.CreateGCETypeAVD(
             cfg, fake_build_target, fake_build_id, report_internal_ip=True)
 
         self.assertEquals(
