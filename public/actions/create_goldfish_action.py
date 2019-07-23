@@ -31,6 +31,7 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import goldfish_compute_client
 from acloud.internal.lib import utils
 
+
 logger = logging.getLogger(__name__)
 
 _EMULATOR_INFO_FILENAME = "emulator-info.txt"

@@ -22,6 +22,7 @@ import subprocess
 
 from acloud import errors
 
+
 logger = logging.getLogger(__name__)
 
 PKG_INSTALL_CMD = "sudo apt-get --assume-yes install %s"
