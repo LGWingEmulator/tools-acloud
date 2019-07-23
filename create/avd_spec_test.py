@@ -35,6 +35,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         """Initialize new avd_spec.AVDSpec."""
         super(AvdSpecTest, self).setUp()
         self.args = mock.MagicMock()
+        self.args.flavor = ""
         self.args.local_image = ""
         self.args.config_file = ""
         self.args.build_target = "fake_build_target"
