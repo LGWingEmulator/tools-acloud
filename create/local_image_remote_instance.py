@@ -40,9 +40,11 @@ logger = logging.getLogger(__name__)
 
 _CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 _CVD_USER = getpass.getuser()
-_CMD_LAUNCH_CVD_ARGS = (" -cpus %s -x_res %s -y_res %s -dpi %s "
-                        "-memory_mb %s -blank_data_image_mb %s "
-                        "-data_policy always_create ")
+_CMD_LAUNCH_CVD_ARGS = ("-cpus %s -x_res %s -y_res %s -dpi %s "
+                        "-memory_mb %s ")
+_CMD_LAUNCH_CVD_DISK_ARGS = ("-blank_data_image_mb %s "
+                             "-data_policy always_create ")
+
 #Output to Serial port 1 (console) group in the instance
 _OUTPUT_CONSOLE_GROUPS = "tty"
 SSH_BIN = "ssh"
@@ -236,8 +238,10 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             hw_property["x_res"],
             hw_property["y_res"],
             hw_property["dpi"],
-            hw_property["memory"],
-            hw_property["disk"])
+            hw_property["memory"])
+        if constants.HW_ALIAS_DISK in hw_property:
+            launch_cvd_args = (launch_cvd_args + _CMD_LAUNCH_CVD_DISK_ARGS %
+                               hw_property[constants.HW_ALIAS_DISK])
         remote_cmd = ("\"sudo su -c 'bin/launch_cvd %s>&/dev/ttyS0&' - '%s'\"" %
                       (launch_cvd_args, cvd_user))
         logger.debug("remote_cmd:\n %s", remote_cmd)
