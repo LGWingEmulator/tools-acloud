@@ -153,8 +153,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
             metadata["cvd_01_y_res"] = avd_spec.hw_property[constants.HW_Y_RES]
             metadata["cvd_01_dpi"] = avd_spec.hw_property[constants.HW_ALIAS_DPI]
-            metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[
-                constants.HW_ALIAS_DISK]
+            if constants.HW_ALIAS_DISK in avd_spec.hw_property:
+                metadata["cvd_01_blank_data_disk_size"] = avd_spec.hw_property[
+                    constants.HW_ALIAS_DISK]
             # Use another METADATA_DISPLAY to record resolution which will be
             # retrieved in acloud list cmd. We try not to use cvd_01_x_res
             # since cvd_01_xxx metadata is going to deprecated by cuttlefish.
