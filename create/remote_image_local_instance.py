@@ -31,6 +31,9 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import utils
 from acloud.setup import setup_common
 
+
+logger = logging.getLogger(__name__)
+
 # Download remote image variables.
 _CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 _CUTTLEFISH_COMMON_BIN_PATH = "/usr/lib/cuttlefish-common/bin/"
@@ -45,8 +48,6 @@ _CONFIRM_DOWNLOAD_DIR = ("Download dir %(download_dir)s does not have enough "
 # Let's add an extra buffer (~2G) to make sure user has enough disk space
 # for the downloaded image artifacts.
 _REQUIRED_SPACE = 10
-
-logger = logging.getLogger(__name__)
 
 
 class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstance):

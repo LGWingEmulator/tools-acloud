@@ -45,6 +45,9 @@ from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 
+
+logger = logging.getLogger(__name__)
+
 _METADATA_TO_UNSET = ["cvd_01_launch",
                       "cvd_01_fetch_android_build_target",
                       "cvd_01_fetch_android_bid",
@@ -52,8 +55,6 @@ _METADATA_TO_UNSET = ["cvd_01_launch",
                       "cvd_01_fetch_system_build_target",
                       "cvd_01_fetch_kernel_bid",
                       "cvd_01_fetch_kernel_build_target"]
-
-logger = logging.getLogger(__name__)
 
 
 class CvdComputeClient(android_compute_client.AndroidComputeClient):

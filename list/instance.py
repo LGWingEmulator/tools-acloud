@@ -39,6 +39,7 @@ from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 
+
 logger = logging.getLogger(__name__)
 
 _MSG_UNABLE_TO_CALCULATE = "Unable to calculate"

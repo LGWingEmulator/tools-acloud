@@ -26,7 +26,9 @@ from acloud.internal.lib import utils
 from acloud.public.actions import base_device_factory
 from acloud.public.actions import common_operations
 
+
 logger = logging.getLogger(__name__)
+
 
 class CheepsRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
     """Create class for a Cheeps remote image remote instance AVD."""

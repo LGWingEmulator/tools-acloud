@@ -102,6 +102,7 @@ from acloud.public.actions import create_goldfish_action
 from acloud.setup import setup
 from acloud.setup import setup_args
 
+
 LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 ACLOUD_LOGGER = "acloud"
 

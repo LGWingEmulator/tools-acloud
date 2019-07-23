@@ -35,6 +35,7 @@ from acloud.internal.lib import utils
 from acloud.public.actions import base_device_factory
 from acloud.public.actions import common_operations
 
+
 logger = logging.getLogger(__name__)
 
 _CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
@@ -52,16 +53,20 @@ _SSH_CMD_MAX_RETRY = 2
 _SSH_CMD_RETRY_SLEEP = 3
 _USER_BUILD = "userbuild"
 
+
 class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
     """A class that can produce a cuttlefish device.
 
     Attributes:
         avd_spec: AVDSpec object that tells us what we're going to create.
         cfg: An AcloudConfig instance.
-        image_path: A string, upload image artifact to instance.
-        cvd_host_package: A string, upload host package artifact to instance.
+        local_image_artifact: A string, path to local image.
+        cvd_host_package_artifact: A string, path to cvd host package.
+        report_internal_ip: Boolean, True for the internal ip is used when
+                            connecting from another GCE instance.
         credentials: An oauth2client.OAuth2Credentials instance.
         compute_client: An object of cvd_compute_client.CvdComputeClient.
+        ssh_cmd: Sting, ssh command to connect GCE instance.
     """
     def __init__(self, avd_spec, local_image_artifact, cvd_host_package_artifact):
         """Constructs a new remote instance device factory."""
@@ -220,8 +225,13 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._ShellCmdWithRetry(self._ssh_cmd + remote_cmd)
 
     def _LaunchCvd(self, cvd_user, hw_property):
-        """Launch CVD."""
-        lunch_cvd_args = _CMD_LAUNCH_CVD_ARGS % (
+        """Launch CVD.
+
+        Args:
+            cvd_user: A string, user run the cvd in the instance.
+            hw_property: dict object of hw property.
+        """
+        launch_cvd_args = _CMD_LAUNCH_CVD_ARGS % (
             hw_property["cpu"],
             hw_property["x_res"],
             hw_property["y_res"],
@@ -229,7 +239,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             hw_property["memory"],
             hw_property["disk"])
         remote_cmd = ("\"sudo su -c 'bin/launch_cvd %s>&/dev/ttyS0&' - '%s'\"" %
-                      (lunch_cvd_args, cvd_user))
+                      (launch_cvd_args, cvd_user))
         logger.debug("remote_cmd:\n %s", remote_cmd)
         subprocess.Popen(self._ssh_cmd + remote_cmd, shell=True)
 
@@ -238,7 +248,6 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
     """Create class for a local image remote instance AVD.
 
     Attributes:
-        local_image_artifact: A string, path to local image.
         cvd_host_package_artifact: A string, path to cvd host package.
     """
 
@@ -294,6 +303,9 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
             no_prompts: Boolean, True to skip all prompts.
+
+        Returns:
+            A Report instance.
         """
         self.cvd_host_package_artifact = self.VerifyHostPackageArtifactsExist()
         device_factory = RemoteInstanceDeviceFactory(

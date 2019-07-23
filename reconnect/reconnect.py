@@ -35,6 +35,7 @@ from acloud.list import list as list_instance
 from acloud.public import config
 from acloud.public import report
 
+
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
 
