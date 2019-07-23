@@ -243,6 +243,7 @@ class AVDSpec(object):
         Args:
             args: Namespace object from argparse.parse_args.
         """
+        self._cfg.OverrideHwPropertyWithFlavor(self._flavor)
         self._hw_property = {}
         self._hw_property = self._ParseHWPropertyStr(self._cfg.hw_property)
         logger.debug("Default hw property for [%s] flavor: %s", self._flavor,
@@ -396,7 +397,6 @@ class AVDSpec(object):
 
         if flavor_from_build_string and not flavor_arg:
             self._flavor = flavor_from_build_string
-            self._cfg.OverrideHwPropertyWithFlavor(flavor_from_build_string)
 
     def _ProcessRemoteBuildArgs(self, args):
         """Get the remote build args.
