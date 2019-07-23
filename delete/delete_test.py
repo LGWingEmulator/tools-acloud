@@ -21,6 +21,7 @@ from acloud.delete import delete
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 
+
 # pylint: disable=invalid-name,protected-access,unused-argument,no-member
 class DeleteTest(driver_test_lib.BaseDriverTest):
     """Test delete functions."""

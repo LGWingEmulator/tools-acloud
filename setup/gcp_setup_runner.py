@@ -27,6 +27,9 @@ from acloud.public import config
 from acloud.setup import base_task_runner
 from acloud.setup import google_sdk
 
+
+logger = logging.getLogger(__name__)
+
 # APIs that need to be enabled for GCP project.
 _ANDROID_BUILD_SERVICE = "androidbuildinternal.googleapis.com"
 _COMPUTE_ENGINE_SERVICE = "compute.googleapis.com"
@@ -54,8 +57,6 @@ _BUCKET_RE = re.compile(r"^gs://(?P<bucket>.+)/")
 _BUCKET_REGION_RE = re.compile(r"^Location constraint:(?P<region>.+)")
 _PROJECT_RE = re.compile(r"^project = (?P<project>.+)")
 _ZONE_RE = re.compile(r"^zone = (?P<zone>.+)")
-
-logger = logging.getLogger(__name__)
 
 
 def UpdateConfigFile(config_path, item, value):

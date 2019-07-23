@@ -30,11 +30,13 @@ from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 
+
 GS_IMAGE_SOURCE_URI = "https://storage.googleapis.com/fake-bucket/fake.tar.gz"
 GS_IMAGE_SOURCE_DISK = (
     "https://www.googleapis.com/compute/v1/projects/fake-project/zones/"
     "us-east1-d/disks/fake-disk")
 PROJECT = "fake-project"
+
 
 # pylint: disable=protected-access, too-many-public-methods
 class ComputeClientTest(driver_test_lib.BaseDriverTest):
@@ -583,9 +585,12 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(gcompute_client.ComputeClient, "GetSubnetworkUrl")
     @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
-    def testCreateInstanceWithTags(self, mock_wait, mock_get_mach_type,
-                           mock_get_subnetwork_url, mock_get_network_url,
-                           mock_get_image):
+    def testCreateInstanceWithTags(self,
+                                   mock_wait,
+                                   mock_get_mach_type,
+                                   mock_get_subnetwork_url,
+                                   mock_get_network_url,
+                                   mock_get_image):
         """Test CreateInstance."""
         mock_get_mach_type.return_value = {"selfLink": self.MACHINE_TYPE_URL}
         mock_get_network_url.return_value = self.NETWORK_URL
