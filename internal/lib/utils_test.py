@@ -31,11 +31,13 @@ from acloud import errors
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 
+
 # Tkinter may not be supported so mock it out.
 try:
     import Tkinter
 except ImportError:
     Tkinter = mock.Mock()
+
 
 class FakeTkinter(object):
     """Fake implementation of Tkinter.Tk()"""

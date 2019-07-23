@@ -43,6 +43,7 @@ from acloud.setup import setup
 from acloud.setup import gcp_setup_runner
 from acloud.setup import host_setup_runner
 
+
 _MAKE_CMD = "build/soong/soong_ui.bash"
 _MAKE_ARG = "--make-mode"
 

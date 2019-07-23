@@ -32,6 +32,7 @@ from acloud.public import report
 from acloud.internal import constants
 from acloud.internal.lib import utils
 
+
 logger = logging.getLogger(__name__)
 
 

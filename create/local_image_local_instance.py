@@ -32,6 +32,7 @@ from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.public import report
 
+
 logger = logging.getLogger(__name__)
 
 _CMD_LAUNCH_CVD_ARGS = (" --daemon --cpus %s --x_res %s --y_res %s --dpi %s "
@@ -47,6 +48,7 @@ _LAUNCH_CVD_TIMEOUT_SECS = 60  # setup timeout as 60 seconds
 _LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
                              "within %d secs." % _LAUNCH_CVD_TIMEOUT_SECS)
 
+
 class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
     """Create class for a local image local instance AVD."""
 
@@ -58,6 +60,12 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
             no_prompts: Boolean, True to skip all prompts.
+
+        Raises:
+            errors.LaunchCVDFail: Launch AVD failed.
+
+        Returns:
+            A Report instance.
         """
         # Running instances on local is not supported on all OS.
         if not utils.IsSupportedPlatform(print_warning=True):

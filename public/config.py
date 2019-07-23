@@ -55,11 +55,12 @@ from acloud.internal.proto import internal_config_pb2
 from acloud.internal.proto import user_config_pb2
 from acloud.create import create_args
 
+
+logger = logging.getLogger(__name__)
+
 _CONFIG_DATA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data")
 _DEFAULT_CONFIG_FILE = "acloud.config"
-
-logger = logging.getLogger(__name__)
 
 
 def GetDefaultConfigFile():

@@ -40,6 +40,7 @@ import zipfile
 from acloud import errors
 from acloud.internal import constants
 
+
 logger = logging.getLogger(__name__)
 
 SSH_KEYGEN_CMD = ["ssh-keygen", "-t", "rsa", "-b", "4096"]

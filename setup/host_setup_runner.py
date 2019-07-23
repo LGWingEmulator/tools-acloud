@@ -29,6 +29,7 @@ from acloud.internal.lib import utils
 from acloud.setup import base_task_runner
 from acloud.setup import setup_common
 
+
 logger = logging.getLogger(__name__)
 
 # Install cuttlefish-common will probably not work now.

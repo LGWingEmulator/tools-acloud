@@ -35,6 +35,9 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import utils
 from acloud.public import config
 
+
+logger = logging.getLogger(__name__)
+
 # Default values for build target.
 _BRANCH_RE = re.compile(r"^Manifest branch: (?P<branch>.+)")
 _BUILD_TARGET = "build_target"
@@ -71,8 +74,6 @@ _DEFAULT_BRANCH = "aosp-master"
 # the branch, avd type and device flavor:
 # aosp, cf and phone -> aosp_cf_x86_phone.
 _BRANCH_TARGET_PREFIX = {"aosp": "aosp_"}
-
-logger = logging.getLogger(__name__)
 
 
 def EscapeAnsi(line):
