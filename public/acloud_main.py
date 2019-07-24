@@ -319,9 +319,9 @@ def _VerifyArgs(parsed_args):
     if parsed_args.which == create_args.CMD_CREATE:
         create_args.VerifyArgs(parsed_args)
     if parsed_args.which == CMD_CREATE_CUTTLEFISH:
-        if not parsed_args.build_id or not parsed_args.build_target:
+        if not parsed_args.build_id and not parsed_args.branch:
             raise errors.CommandArgError(
-                "Must specify --build_id and --build_target")
+                "Must specify --build_id or --branch")
     if parsed_args.which == CMD_CREATE_GOLDFISH:
         if not parsed_args.emulator_build_id and not parsed_args.build_id and (
                 not parsed_args.emulator_branch and not parsed_args.branch):
