@@ -26,9 +26,14 @@ from acloud.internal.lib import utils
 class LocalImageLocalInstanceTest(unittest.TestCase):
     """Test LocalImageLocalInstance method."""
 
-    LAUNCH_CVD_CMD = """sg group1 <<EOF
+    LAUNCH_CVD_CMD_WITH_DISK = """sg group1 <<EOF
 sg group2
-launch_cvd --daemon --cpus fake --x_res fake --y_res fake --dpi fake --memory_mb fake --blank_data_image_mb fake --data_policy always_create --system_image_dir fake_image_dir --vnc_server_port 6444
+launch_cvd --daemon --cpus fake --x_res fake --y_res fake --dpi fake --memory_mb fake --system_image_dir fake_image_dir --vnc_server_port 6444 --blank_data_image_mb fake --data_policy always_create
+EOF"""
+
+    LAUNCH_CVD_CMD_NO_DISK = """sg group1 <<EOF
+sg group2
+launch_cvd --daemon --cpus fake --x_res fake --y_res fake --dpi fake --memory_mb fake --system_image_dir fake_image_dir --vnc_server_port 6444
 EOF"""
 
     def setUp(self):
@@ -46,9 +51,14 @@ EOF"""
 
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
             constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir")
+        self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_WITH_DISK)
 
-        self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD)
-
+        # "disk" doesn't exist in hw_property.
+        hw_property = {"cpu": "fake", "x_res": "fake", "y_res": "fake",
+                       "dpi":"fake", "memory": "fake"}
+        launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
+            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir")
+        self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_NO_DISK)
 
 if __name__ == "__main__":
     unittest.main()
