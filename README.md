@@ -58,20 +58,21 @@ a locally built image or an image from the Android Build servers.
 Here's a quick cheat-sheet for the 4 use cases:
 
 * Remote instance using an Android Build image (LKGB (Last Known Good Build)
-for cuttlefish phone target in the branch of your repo)
+for cuttlefish phone target in the branch of your repo, default aosp master
+if we can't determine it)
 
 > $ acloud create
 
-* Remote instance using a locally built image (use `m dist` to build the image)
+* Remote instance using a locally built image (use `m` to build the image)
 
-> $ acloud create --local-image [local-image-path]
+> $ acloud create --local-image [optional local-image-path]
 
 * Local instance using an Android Build image (LKGB for cuttlefish phone
 target in the branch of your repo)
 
 > $ acloud create --local-instance
 
-* Local instance using a locally built image (use `m dist` to build the image)
+* Local instance using a locally built image (use `m` to build the image)
 
 > $ acloud create --local-instance --local-image
 
