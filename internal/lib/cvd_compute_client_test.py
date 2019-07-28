@@ -182,6 +182,32 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             labels=expected_labels,
             extra_scopes=self.EXTRA_SCOPES)
 
+    # pylint: disable=protected-access
+    def testGetLaunchCvdArgs(self):
+        """Test GetLaunchCvdArgs"""
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.hw_property = {}
+        fake_avd_spec.hw_property[constants.HW_ALIAS_CPUS] = "2"
+        fake_avd_spec.hw_property[constants.HW_ALIAS_MEMORY] = "4096"
+
+        # Test get launch_args exist from config
+        self.assertEqual(self.cvd_compute_client._GetLaunchCvdArgs(fake_avd_spec),
+                         self.LAUNCH_ARGS)
+
+        # Test get launch_args from cpu and memory
+        expected_args = "-cpus=2 -memory_mb=4096"
+        self.cvd_compute_client._launch_args = None
+        self.assertEqual(self.cvd_compute_client._GetLaunchCvdArgs(fake_avd_spec),
+                         expected_args)
+
+        # Test to set launch_args as "1" for no customized args
+        expected_args = "1"
+        fake_avd_spec.hw_property = {}
+        self.assertEqual(self.cvd_compute_client._GetLaunchCvdArgs(fake_avd_spec),
+                         expected_args)
+
+        self.cvd_compute_client._launch_args = self.LAUNCH_ARGS
+
 
 if __name__ == "__main__":
     unittest.main()
