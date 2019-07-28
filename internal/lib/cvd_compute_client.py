@@ -125,8 +125,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if system_branch and system_build_id:
             metadata["cvd_01_fetch_system_bid"] = "{branch}/{build_id}".format(
                 branch=system_branch, build_id=system_build_id)
-        metadata["cvd_01_launch"] = (self._launch_args
-                                     if self._launch_args else "1")
+        metadata["cvd_01_launch"] = self._GetLaunchCvdArgs(avd_spec)
 
         # For the local image, we unset the _METADATA_TO_UNSET from
         # metadata to tell server not to launch cvd and not to fetch image
@@ -197,3 +196,34 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             zone=self._zone,
             labels=labels,
             extra_scopes=extra_scopes)
+
+    def _GetLaunchCvdArgs(self, avd_spec):
+        """Define the launch_cvd args.
+
+        Set launch_cvd args with following priority.
+        -First: Set args from config.
+        -Second: Set args from cpu and memory settings.
+        -Third: Set args as "1" to don't pass any args.
+
+        Args:
+            avd_spec: An AVDSpec instance.
+
+        Returns:
+            String of launch_cvd args.
+        """
+        if self._launch_args:
+            return self._launch_args
+
+        if avd_spec:
+            cpu_arg = ""
+            mem_arg = ""
+            if constants.HW_ALIAS_CPUS in avd_spec.hw_property:
+                cpu_arg = ("-cpus=%s" %
+                           avd_spec.hw_property[constants.HW_ALIAS_CPUS])
+            if constants.HW_ALIAS_MEMORY in avd_spec.hw_property:
+                mem_arg = ("-memory_mb=%s" %
+                           avd_spec.hw_property[constants.HW_ALIAS_MEMORY])
+            if cpu_arg or mem_arg:
+                return cpu_arg + " " + mem_arg
+
+        return "1"
