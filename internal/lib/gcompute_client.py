@@ -106,6 +106,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
     ])
     # Default settings for gce operations
     DEFAULT_INSTANCE_SCOPE = [
+        "https://www.googleapis.com/auth/androidbuild.internal",
         "https://www.googleapis.com/auth/devstorage.read_only",
         "https://www.googleapis.com/auth/logging.write"
     ]
