@@ -311,10 +311,13 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                 device_dict.update(device.build_info)
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
-                    ip, cfg.ssh_private_key_path,
-                    utils.AVD_PORT_DICT[avd_type].vnc_port,
-                    utils.AVD_PORT_DICT[avd_type].adb_port,
-                    getpass.getuser(), client_adb_port)
+                    ip_addr=ip,
+                    rsa_key_file=cfg.ssh_private_key_path,
+                    target_vnc_port=utils.AVD_PORT_DICT[avd_type].vnc_port,
+                    target_adb_port=utils.AVD_PORT_DICT[avd_type].adb_port,
+                    ssh_user=getpass.getuser(),
+                    client_adb_port=client_adb_port,
+                    extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
             if device.instance_name in failures:
