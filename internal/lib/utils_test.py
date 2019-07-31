@@ -402,7 +402,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
             self.fail("shouldn't timeout")
 
     def testAutoConnectCreateSSHTunnelFail(self):
-        """test auto connect."""
+        """Test auto connect."""
         fake_ip_addr = "1.1.1.1"
         fake_rsa_key_file = "/tmp/rsa_file"
         fake_target_vnc_port = 8888
@@ -417,6 +417,37 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                                                    fake_target_vnc_port,
                                                    target_adb_port,
                                                    ssh_user))
+
+    # pylint: disable=protected-access,no-member
+    def testExtraArgsSSHTunnel(self):
+        """Tesg extra args will be the same with expanded args."""
+        fake_ip_addr = "1.1.1.1"
+        fake_rsa_key_file = "/tmp/rsa_file"
+        fake_target_vnc_port = 8888
+        target_adb_port = 9999
+        ssh_user = "fake_user"
+        fake_port = 12345
+        self.Patch(utils, "PickFreePort", return_value=fake_port)
+        self.Patch(utils, "_ExecuteCommand")
+        self.Patch(subprocess, "check_call", return_value=True)
+        extra_args_ssh_tunnel = "-o command='shell %s %h' -o command1='ls -la'"
+        utils.AutoConnect(ip_addr=fake_ip_addr,
+                          rsa_key_file=fake_rsa_key_file,
+                          target_vnc_port=fake_target_vnc_port,
+                          target_adb_port=target_adb_port,
+                          ssh_user=ssh_user,
+                          client_adb_port=fake_port,
+                          extra_args_ssh_tunnel=extra_args_ssh_tunnel)
+        args_list = ["-i", "/tmp/rsa_file",
+                     "-o", "UserKnownHostsFile=/dev/null",
+                     "-o", "StrictHostKeyChecking=no",
+                     "-L", "12345:127.0.0.1:8888",
+                     "-L", "12345:127.0.0.1:9999",
+                     "-N", "-f", "-l", "fake_user", "1.1.1.1",
+                     "-o", "command=shell %s %h",
+                     "-o", "command1=ls -la"]
+        first_call_args = utils._ExecuteCommand.call_args_list[0][0]
+        self.assertEqual(first_call_args[1], args_list)
 
 
 if __name__ == "__main__":

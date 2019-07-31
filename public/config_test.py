@@ -44,6 +44,7 @@ orientation: "portrait"
 resolution: "1200x1200x1200x1200"
 client_id: "fake_client_id"
 client_secret: "fake_client_secret"
+extra_args_ssh_tunnel: "fake_extra_args_ssh_tunnel"
 metadata_variable {
     key: "metadata_1"
     value: "metadata_value_1"
@@ -132,6 +133,7 @@ common_hw_property_map {
         self.assertEqual(cfg.resolution, "1200x1200x1200x1200")
         self.assertEqual(cfg.client_id, "fake_client_id")
         self.assertEqual(cfg.client_secret, "fake_client_secret")
+        self.assertEqual(cfg.extra_args_ssh_tunnel, "fake_extra_args_ssh_tunnel")
         self.assertEqual(
             {key: val for key, val in cfg.metadata_variable.iteritems()},
             {"metadata_1": "metadata_value_1"})
