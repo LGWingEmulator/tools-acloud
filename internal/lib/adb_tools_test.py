@@ -23,7 +23,9 @@ from acloud.internal.lib import driver_test_lib
 class AdbToolsTest(driver_test_lib.BaseDriverTest):
     """Test adb functions."""
     DEVICE_ALIVE = ("List of devices attached\n"
-                    "127.0.0.1:48451 device")
+                    "127.0.0.1:48451 device product:aosp_cf_x86_phone "
+                    "model:Cuttlefish_x86_phone device:vsoc_x86 "
+                    "transport_id:98")
     DEVICE_OFFLINE = ("List of devices attached\n"
                       "127.0.0.1:48451 offline")
     DEVICE_NONE = ("List of devices attached")
@@ -37,10 +39,52 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(adb_cmd.GetAdbConnectionStatus(), "device")
 
         self.Patch(subprocess, "check_output", return_value=self.DEVICE_OFFLINE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
         self.assertEqual(adb_cmd.GetAdbConnectionStatus(), "offline")
 
         self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
         self.assertEqual(adb_cmd.GetAdbConnectionStatus(), None)
+
+    def testGetAdbConnectionStatusFail(self):
+        """Test adb connect status fail."""
+        fake_adb_port = None
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
+        self.assertEqual(adb_cmd.GetAdbConnectionStatus(), None)
+
+    def testGetAdbInformation(self):
+        """Test get adb information."""
+        fake_adb_port = "48451"
+        dict_device = {'product': 'aosp_cf_x86_phone',
+                       'usb': None,
+                       'adb_status': 'device',
+                       'device': 'vsoc_x86',
+                       'model': 'Cuttlefish_x86_phone',
+                       'transport_id': '98'}
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_ALIVE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
+        self.assertEqual(adb_cmd.device_information, dict_device)
+
+        dict_office = {'product': None,
+                       'usb': None,
+                       'adb_status': 'offline',
+                       'device': None,
+                       'model': None,
+                       'transport_id': None}
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_OFFLINE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
+        self.assertEqual(adb_cmd.device_information, dict_office)
+
+        dict_none = {'product': None,
+                     'usb': None,
+                     'adb_status': None,
+                     'device': None,
+                     'model': None,
+                     'transport_id': None}
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
+        self.assertEqual(adb_cmd.device_information, dict_none)
 
     # pylint: disable=no-member,protected-access
     def testConnectAdb(self):
