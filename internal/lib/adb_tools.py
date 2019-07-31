@@ -26,20 +26,39 @@ _ADB_CONNECT = "connect"
 _ADB_DEVICE = "devices"
 _ADB_DISCONNECT = "disconnect"
 _ADB_STATUS_DEVICE = "device"
+_ADB_STATUS_DEVICE_ARGS = "-l"
+_RE_ADB_DEVICE_INFO = (r"%s\s*(?P<adb_status>[\S]+)? ?"
+                       r"(usb:(?P<usb>[\S]+))? ?"
+                       r"(product:(?P<product>[\S]+))? ?"
+                       r"(model:(?P<model>[\S]+))? ?"
+                       r"(device:(?P<device>[\S]+))? ?"
+                       r"(transport_id:(?P<transport_id>[\S]+))? ?")
+_DEVICE_ATTRIBUTES = ["adb_status", "usb", "product", "model", "device", "transport_id"]
 
 
 class AdbTools(object):
     """Adb tools.
 
-    Args:
-        adb_port: String of adb port number.
+    Attributes:
+        _adb_command: String, combine adb commands then execute it.
+        _adb_port: Integer, Specified adb port to establish connection.
+        _device_serial: String, adb devices serial.
+        _device_information: Dict, will be added to adb information include usb,
+                            product model, device and transport_id
     """
     def __init__(self, adb_port=None):
+        """Initialize.
+
+        Args:
+            adb_port: String of adb port number.
+        """
         self._adb_command = ""
         self._adb_port = adb_port
         self._device_serial = ""
+        self._device_information = {}
         self._SetDeviceSerial()
         self._CheckAdb()
+        self._GetAdbInformation()
 
     def _SetDeviceSerial(self):
         """Set device serial."""
@@ -59,24 +78,7 @@ class AdbTools(object):
     def GetAdbConnectionStatus(self):
         """Get Adb connect status.
 
-        We determine adb connection in below manner:
-        1. Check if self._adb_port is null (ssh tunnel is broken).
-        2. Check adb devices command to get the connection status of the
-        adb devices. When the attached field is device, then device is returned,
-        if it is offline, then offline is returned. If no device is found,
-        the None is returned.
-
-        e.g.
-            Case 1: return device
-            List of devices attached
-            127.0.0.1:48451 device
-
-            Case 2: return offline
-            List of devices attached
-            127.0.0.1:48451 offline
-
-            Case 3: return None
-            List of devices attached
+        Check if self._adb_port is null (ssh tunnel is broken).
 
         Returns:
             String, the result of adb connection.
@@ -84,13 +86,57 @@ class AdbTools(object):
         if not self._adb_port:
             return None
 
-        adb_cmd = [self._adb_command, _ADB_DEVICE]
+        return self._device_information["adb_status"]
+
+    def _GetAdbInformation(self):
+        """Get Adb connect information.
+
+        1. Check adb devices command to get the connection information.
+
+        2. Gather information include usb, product model, device and transport_id
+        when the attached field is device.
+
+        e.g.
+            Case 1:
+            List of devices attached
+            127.0.0.1:48451 device product:aosp_cf model:Cuttlefish device:vsoc_x86 transport_id:147
+            _device_information = {"adb_status":"device",
+                                   "usb":None,
+                                   "product":"aosp_cf",
+                                   "model":"Cuttlefish",
+                                   "device":"vsoc_x86",
+                                   "transport_id":"147"}
+
+            Case 2:
+            List of devices attached
+            127.0.0.1:48451 offline
+            _device_information = {"adb_status":"offline",
+                                   "usb":None,
+                                   "product":None,
+                                   "model":None,
+                                   "device":None,
+                                   "transport_id":None}
+
+            Case 3:
+            List of devices attached
+            _device_information = {"adb_status":None,
+                                   "usb":None,
+                                   "product":None,
+                                   "model":None,
+                                   "device":None,
+                                   "transport_id":None}
+        """
+        adb_cmd = [self._adb_command, _ADB_DEVICE, _ADB_STATUS_DEVICE_ARGS]
         device_info = subprocess.check_output(adb_cmd)
+        self._device_information = {
+            attribute: None for attribute in _DEVICE_ATTRIBUTES}
+
         for device in device_info.splitlines():
-            match = re.match(r"%s\s(?P<adb_status>.+)" % self._device_serial, device)
+            match = re.match(_RE_ADB_DEVICE_INFO % self._device_serial, device)
             if match:
-                return match.group("adb_status")
-        return None
+                self._device_information = {
+                    attribute: match.group(attribute) if match.group(attribute)
+                               else None for attribute in _DEVICE_ATTRIBUTES}
 
     def IsAdbConnectionAlive(self):
         """Check devices connect alive.
@@ -142,3 +188,8 @@ class AdbTools(object):
             utils.PrintColorString("Failed to adb connect %s" %
                                    self._device_serial,
                                    utils.TextColors.FAIL)
+
+    @property
+    def device_information(self):
+        """Return the device information."""
+        return self._device_information
