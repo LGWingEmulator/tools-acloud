@@ -25,6 +25,7 @@ import grp
 import logging
 import os
 import platform
+import shlex
 import shutil
 import signal
 import struct
@@ -830,7 +831,7 @@ def _ExecuteCommand(cmd, args):
 
 # pylint: disable=too-many-locals
 def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
-                ssh_user, client_adb_port=None):
+                ssh_user, client_adb_port=None, extra_args_ssh_tunnel=None):
     """Autoconnect to an AVD instance.
 
     Args:
@@ -842,6 +843,7 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
         target_adb_port: Integer of target adb port number.
         ssh_user: String of user login into the instance.
         client_adb_port: Integer, Specified adb port to establish connection.
+        extra_args_ssh_tunnel: String, extra args for ssh tunnel connection.
 
     Returns:
         NamedTuple of (vnc_port, adb_port) SSHTUNNEL of the connect, both are
@@ -858,10 +860,13 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
             "target_adb_port": target_adb_port,
             "ssh_user": ssh_user,
             "ip_addr": ip_addr}
-        _ExecuteCommand(constants.SSH_BIN, ssh_tunnel_args.split())
-    except subprocess.CalledProcessError:
-        PrintColorString("Failed to create ssh tunnels, retry with '#acloud "
-                         "reconnect'.", TextColors.FAIL)
+        ssh_tunnel_args_list = shlex.split(ssh_tunnel_args)
+        if extra_args_ssh_tunnel:
+            ssh_tunnel_args_list.extend(shlex.split(extra_args_ssh_tunnel))
+        _ExecuteCommand(constants.SSH_BIN, ssh_tunnel_args_list)
+    except subprocess.CalledProcessError as e:
+        PrintColorString("\n%s\nFailed to create ssh tunnels, retry with '#acloud "
+                         "reconnect'." % e, TextColors.FAIL)
         return ForwardedPorts(vnc_port=None, adb_port=None)
 
     try:

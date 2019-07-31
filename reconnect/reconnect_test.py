@@ -72,24 +72,31 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.display = ""
         utils.AutoConnect.call_count = 0
         instance_object.forwarding_vnc_port = 5555
+        extra_args_ssh_tunnel = None
         self.Patch(utils, "AutoConnect",
                    return_value=ForwardedPorts(vnc_port=11111, adb_port=22222))
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
-        utils.AutoConnect.assert_called_with(instance_object.ip,
-                                             ssh_private_key_path,
-                                             constants.CF_VNC_PORT,
-                                             constants.CF_ADB_PORT,
-                                             "fake_user")
+        utils.AutoConnect.assert_called_with(ip_addr=instance_object.ip,
+                                             rsa_key_file=ssh_private_key_path,
+                                             target_vnc_port=constants.CF_VNC_PORT,
+                                             target_adb_port=constants.CF_ADB_PORT,
+                                             ssh_user="fake_user",
+                                             extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         utils.LaunchVncClient.assert_called_with(11111)
 
         instance_object.display = "999x777 (99)"
+        extra_args_ssh_tunnel = "fake_extra_args_ssh_tunnel"
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
-        utils.AutoConnect.assert_called_with(instance_object.ip,
-                                             ssh_private_key_path,
-                                             constants.CF_VNC_PORT,
-                                             constants.CF_ADB_PORT,
-                                             "fake_user")
+        reconnect.ReconnectInstance(ssh_private_key_path,
+                                    instance_object,
+                                    fake_report,
+                                    extra_args_ssh_tunnel)
+        utils.AutoConnect.assert_called_with(ip_addr=instance_object.ip,
+                                             rsa_key_file=ssh_private_key_path,
+                                             target_vnc_port=constants.CF_VNC_PORT,
+                                             target_adb_port=constants.CF_ADB_PORT,
+                                             ssh_user="fake_user",
+                                             extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         utils.LaunchVncClient.assert_called_with(11111, "999", "777")
 
         #test reconnect local instance.
@@ -98,7 +105,9 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.forwarding_vnc_port = 5555
         instance_object.ssh_tunnel_is_connected = False
         utils.AutoConnect.call_count = 0
-        reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
+        reconnect.ReconnectInstance(ssh_private_key_path,
+                                    instance_object,
+                                    fake_report)
         utils.AutoConnect.assert_not_called()
         utils.LaunchVncClient.assert_called_with(5555)
 
@@ -115,24 +124,25 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         self.Patch(getpass, "getuser", return_value="fake_user")
         self.Patch(utils, "AutoConnect")
         self.Patch(reconnect, "StartVnc")
-
         #test reconnect remote instance when avd_type as gce.
         instance_object.avd_type = "gce"
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
-        utils.AutoConnect.assert_called_with(instance_object.ip,
-                                             ssh_private_key_path,
-                                             constants.GCE_VNC_PORT,
-                                             constants.GCE_ADB_PORT,
-                                             "fake_user")
+        utils.AutoConnect.assert_called_with(ip_addr=instance_object.ip,
+                                             rsa_key_file=ssh_private_key_path,
+                                             target_vnc_port=constants.GCE_VNC_PORT,
+                                             target_adb_port=constants.GCE_ADB_PORT,
+                                             ssh_user="fake_user",
+                                             extra_args_ssh_tunnel=None)
 
         #test reconnect remote instance when avd_type as cuttlefish.
         instance_object.avd_type = "cuttlefish"
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
-        utils.AutoConnect.assert_called_with(instance_object.ip,
-                                             ssh_private_key_path,
-                                             constants.CF_VNC_PORT,
-                                             constants.CF_ADB_PORT,
-                                             "fake_user")
+        utils.AutoConnect.assert_called_with(ip_addr=instance_object.ip,
+                                             rsa_key_file=ssh_private_key_path,
+                                             target_vnc_port=constants.CF_VNC_PORT,
+                                             target_adb_port=constants.CF_ADB_PORT,
+                                             ssh_user="fake_user",
+                                             extra_args_ssh_tunnel=None)
 
 
     def testReconnectInstanceUnknownAvdType(self):
