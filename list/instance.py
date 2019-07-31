@@ -105,6 +105,7 @@ class Instance(object):
         self._avd_type = None
         self._avd_flavor = None
         self._is_local = None  # True if this is a local instance
+        self._device_information = None
 
     def __repr__(self):
         """Return full name property for print."""
@@ -126,6 +127,14 @@ class Instance(object):
         if self._adb_port:
             representation.append("%s adb serial: 127.0.0.1:%s" %
                                   (indent, self._adb_port))
+            representation.append("%s product: %s" % (
+                indent, self._device_information["product"]))
+            representation.append("%s model: %s" % (
+                indent, self._device_information["model"]))
+            representation.append("%s device: %s" % (
+                indent, self._device_information["device"]))
+            representation.append("%s transport_id: %s" % (
+                indent, self._device_information["transport_id"]))
         else:
             representation.append("%s adb serial: disconnected" % indent)
 
@@ -233,6 +242,10 @@ class LocalInstance(Instance):
                 local_instance._display = ("%sx%s (%s)" % (x_res, y_res, dpi))
                 local_instance._is_local = True
                 local_instance._ssh_tunnel_is_connected = True
+
+                adb_device = AdbTools(constants.CF_ADB_PORT)
+                if adb_device.IsAdbConnected():
+                    local_instance._device_information = adb_device.device_information
                 return local_instance
         return None
 
@@ -303,6 +316,7 @@ class RemoteInstance(Instance):
 
             adb_device = AdbTools(self._adb_port)
             if adb_device.IsAdbConnected():
+                self._device_information = adb_device.device_information
                 self._fullname = (_FULL_NAME_STRING %
                                   {"device_serial": "127.0.0.1:%d" % self._adb_port,
                                    "instance_name": self._name,
