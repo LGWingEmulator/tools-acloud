@@ -173,28 +173,6 @@ def _ParseArgs(args):
         dest="kernel_build_target",
         default="kernel",
         help="Kernel build target, specify if different from 'kernel'")
-    create_cf_parser.add_argument(
-        "--system_branch",
-        type=str,
-        dest="system_branch",
-        help="Branch to consume the system image (system.img) from, will "
-        "default to what is defined by --branch. "
-        "That feature allows to (automatically) test various combinations "
-        "of vendor.img (CF, e.g.) and system images (GSI, e.g.). ",
-        required=False)
-    create_cf_parser.add_argument(
-        "--system_build_id",
-        type=str,
-        dest="system_build_id",
-        help="System image build id, e.g. 2145099, P2804227",
-        required=False)
-    create_cf_parser.add_argument(
-        "--system_build_target",
-        type=str,
-        dest="system_build_target",
-        help="System image build target, specify if different from "
-        "--build_target",
-        required=False)
 
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
@@ -315,6 +293,9 @@ def _VerifyArgs(parsed_args):
 
     Raises:
         errors.CommandArgError: If args are invalid.
+        errors.UnsupportedCreateArgs: When a create arg is specified but
+                                      unsupported for a particular avd type.
+                                      (e.g. --system-build-id for gf)
     """
     if parsed_args.which == create_args.CMD_CREATE:
         create_args.VerifyArgs(parsed_args)
@@ -330,6 +311,12 @@ def _VerifyArgs(parsed_args):
                 "--emulator_branch or --emulator_build_id")
         if not parsed_args.build_target:
             raise errors.CommandArgError("Must specify --build_target")
+        if (parsed_args.system_branch
+                or parsed_args.system_build_id
+                or parsed_args.system_build_target):
+            raise errors.UnsupportedCreateArgs(
+                "--system-* args are not supported for AVD type: %s"
+                % constants.TYPE_GF)
 
     if parsed_args.which in [
             create_args.CMD_CREATE, CMD_CREATE_CUTTLEFISH, CMD_CREATE_GOLDFISH
