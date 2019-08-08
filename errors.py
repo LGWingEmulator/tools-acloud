@@ -151,6 +151,10 @@ class UnsupportedMultiAdbPort(CreateError):
     """Unsupported create action for multi AVDs and specify adb port."""
 
 
+class UnsupportedCreateArgs(CreateError):
+    """Unsupported create arg for a specified AVD type."""
+
+
 class GetBuildIDError(CreateError):
     """Can't get build id from Android Build."""
 
