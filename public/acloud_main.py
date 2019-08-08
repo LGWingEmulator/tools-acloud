@@ -42,6 +42,20 @@ This a tool to create Android Virtual Devices locally/remotely.
  - Delete instances:
    $ acloud delete
 
+ - Reconnect:
+   To reconnect adb/vnc to an existing instance that's been disconnected:
+   $ acloud reconnect
+   Or to specify a specific instance:
+   $ acloud reconnect --instance-names <instance_name like ins-123-cf-x86-phone>
+
+ - List:
+   List will retrieve all the remote instances you've created in addition to any
+   local instances created as well.
+   To show device IP address, adb port and instance name:
+   $ acloud list
+   To show more detail info on the list.
+   $ acloud list -vv
+
 Try $acloud [cmd] --help for further details.
 
 """
