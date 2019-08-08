@@ -98,6 +98,28 @@ def AddCommonCreateArgs(parser):
         type=int,
         required=False,
         help="The maximum time in seconds used to wait for the AVD to boot.")
+    parser.add_argument(
+        "--system-branch",
+        type=str,
+        dest="system_branch",
+        help="'cuttlefish only' Branch to consume the system image (system.img) "
+        "from, will default to what is defined by --branch. "
+        "That feature allows to (automatically) test various combinations "
+        "of vendor.img (CF, e.g.) and system images (GSI, e.g.). ",
+        required=False)
+    parser.add_argument(
+        "--system-build-id",
+        type=str,
+        dest="system_build_id",
+        help="'cuttlefish only' System image build id, e.g. 2145099, P2804227",
+        required=False)
+    parser.add_argument(
+        "--system-build-target",
+        type=str,
+        dest="system_build_target",
+        help="'cuttlefish only' System image build target, specify if different "
+        "from --build_target",
+        required=False)
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
@@ -123,6 +145,24 @@ def AddCommonCreateArgs(parser):
         "--build_target",
         type=str,
         dest="build_target",
+        required=False,
+        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--system_branch",
+        type=str,
+        dest="system_branch",
+        required=False,
+        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--system_build_id",
+        type=str,
+        dest="system_build_id",
+        required=False,
+        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--system_build_target",
+        type=str,
+        dest="system_build_target",
         required=False,
         help=argparse.SUPPRESS)
 
@@ -279,6 +319,9 @@ def VerifyArgs(args):
         errors.CheckPathError: Zipped image path doesn't exist.
         errors.UnsupportedFlavor: Flavor doesn't support.
         errors.UnsupportedMultiAdbPort: multi adb port doesn't support.
+        errors.UnsupportedCreateArgs: When a create arg is specified but
+                                      unsupported for a particular avd type.
+                                      (e.g. --system-build-id for gf)
     """
     # Verify that user specified flavor name is in support list.
     # We don't use argparse's builtin validation because we need to be able to
@@ -287,6 +330,11 @@ def VerifyArgs(args):
         raise errors.UnsupportedFlavor(
             "Flavor[%s] isn't in support list: %s" % (args.flavor,
                                                       constants.ALL_FLAVORS))
+    if args.avd_type != constants.TYPE_CF:
+        if args.system_branch or args.system_build_id or args.system_build_target:
+            raise errors.UnsupportedCreateArgs(
+                "--system-* args are not supported for AVD type: %s"
+                % args.avd_type)
 
     if args.num > 1 and args.adb_port:
         raise errors.UnsupportedMultiAdbPort(
