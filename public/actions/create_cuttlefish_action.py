@@ -28,6 +28,7 @@ from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
+from acloud.internal.lib import cvd_compute_client_multi_stage
 
 
 logger = logging.getLogger(__name__)
@@ -56,8 +57,12 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
         self.credentials = auth.CreateCredentials(cfg)
 
-        compute_client = cvd_compute_client.CvdComputeClient(
-            cfg, self.credentials)
+        if cfg.enable_multi_stage:
+            compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
+                cfg, self.credentials)
+        else:
+            compute_client = cvd_compute_client.CvdComputeClient(
+                cfg, self.credentials)
         super(CuttlefishDeviceFactory, self).__init__(compute_client)
 
         # Private creation parameters
