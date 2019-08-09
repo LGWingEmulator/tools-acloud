@@ -120,6 +120,20 @@ def AddCommonCreateArgs(parser):
         help="'cuttlefish only' System image build target, specify if different "
         "from --build_target",
         required=False)
+    parser.add_argument(
+        "--multi-stage-launch",
+        dest="multi_stage_launch",
+        action='store_true',
+        required=False,
+        default=None,
+        help="Enable the multi-stage cuttlefish launch.")
+    parser.add_argument(
+        "--no-multi-stage-launch",
+        dest="multi_stage_launch",
+        action='store_false',
+        required=False,
+        default=None,
+        help="Disable the multi-stage cuttlefish launch.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
