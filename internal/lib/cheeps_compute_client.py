@@ -95,17 +95,6 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
                 metadata["user"] = avd_spec.username
                 metadata["password"] = avd_spec.password
 
-        # Add per-instance ssh key
-        if self._ssh_public_key_path:
-            rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
-            logger.info("ssh_public_key_path is specified in config: %s, "
-                        "will add the key to the instance.",
-                        self._ssh_public_key_path)
-            metadata["sshKeys"] = "%s:%s" % (getpass.getuser(), rsa)
-        else:
-            logger.warning("ssh_public_key_path is not specified in config, "
-                           "only project-wide key will be effective.")
-
         # Add labels for giving the instances ability to be filter for
         # acloud list/delete cmds.
         labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
