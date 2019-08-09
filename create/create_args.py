@@ -99,6 +99,48 @@ def AddCommonCreateArgs(parser):
         required=False,
         help="The maximum time in seconds used to wait for the AVD to boot.")
     parser.add_argument(
+        "--build-target",
+        type=str,
+        dest="build_target",
+        help="Android build target, e.g. aosp_cf_x86_phone-userdebug, "
+             "or short names: phone, tablet, or tablet_mobile.")
+    parser.add_argument(
+        "--branch",
+        type=str,
+        dest="branch",
+        help="Android branch, e.g. mnc-dev or git_mnc-dev")
+    parser.add_argument(
+        "--build-id",
+        type=str,
+        dest="build_id",
+        help="Android build id, e.g. 2145099, P2804227")
+    parser.add_argument(
+        "--kernel-build-id",
+        type=str,
+        dest="kernel_build_id",
+        required=False,
+        help="Android kernel build id, e.g. 4586590. This is to test a new"
+        " kernel build with a particular Android build (--build_id). If neither"
+        " kernel_branch nor kernel_build_id are specified, the kernel that's"
+        " bundled with the Android build would be used.")
+    parser.add_argument(
+        "--kernel-branch",
+        type=str,
+        dest="kernel_branch",
+        required=False,
+        help="Android kernel build branch name, e.g."
+        " kernel-common-android-4.14. This is to test a new kernel build with a"
+        " particular Android build (--build-id). If specified without"
+        " specifying kernel_build_id, the last green build in the branch will"
+        " be used. If neither kernel_branch nor kernel_build_id are specified,"
+        " the kernel that's bundled with the Android build would be used.")
+    parser.add_argument(
+        "--kernel-build-target",
+        type=str,
+        dest="kernel_build_target",
+        default="kernel",
+        help="Kernel build target, specify if different from 'kernel'")
+    parser.add_argument(
         "--system-branch",
         type=str,
         dest="system_branch",
@@ -179,6 +221,24 @@ def AddCommonCreateArgs(parser):
         dest="system_build_target",
         required=False,
         help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--kernel_build_id",
+        type=str,
+        dest="kernel_build_id",
+        required=False,
+        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--kernel_branch",
+        type=str,
+        dest="kernel_branch",
+        required=False,
+        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--kernel_build_target",
+        type=str,
+        dest="kernel_build_target",
+        default="kernel",
+        help=argparse.SUPPRESS)
 
 
 def GetCreateArgParser(subparser):
@@ -218,31 +278,6 @@ def GetCreateArgParser(subparser):
         type=str,
         dest="flavor",
         help="The device flavor of the AVD (default %s)." % constants.FLAVOR_PHONE)
-    create_parser.add_argument(
-        "--build-target",
-        type=str,
-        dest="build_target",
-        help="Android build target, e.g. aosp_cf_x86_phone-userdebug, "
-             "or short names: phone, tablet, or tablet_mobile.")
-    create_parser.add_argument(
-        "--branch",
-        type=str,
-        dest="branch",
-        help="Android branch, e.g. mnc-dev or git_mnc-dev")
-    create_parser.add_argument(
-        "--build-id",
-        type=str,
-        dest="build_id",
-        help="Android build id, e.g. 2145099, P2804227")
-    create_parser.add_argument(
-        "--kernel-build-id",
-        type=str,
-        dest="kernel_build_id",
-        required=False,
-        help=("Android kernel build id, e.g. 4586590. This is to test a new"
-              " kernel build with a particular Android build (--build_id). If"
-              "not specified, the kernel that's bundled with the Android build"
-              "would be used."))
     create_parser.add_argument(
         "--local-image",
         type=str,
