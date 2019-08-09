@@ -101,4 +101,10 @@ message UserConfig {
 
   // Provide some additional parameters to build the ssh tunnel.
   optional string extra_args_ssh_tunnel = 27;
+
+  // [CVD only] Version of fetch_cvd to use.
+  optional string fetch_cvd_version = 28;
+
+  // [CVD only] Enable multi stage function.
+  optional bool enable_multi_stage = 29;
 }

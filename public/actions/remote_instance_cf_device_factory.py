@@ -25,6 +25,7 @@ import subprocess
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
+from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import utils
 from acloud.public.actions import base_device_factory
 
@@ -70,8 +71,13 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._cvd_host_package_artifact = cvd_host_package_artifact
         self._report_internal_ip = avd_spec.report_internal_ip
         self.credentials = auth.CreateCredentials(avd_spec.cfg)
-        compute_client = cvd_compute_client.CvdComputeClient(
-            avd_spec.cfg, self.credentials)
+        # Control compute_client with enable_multi_stage
+        if self._cfg.enable_multi_stage:
+            compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
+                avd_spec.cfg, self.credentials)
+        else:
+            compute_client = cvd_compute_client.CvdComputeClient(
+                avd_spec.cfg, self.credentials)
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
         # Private creation parameters
         self._ssh_cmd = None
