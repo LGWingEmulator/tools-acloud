@@ -140,40 +140,6 @@ def _ParseArgs(args):
     create_cf_parser = subparsers.add_parser(CMD_CREATE_CUTTLEFISH)
     create_cf_parser.required = False
     create_cf_parser.set_defaults(which=CMD_CREATE_CUTTLEFISH)
-    create_cf_parser.add_argument(
-        "--branch",
-        type=str,
-        dest="branch",
-        help="Android branch, e.g. git_master")
-    create_cf_parser.add_argument(
-        "--kernel_build_id",
-        "--kernel-build-id",
-        type=str,
-        dest="kernel_build_id",
-        required=False,
-        help="Android kernel build id, e.g. 4586590. This is to test a new"
-        " kernel build with a particular Android build (--build_id). If neither"
-        " kernel_branch nor kernel_build_id are specified, the kernel that's"
-        " bundled with the Android build would be used.")
-    create_cf_parser.add_argument(
-        "--kernel_branch",
-        "--kernel-branch",
-        type=str,
-        dest="kernel_branch",
-        required=False,
-        help="Android kernel build branch name, e.g."
-        " kernel-common-android-4.14. This is to test a new kernel build with a"
-        " particular Android build (--build-id). If specified without"
-        " specifying kernel_build_id, the last green build in the branch will"
-        " be used. If neither kernel_branch nor kernel_build_id are specified,"
-        " the kernel that's bundled with the Android build would be used.")
-    create_cf_parser.add_argument(
-        "--kernel_build_target",
-        type=str,
-        dest="kernel_build_target",
-        default="kernel",
-        help="Kernel build target, specify if different from 'kernel'")
-
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
 
@@ -186,11 +152,6 @@ def _ParseArgs(args):
     create_gf_parser = subparsers.add_parser(CMD_CREATE_GOLDFISH)
     create_gf_parser.required = False
     create_gf_parser.set_defaults(which=CMD_CREATE_GOLDFISH)
-    create_gf_parser.add_argument(
-        "--branch",
-        type=str,
-        dest="branch",
-        help="Android branch, e.g. git_master")
     create_gf_parser.add_argument(
         "--emulator_build_id",
         type=str,
@@ -227,24 +188,6 @@ def _ParseArgs(args):
         required=False,
         default=None,
         help="Tags to be set on to the created instance. e.g. https-server.")
-    create_gf_parser.add_argument(
-        "--kernel_build_id",
-        type=str,
-        dest="kernel_build_id",
-        help="Android kernel build id, e.g. 4586590. This is to test a new"
-        " kernel build with a particular Android build (--build_id). If neither"
-        " kernel_branch nor kernel_build_id are specified, the kernel that's"
-        " bundled with the Android build would be used.")
-    create_gf_parser.add_argument(
-        "--kernel_branch",
-        type=str,
-        dest="kernel_branch",
-        help="Android kernel build branch name, "
-        "e.g. kernel-common-android-4.14. This is to test a new kernel build "
-        "with a particular Android build (--build_id). If specified without "
-        "specifying kernel_build_id, the last green build in the branch will "
-        "be used. If neither kernel_branch nor kernel_build_id are specified, "
-        "the kernel that's bundled with the Android build would be used.")
 
     create_args.AddCommonCreateArgs(create_gf_parser)
     subparser_list.append(create_gf_parser)
