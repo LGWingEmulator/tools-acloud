@@ -210,7 +210,6 @@ def CreateDevices(avd_spec=None,
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
         build_id = avd_spec.remote_image[constants.BUILD_ID]
-        kernel_build_id = avd_spec.kernel_build_id
         num = avd_spec.num
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
@@ -218,10 +217,12 @@ def CreateDevices(avd_spec=None,
         logcat_file = avd_spec.logcat_file
         client_adb_port = avd_spec.client_adb_port
         boot_timeout_secs = avd_spec.boot_timeout_secs
+        kernel_branch = avd_spec.kernel_build_info[constants.BUILD_BRANCH]
+        kernel_build_id = avd_spec.kernel_build_info[constants.BUILD_ID]
+        kernel_build_target = avd_spec.kernel_build_info[constants.BUILD_TARGET]
         system_branch = avd_spec.system_build_info[constants.BUILD_BRANCH]
         system_build_id = avd_spec.system_build_info[constants.BUILD_ID]
         system_build_target = avd_spec.system_build_info[constants.BUILD_TARGET]
-
     logger.info(
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "

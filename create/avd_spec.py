@@ -104,13 +104,13 @@ class AVDSpec(object):
         self._flavor = None
         self._image_source = None
         self._instance_type = None
-        self._kernel_build_id = None
         self._local_image_dir = None
         self._local_image_artifact = None
         self._image_download_dir = None
         self._num_of_instances = None
         self._remote_image = None
         self._system_build_info = None
+        self._kernel_build_info = None
         self._hw_property = None
         # Create config instance for android_build_client to query build api.
         self._cfg = config.GetAcloudConfig(args)
@@ -266,7 +266,6 @@ class AVDSpec(object):
                                if args.local_instance else
                                constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
-        self._kernel_build_id = args.kernel_build_id
         self._serial_log_file = args.serial_log_file
         self._logcat_file = args.logcat_file
         self._emulator_build_id = args.emulator_build_id
@@ -435,10 +434,13 @@ class AVDSpec(object):
                 self._remote_image[constants.BUILD_TARGET],
                 self._remote_image[constants.BUILD_BRANCH])
 
-        # Process system image
+        # Process system image and kernel image.
         self._system_build_info = {constants.BUILD_ID: args.system_build_id,
                                    constants.BUILD_BRANCH: args.system_branch,
                                    constants.BUILD_TARGET: args.system_build_target}
+        self._kernel_build_info = {constants.BUILD_ID: args.kernel_build_id,
+                                   constants.BUILD_BRANCH: args.kernel_branch,
+                                   constants.BUILD_TARGET: args.kernel_build_target}
 
     @staticmethod
     def _GetGitRemote():
@@ -576,9 +578,9 @@ class AVDSpec(object):
         return self._report_internal_ip
 
     @property
-    def kernel_build_id(self):
-        """Return kernel build id."""
-        return self._kernel_build_id
+    def kernel_build_info(self):
+        """Return kernel build info."""
+        return self._kernel_build_info
 
     @property
     def flavor(self):
