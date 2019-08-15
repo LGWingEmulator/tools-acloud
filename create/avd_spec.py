@@ -128,6 +128,9 @@ class AVDSpec(object):
         # The maximum time in seconds used to wait for the AVD to boot.
         self._boot_timeout_secs = None
 
+        # The local instance id
+        self._local_instance_id = None
+
         self._ProcessArgs(args)
 
     def __repr__(self):
@@ -149,6 +152,7 @@ class AVDSpec(object):
         if self._image_source == constants.IMAGE_SRC_LOCAL:
             image_summary = "local image dir"
             image_details = self._local_image_dir
+            representation.append(" - instance id: %s" % self._local_instance_id)
         elif self._image_source == constants.IMAGE_SRC_REMOTE:
             image_summary = "remote image details"
             image_details = self._remote_image
@@ -272,6 +276,7 @@ class AVDSpec(object):
         self._instance_type = (constants.INSTANCE_TYPE_LOCAL
                                if args.local_instance else
                                constants.INSTANCE_TYPE_REMOTE)
+        self._local_instance_id = args.local_instance
         self._num_of_instances = args.num
         self._serial_log_file = args.serial_log_file
         self._emulator_build_id = args.emulator_build_id
@@ -685,3 +690,8 @@ class AVDSpec(object):
     def system_build_info(self):
         """Return system_build_info."""
         return self._system_build_info
+
+    @property
+    def local_instance_id(self):
+        """Return local_instance_id."""
+        return self._local_instance_id

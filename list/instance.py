@@ -26,6 +26,7 @@ The details include:
 - and more!
 """
 
+import collections
 import datetime
 import logging
 import re
@@ -60,6 +61,22 @@ _RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
                             r"((.*\s*-blank_data_image_mb\s)(?P<disk>\d+))?")
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
+LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
+                                                   constants.ADB_PORT])
+
+
+def GetLocalPortsbyInsId(local_instance_id):
+    """Get vnc and adb port by local instance id.
+
+    Args:
+        local_instance_id: local_instance_id: Integer of instance id.
+
+    Returns:
+        NamedTuple of (vnc_port, adb_port) used by local instance, both are
+        integers.
+    """
+    return LocalPorts(vnc_port=constants.CF_VNC_PORT + local_instance_id - 1,
+                      adb_port=constants.CF_ADB_PORT + local_instance_id - 1)
 
 
 def _GetElapsedTime(start_time):

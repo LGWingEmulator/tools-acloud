@@ -144,8 +144,11 @@ INS_KEY_AVD_FLAVOR = "flavor"
 INS_KEY_IS_LOCAL = "remote"
 INS_STATUS_RUNNING = "RUNNING"
 LOCAL_INS_NAME = "local-instance"
+ENV_CUTTLEFISH_CONFIG_FILE = "CUTTLEFISH_CONFIG_FILE"
+CUTTLEFISH_CONFIG_FILE = "cuttlefish_config.json"
 
 TEMP_ARTIFACTS_FOLDER = "acloud_image_artifacts"
 TOOL_NAME = "acloud"
 EXIT_BY_USER = 1
 EXIT_BY_ERROR = -99
+RE_LAUNCH_CVD_PATTERN = "launch_cvd.*%(arg_name)s %(arg_value)s"
