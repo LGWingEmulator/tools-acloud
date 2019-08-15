@@ -21,7 +21,6 @@ directly.
 """
 
 from __future__ import print_function
-import getpass
 import logging
 import os
 import subprocess
@@ -315,7 +314,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                     rsa_key_file=cfg.ssh_private_key_path,
                     target_vnc_port=utils.AVD_PORT_DICT[avd_type].vnc_port,
                     target_adb_port=utils.AVD_PORT_DICT[avd_type].adb_port,
-                    ssh_user=getpass.getuser(),
+                    ssh_user=constants.GCE_USER,
                     client_adb_port=client_adb_port,
                     extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
                 device_dict[constants.VNC_PORT] = forwarded_ports.vnc_port
