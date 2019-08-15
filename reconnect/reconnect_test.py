@@ -14,7 +14,6 @@
 """Tests for reconnect."""
 
 import collections
-import getpass
 import unittest
 import subprocess
 
@@ -45,7 +44,6 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.islocal = False
         instance_object.forwarding_adb_port = "8686"
         instance_object.avd_type = "cuttlefish"
-        self.Patch(getpass, "getuser", return_value="fake_user")
         self.Patch(subprocess, "check_call", return_value=True)
         self.Patch(utils, "LaunchVncClient")
         self.Patch(utils, "AutoConnect")
@@ -80,7 +78,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
                                              rsa_key_file=ssh_private_key_path,
                                              target_vnc_port=constants.CF_VNC_PORT,
                                              target_adb_port=constants.CF_ADB_PORT,
-                                             ssh_user="fake_user",
+                                             ssh_user=constants.GCE_USER,
                                              extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         utils.LaunchVncClient.assert_called_with(11111)
 
@@ -95,7 +93,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
                                              rsa_key_file=ssh_private_key_path,
                                              target_vnc_port=constants.CF_VNC_PORT,
                                              target_adb_port=constants.CF_ADB_PORT,
-                                             ssh_user="fake_user",
+                                             ssh_user=constants.GCE_USER,
                                              extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         utils.LaunchVncClient.assert_called_with(11111, "999", "777")
 
@@ -121,7 +119,6 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.forwarding_adb_port = "9999"
         instance_object.islocal = False
         instance_object.ssh_tunnel_is_connected = False
-        self.Patch(getpass, "getuser", return_value="fake_user")
         self.Patch(utils, "AutoConnect")
         self.Patch(reconnect, "StartVnc")
         #test reconnect remote instance when avd_type as gce.
@@ -131,7 +128,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
                                              rsa_key_file=ssh_private_key_path,
                                              target_vnc_port=constants.GCE_VNC_PORT,
                                              target_adb_port=constants.GCE_ADB_PORT,
-                                             ssh_user="fake_user",
+                                             ssh_user=constants.GCE_USER,
                                              extra_args_ssh_tunnel=None)
 
         #test reconnect remote instance when avd_type as cuttlefish.
@@ -141,7 +138,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
                                              rsa_key_file=ssh_private_key_path,
                                              target_vnc_port=constants.CF_VNC_PORT,
                                              target_adb_port=constants.CF_ADB_PORT,
-                                             ssh_user="fake_user",
+                                             ssh_user=constants.GCE_USER,
                                              extra_args_ssh_tunnel=None)
 
 

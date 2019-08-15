@@ -95,6 +95,7 @@ LIST_CF_USER_GROUPS = ["kvm", "cvdnetwork"]
 
 IP = "ip"
 INSTANCE_NAME = "instance_name"
+GCE_USER = "vsoc-01"
 VNC_PORT = "vnc_port"
 ADB_PORT = "adb_port"
 # For cuttlefish remote instances

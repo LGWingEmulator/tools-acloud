@@ -16,7 +16,6 @@
 device factory."""
 
 from distutils.spawn import find_executable
-import getpass
 import glob
 import logging
 import os
@@ -32,7 +31,6 @@ from acloud.public.actions import base_device_factory
 
 logger = logging.getLogger(__name__)
 
-_CVD_USER = getpass.getuser()
 _CMD_LAUNCH_CVD_ARGS = ("-cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s ")
 _CMD_LAUNCH_CVD_DISK_ARGS = ("-blank_data_image_mb %s "
@@ -94,12 +92,12 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             A string, representing instance name.
         """
         instance = self._CreateGceInstance()
-        self._SetAVDenv(_CVD_USER)
-        self._UploadArtifacts(_CVD_USER,
+        self._SetAVDenv(constants.GCE_USER)
+        self._UploadArtifacts(constants.GCE_USER,
                               self._local_image_artifact,
                               self._cvd_host_package_artifact,
                               self._avd_spec.local_image_dir)
-        self._LaunchCvd(_CVD_USER, self._avd_spec.hw_property)
+        self._LaunchCvd(constants.GCE_USER, self._avd_spec.hw_property)
         return instance
 
     @staticmethod
@@ -156,7 +154,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             avd_spec=self._avd_spec)
         ip = self._compute_client.GetInstanceIP(instance)
         self._ssh_cmd = find_executable(SSH_BIN) + _SSH_CMD % {
-            "login_user": getpass.getuser(),
+            "login_user": constants.GCE_USER,
             "rsa_key_file": self._cfg.ssh_private_key_path,
             "ip_addr": (ip.internal if self._report_internal_ip
                         else ip.external)}
