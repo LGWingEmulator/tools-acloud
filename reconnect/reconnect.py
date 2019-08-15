@@ -21,7 +21,6 @@ Reconnect will:
 
 from __future__ import print_function
 
-import getpass
 import re
 
 from acloud import errors
@@ -127,7 +126,7 @@ def ReconnectInstance(ssh_private_key_path,
             rsa_key_file=ssh_private_key_path,
             target_vnc_port=utils.AVD_PORT_DICT[instance.avd_type].vnc_port,
             target_adb_port=utils.AVD_PORT_DICT[instance.avd_type].adb_port,
-            ssh_user=getpass.getuser(),
+            ssh_user=constants.GCE_USER,
             extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         vnc_port = forwarded_ports.vnc_port
         adb_port = forwarded_ports.adb_port
@@ -176,7 +175,7 @@ def Run(args):
                                    utils.TextColors.WARNING)
             continue
         if not instance.islocal:
-            AddPublicSshRsaToInstance(cfg, getpass.getuser(), instance.name)
+            AddPublicSshRsaToInstance(cfg, constants.GCE_USER, instance.name)
         ReconnectInstance(cfg.ssh_private_key_path,
                           instance,
                           reconnect_report,

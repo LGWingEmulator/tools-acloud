@@ -80,6 +80,28 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._ssh_public_key_path = acloud_config.ssh_public_key_path
         self._launch_args = acloud_config.launch_args
         self._instance_name_pattern = acloud_config.instance_name_pattern
+        self._AddPerInstanceSshkey()
+
+    def _AddPerInstanceSshkey(self):
+        """Add per-instance ssh key.
+
+        Assign the ssh publick key to instacne then use ssh command to
+        control remote instance via the ssh publick key. Added sshkey for two
+        users. One is vsoc01, another is current user.
+
+        """
+        if self._ssh_public_key_path:
+            rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
+            logger.info("ssh_public_key_path is specified in config: %s, "
+                        "will add the key to the instance.",
+                        self._ssh_public_key_path)
+            self._metadata["sshKeys"] = "{0}:{2}\n{1}:{2}".format(getpass.getuser(),
+                                                                  constants.GCE_USER,
+                                                                  rsa)
+        else:
+            logger.warning(
+                "ssh_public_key_path is not specified in config, "
+                "only project-wide key will be effective.")
 
     @classmethod
     def _FormalizeName(cls, name):
@@ -282,17 +304,6 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             avd_spec.hw_property[constants.HW_X_RES],
             avd_spec.hw_property[constants.HW_Y_RES],
             avd_spec.hw_property[constants.HW_ALIAS_DPI]))
-
-        # Add per-instance ssh key
-        if self._ssh_public_key_path:
-            rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
-            logger.info(
-                "ssh_public_key_path is specified in config: %s, "
-                "will add the key to the instance.", self._ssh_public_key_path)
-            metadata["sshKeys"] = "%s:%s" % (getpass.getuser(), rsa)
-        else:
-            logger.warning("ssh_public_key_path is not specified in config, "
-                           "only project-wide key will be effective.")
 
         # Add labels for giving the instances ability to be filter for
         # acloud list/delete cmds.

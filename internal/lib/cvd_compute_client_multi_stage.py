@@ -331,18 +331,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                 avd_spec.hw_property[constants.HW_Y_RES],
                 avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
-        # Add per-instance ssh key
-        if self._ssh_public_key_path:
-            rsa = self._LoadSshPublicKey(self._ssh_public_key_path)
-            logger.info("ssh_public_key_path is specified in config: %s, "
-                        "will add the key to the instance.",
-                        self._ssh_public_key_path)
-            metadata["sshKeys"] = "{0}:{2}\n{1}:{2}".format(getpass.getuser(), _GCE_USER, rsa)
-        else:
-            logger.warning(
-                "ssh_public_key_path is not specified in config, "
-                "only project-wide key will be effective.")
-
         labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
         disk_args = self._GetDiskArgs(
             instance, image_name, image_project, boot_disk_size_gb)
