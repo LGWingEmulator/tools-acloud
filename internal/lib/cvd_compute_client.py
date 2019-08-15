@@ -168,10 +168,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             metadata["cvd_01_x_res"] = resolution[0]
             metadata["cvd_01_y_res"] = resolution[1]
 
-        # Add labels for giving the instances ability to be filter for
-        # acloud list/delete cmds.
-        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
-
         gcompute_client.ComputeClient.CreateInstance(
             self,
             instance=instance,
@@ -182,7 +178,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
-            labels=labels,
             extra_scopes=extra_scopes)
 
     def _GetLaunchCvdArgs(self, avd_spec):
