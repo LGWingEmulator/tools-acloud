@@ -31,7 +31,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
     @mock.patch("subprocess.check_output")
     def testGetStopcvd(self, mock_subprocess, mock_path_exist):
         """Test _GetStopCvd."""
-        mock_subprocess.side_effect = ["fack_id",
+        mock_subprocess.side_effect = ["fake_id",
                                        "/tmp/bin/run_cvd"]
         expected_value = "/tmp/bin/stop_cvd"
         self.assertEqual(expected_value, delete._GetStopCvd())
@@ -41,7 +41,10 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
     def testDeleteLocalInstance(self, mock_subprocess, mock_get_stopcvd):
         """Test DeleteLocalInstance."""
         mock_subprocess.return_value = True
-        delete_report = delete.DeleteLocalInstance()
+        instance_object = mock.MagicMock()
+        instance_object.instance_dir = "fake_instance_dir"
+        instance_object.name = "local-instance"
+        delete_report = delete.DeleteLocalInstance(instance_object)
         self.assertEqual(delete_report.data, {
             "deleted": [
                 {

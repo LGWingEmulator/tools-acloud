@@ -241,3 +241,7 @@ class AdbDisconnectFailed(Exception):
 
 class UnsupportedLocalInstanceId(Exception):
     """Unsupported local instance id."""
+
+
+class InvalidInstanceDir(Exception):
+    """Invalid instance dir."""

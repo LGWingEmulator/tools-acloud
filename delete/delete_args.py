@@ -40,20 +40,14 @@ def GetDeleteArgParser(subparser):
         dest="instance_names",
         nargs="+",
         required=False,
-        help="The names of the remote instances that need to delete, "
-        "separated by spaces, e.g. --instance-names instance-1 instance-2")
+        help="The names of the instances that need to delete, "
+        "separated by spaces, e.g. --instance-names instance-1 local-instance-1")
     delete_group.add_argument(
         "--all",
         action="store_true",
         dest="all",
         required=False,
         help="If more than 1 AVD instance is found, delete them all.")
-    delete_group.add_argument(
-        "--local-instance",
-        action="store_true",
-        dest="local_instance",
-        required=False,
-        help="Only delete the local instance.")
     delete_group.add_argument(
         "--adb-port", "-p",
         type=int,
