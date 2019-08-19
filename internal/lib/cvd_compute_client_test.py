@@ -138,7 +138,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels={constants.LABEL_CREATE_BY: "fake_user"},
             extra_scopes=self.EXTRA_SCOPES)
 
         #test use local image in the remote instance.
@@ -168,7 +167,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             self.KERNEL_BUILD_TARGET, self.EXTRA_DATA_DISK_SIZE_GB,
             fake_avd_spec, extra_scopes=self.EXTRA_SCOPES)
 
-        expected_labels = {constants.LABEL_CREATE_BY: "fake_user"}
         mock_create.assert_called_with(
             self.cvd_compute_client,
             instance=self.INSTANCE,
@@ -179,7 +177,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels=expected_labels,
             extra_scopes=self.EXTRA_SCOPES)
 
     # pylint: disable=protected-access

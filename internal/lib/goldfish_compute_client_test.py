@@ -117,7 +117,6 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
         }
         expected_metadata.update(self.METADATA)
         expected_disk_args = [{"fake_arg": "fake_value"}]
-        expected_labels = {'created_by': "fake_user"}
 
         self.goldfish_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
@@ -140,7 +139,6 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             zone=self.ZONE,
             gpu=self.GPU,
             tags=self.TAGS,
-            labels=expected_labels,
             extra_scopes=self.EXTRA_SCOPES)
 
 

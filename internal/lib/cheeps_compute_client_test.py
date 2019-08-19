@@ -77,8 +77,7 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             return_value={"diskSizeGb": self.BOOT_DISK_SIZE_GB})
         self.Patch(gcompute_client.ComputeClient, "CreateInstance")
 
-    @mock.patch("getpass.getuser", return_value="fake_user")
-    def testCreateInstance(self, _mock_user):
+    def testCreateInstance(self):
         """Test CreateInstance."""
 
         expected_metadata = {
@@ -95,7 +94,6 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             'password': self.PASSWORD,
         }
         expected_metadata.update(self.METADATA)
-        expected_labels = {'created_by': "fake_user"}
 
         avd_spec = mock.MagicMock()
         avd_spec.hw_property = {constants.HW_X_RES: str(self.X_RES),
@@ -120,8 +118,7 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             metadata=expected_metadata,
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
-            zone=self.ZONE,
-            labels=expected_labels)
+            zone=self.ZONE)
 
 if __name__ == "__main__":
     unittest.main()
