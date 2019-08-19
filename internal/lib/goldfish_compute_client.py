@@ -209,10 +209,6 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             metadata["cvd_01_y_res"] = resolution[1]
             metadata["cvd_01_dpi"] = resolution[3]
 
-        # Add labels for giving the instances ability to be filter for
-        # acloud list/delete cmds.
-        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
-
         gcompute_client.ComputeClient.CreateInstance(
             self,
             instance=instance,
@@ -225,5 +221,4 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             zone=self._zone,
             gpu=gpu,
             tags=tags,
-            labels=labels,
             extra_scopes=extra_scopes)
