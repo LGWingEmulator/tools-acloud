@@ -26,6 +26,7 @@ import mock
 import apiclient.http
 
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
@@ -515,7 +516,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(gcompute_client.ComputeClient, "GetSubnetworkUrl")
     @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
-    def testCreateInstance(self, mock_wait, mock_get_mach_type,
+    @mock.patch("getpass.getuser", return_value="fake_user")
+    def testCreateInstance(self, _get_user, mock_wait, mock_get_mach_type,
                            mock_get_subnetwork_url, mock_get_network_url,
                            mock_get_image):
         """Test CreateInstance."""
@@ -560,6 +562,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                 "items": [{"key": self.METADATA[0],
                            "value": self.METADATA[1]}],
             },
+            "labels":{constants.LABEL_CREATE_BY: "fake_user"},
         }
 
         self.compute_client.CreateInstance(
@@ -585,7 +588,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(gcompute_client.ComputeClient, "GetSubnetworkUrl")
     @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
+    @mock.patch("getpass.getuser", return_value="fake_user")
     def testCreateInstanceWithTags(self,
+                                   _get_user,
                                    mock_wait,
                                    mock_get_mach_type,
                                    mock_get_subnetwork_url,
@@ -634,6 +639,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                 "items": [{"key": self.METADATA[0],
                            "value": self.METADATA[1]}],
             },
+            "labels":{'created_by': "fake_user"},
         }
 
         self.compute_client.CreateInstance(
@@ -660,7 +666,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(gcompute_client.ComputeClient, "GetSubnetworkUrl")
     @mock.patch.object(gcompute_client.ComputeClient, "GetMachineType")
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
-    def testCreateInstanceWithGpu(self, mock_wait, mock_get_mach,
+    @mock.patch("getpass.getuser", return_value="fake_user")
+    def testCreateInstanceWithGpu(self, _get_user, mock_wait, mock_get_mach,
                                   mock_get_subnetwork, mock_get_network,
                                   mock_get_image, mock_get_accel):
         """Test CreateInstance with a GPU parameter not set to None."""
@@ -706,6 +713,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                     "value": self.METADATA[1]
                 }],
             },
+            "labels":{'created_by': "fake_user"},
         }
 
         self.compute_client.CreateInstance(

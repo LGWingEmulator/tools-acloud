@@ -34,7 +34,6 @@ Android build, and start Android within the host instance.
        cheeps_compute_client.CheepsComputeClient
 """
 
-import getpass
 import logging
 
 from acloud import errors
@@ -95,10 +94,6 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
                 metadata["user"] = avd_spec.username
                 metadata["password"] = avd_spec.password
 
-        # Add labels for giving the instances ability to be filter for
-        # acloud list/delete cmds.
-        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
-
         gcompute_client.ComputeClient.CreateInstance(
             self,
             instance=instance,
@@ -108,5 +103,4 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
             metadata=metadata,
             machine_type=self._machine_type,
             network=self._network,
-            zone=self._zone,
-            labels=labels)
+            zone=self._zone)
