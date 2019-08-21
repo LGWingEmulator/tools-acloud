@@ -22,6 +22,7 @@ import subprocess
 import unittest
 import mock
 
+from acloud import errors
 from acloud.create import avd_spec
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
@@ -87,6 +88,17 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client_multi_stage = cvd_compute_client_multi_stage.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 
+    # pylint: disable=protected-access
+    def testSSHExecuteWithRetry(self):
+        """test SSHExecuteWithRetry method."""
+        compute_client = cvd_compute_client_multi_stage.CvdComputeClient
+        self.Patch(subprocess, "check_call",
+                   side_effect=errors.DeviceConnectionError(
+                       None, "ssh command fail."))
+        self.assertRaises(subprocess.CalledProcessError,
+                          compute_client.ShellCmdWithRetry,
+                          "fake cmd")
+
     def testProcessBuild(self):
         """Test creating "cuttlefish build" strings."""
         self.assertEqual(_ProcessBuild(build_id="123", branch="abc", build_target="def"), "123/def")
@@ -107,7 +119,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(cvd_compute_client_multi_stage.CvdComputeClient, "_GetDiskArgs",
                        return_value=[{"fake_arg": "fake_value"}])
     @mock.patch("getpass.getuser", return_value="fake_user")
-    @mock.patch.object(cvd_compute_client_multi_stage.CvdComputeClient, "_SshCommand")
+    @mock.patch.object(cvd_compute_client_multi_stage.CvdComputeClient, "SshCommand")
     def testCreateInstance(self, _mock_ssh, _get_user, _get_disk_args, mock_create,
                            _get_image, _compare_machine_size, mock_check_img,
                            _mock_env):
