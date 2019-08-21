@@ -35,7 +35,6 @@ Android build, and start Android within the host instance.
 
 """
 
-import getpass
 import logging
 import os
 import stat
@@ -351,7 +350,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                 avd_spec.hw_property[constants.HW_Y_RES],
                 avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
-        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
         disk_args = self._GetDiskArgs(
             instance, image_name, image_project, boot_disk_size_gb)
         gcompute_client.ComputeClient.CreateInstance(
@@ -364,7 +362,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
-            labels=labels,
             extra_scopes=extra_scopes)
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=instance, zone=self._zone)

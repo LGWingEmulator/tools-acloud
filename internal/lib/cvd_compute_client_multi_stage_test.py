@@ -164,7 +164,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels={constants.LABEL_CREATE_BY: "fake_user"},
             extra_scopes=self.EXTRA_SCOPES)
 
         mock_check_img.return_value = True
@@ -187,7 +186,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             self.KERNEL_BUILD_TARGET, self.EXTRA_DATA_DISK_SIZE_GB,
             fake_avd_spec, extra_scopes=self.EXTRA_SCOPES)
 
-        expected_labels = {constants.LABEL_CREATE_BY: "fake_user"}
         mock_create.assert_called_with(
             self.cvd_compute_client_multi_stage,
             instance=self.INSTANCE,
@@ -198,7 +196,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            labels=expected_labels,
             extra_scopes=self.EXTRA_SCOPES)
 
 
