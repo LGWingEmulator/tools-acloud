@@ -164,7 +164,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         """
         if instance in self._instance_to_args:
             ssh_command = "./bin/launch_cvd -daemon " + " ".join(self._instance_to_args[instance])
-            self._SshCommand(self._instance_to_ip[instance], ssh_command, boot_timeout_secs)
+            self.SshCommand(self._instance_to_ip[instance], ssh_command, boot_timeout_secs)
             return True
         return super(CvdComputeClient, self).WaitForBoot(instance, boot_timeout_secs)
 
@@ -216,24 +216,15 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         self._WaitForSsh(ip)
 
-        if avd_spec and avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
+        if avd_spec:
             return instance
 
-        self._UpdateFetchCvd(ip)
+        # TODO: Remove following code after create_cf deprecated.
+        self.UpdateFetchCvd(ip)
 
-        fetch_cvd_args = ["-credential_source=gce"]
-
-        default_build = _ProcessBuild(build_id, branch, build_target)
-        if default_build:
-            fetch_cvd_args.append("-default_build=" + default_build)
-        system_build = _ProcessBuild(system_build_id, system_branch, system_build_target)
-        if system_build:
-            fetch_cvd_args.append("-system_build=" + system_build)
-        kernel_build = _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target)
-        if kernel_build:
-            fetch_cvd_args.append("-kernel_build=" + kernel_build)
-
-        self._FetchBuild(ip, fetch_cvd_args)
+        self.FetchBuild(ip, build_id, branch, build_target, system_build_id,
+                        system_branch, system_build_target, kernel_build_id,
+                        kernel_branch, kernel_build_target)
 
         launch_cvd_args = []
 
@@ -276,8 +267,49 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         return instance
 
+    def GetSshBaseCmd(self, ip):
+        """Run a shell command over SSH on a remote instance.
+
+        This will retry the command if it fails from SSH connection errors.
+
+        Args:
+            ip: Namedtuple of (internal, external) IP of the instance.
+
+        Returns:
+            String of ssh connection command.
+        """
+        return find_executable(_SSH_BIN) + _SSH_CMD % {
+            "login_user": _GCE_USER,
+            "rsa_key_file": self._ssh_private_key_path,
+            "ip_addr": ip.external}
+
+    @staticmethod
+    def ShellCmdWithRetry(remote_cmd, timeout=None):
+        """Runs a shell command on remote device.
+
+        If the network is unstable and causes SSH connect fail, it will retry.
+        When it retry in a short time, you may encounter unstable network. We
+        will use the mechanism of RETRY_BACKOFF_FACTOR. The retry time for each
+        failure is times * retries.
+
+        Args:
+            remote_cmd: A string, shell command to be run on remote.
+
+        Raises:
+            errors.DeviceConnectionError: For any non-zero return code of
+                                           remote_cmd.
+        """
+        utils.RetryExceptionType(
+            exception_types=errors.DeviceConnectionError,
+            max_retries=_SSH_CMD_MAX_RETRY,
+            functor=_SshLogOutput,
+            sleep_multiplier=_SSH_CMD_RETRY_SLEEP,
+            retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
+            cmd=remote_cmd,
+            timeout=timeout)
+
     # TODO(b/117625814): Fix this for cloutop
-    def _SshCommand(self, ip, target_command, timeout=None):
+    def SshCommand(self, ip, target_command, timeout=None):
         """Run a shell command over SSH on a remote instance.
 
         This will retry the command if it fails from SSH connection errors.
@@ -287,19 +319,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             target_command: String, text of command to run on the remote instance.
             timeout: Integer, the maximum time to wait for the command to respond.
         """
-        ssh_base_cmd = find_executable(_SSH_BIN) + _SSH_CMD % {
-            "login_user": _GCE_USER,
-            "rsa_key_file": self._ssh_private_key_path,
-            "ip_addr": ip.external}
-
-        utils.RetryExceptionType(
-            exception_types=errors.DeviceConnectionError,
-            max_retries=_SSH_CMD_MAX_RETRY,
-            functor=_SshLogOutput,
-            sleep_multiplier=_SSH_CMD_RETRY_SLEEP,
-            retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
-            cmd=ssh_base_cmd + target_command,
-            timeout=timeout)
+        self.ShellCmdWithRetry(self.GetSshBaseCmd(ip) + target_command, timeout)
 
     @utils.TimeExecute(function_description="Creating GCE instance")
     def _CreateGceInstance(self, instance, image_name, image_project,
@@ -358,10 +378,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         Args:
             ip: Namedtuple of (internal, external) IP of the instance.
         """
-        self._SshCommand(ip, "uptime")
+        self.SshCommand(ip, "uptime")
 
     @utils.TimeExecute(function_description="Uploading build fetcher to instance")
-    def _UpdateFetchCvd(self, ip):
+    def UpdateFetchCvd(self, ip):
         """Download fetch_cvd from the Build API, and upload it to a remote instance.
 
         The version of fetch_cvd to use is retrieved from the configuration file. Once fetch_cvd
@@ -404,11 +424,28 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         os.rmdir(download_dir)
 
     @utils.TimeExecute(function_description="Downloading build on instance")
-    def _FetchBuild(self, ip, fetch_args):
+    def FetchBuild(self, ip, build_id, branch, build_target, system_build_id,
+                   system_branch, system_build_target, kernel_build_id,
+                   kernel_branch, kernel_build_target):
         """Execute fetch_cvd on the remote instance to get Cuttlefish runtime files.
 
         Args:
             ip: Namedtuple of (internal, external) IP of the instance.
             fetch_args: String of arguments to pass to fetch_cvd.
         """
-        self._SshCommand(ip, "./fetch_cvd " + " ".join(fetch_args))
+        fetch_cvd_args = ["-credential_source=gce"]
+
+        default_build = _ProcessBuild(build_id, branch, build_target)
+        if default_build:
+            fetch_cvd_args.append("-default_build=" + default_build)
+        system_build = _ProcessBuild(system_build_id, system_branch, system_build_target)
+        if system_build:
+            fetch_cvd_args.append("-system_build=" + system_build)
+        # kernel_target have default value "kernel". If user provide kernel_build_id
+        # or kernel_branch, then start to process kernel image.
+        if kernel_build_id or kernel_branch:
+            kernel_build = _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target)
+            if kernel_build:
+                fetch_cvd_args.append("-kernel_build=" + kernel_build)
+
+        self.SshCommand(ip, "./fetch_cvd " + " ".join(fetch_cvd_args))
