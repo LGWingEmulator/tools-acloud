@@ -107,6 +107,10 @@ class NoGoogleSDKDetected(SetupError):
     """Can't find the SDK path."""
 
 
+class NoBillingError(SetupError):
+    """Billing account isn't enabled."""
+
+
 class PackageInstallError(SetupError):
     """Error related to package installation."""
 
