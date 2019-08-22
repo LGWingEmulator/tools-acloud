@@ -39,12 +39,14 @@ _GOOGLE_APIS = [
     _COMPUTE_ENGINE_SERVICE
 ]
 _BUILD_SERVICE_ACCOUNT = "android-build-prod@system.gserviceaccount.com"
+_BILLING_ENABLE_MSG = "billingEnabled: true"
 _DEFAULT_SSH_FOLDER = os.path.expanduser("~/.ssh")
 _DEFAULT_SSH_KEY = "acloud_rsa"
 _DEFAULT_SSH_PRIVATE_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                         _DEFAULT_SSH_KEY)
 _DEFAULT_SSH_PUBLIC_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                        _DEFAULT_SSH_KEY + ".pub")
+_GCLOUD_COMPONENT_ALPHA = "alpha"
 # Bucket naming parameters
 _BUCKET_HEADER = "gs://"
 _BUCKET_LENGTH_LIMIT = 63
@@ -248,6 +250,8 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         google_sdk_init = google_sdk.GoogleSDK()
         try:
             google_sdk_runner = GoogleSDKBins(google_sdk_init.GetSDKBinPath())
+            google_sdk_init.InstallGcloudComponent(google_sdk_runner,
+                                                   _GCLOUD_COMPONENT_ALPHA)
             self._SetupProject(google_sdk_runner)
             self._EnableGcloudServices(google_sdk_runner)
             self._CreateStableHostImage()
@@ -312,6 +316,7 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
 
         Setup project and zone.
         Setup client ID and client secret.
+        Make sure billing account enabled in project.
         Setup Google Cloud Storage bucket.
 
         Args:
@@ -322,6 +327,7 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
             project_changed = self._UpdateProject(gcloud_runner)
         if self._NeedClientIDSetup(project_changed):
             self._SetupClientIDSecret()
+        self._CheckBillingEnable(gcloud_runner)
         self._SetupStorageBucket(gcloud_runner)
 
     def _UpdateProject(self, gcloud_runner):
@@ -371,6 +377,31 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
             self.client_secret = str(raw_input("Enter Client Secret: ").strip())
         UpdateConfigFile(self.config_path, "client_id", self.client_id)
         UpdateConfigFile(self.config_path, "client_secret", self.client_secret)
+
+    def _CheckBillingEnable(self, gcloud_runner):
+        """Check billing enabled in gcp project.
+
+        The billing info get by gcloud alpha command. Here is one example:
+        $ gcloud alpha billing projects describe project_name
+            billingAccountName: billingAccounts/011BXX-A30XXX-9XXXX
+            billingEnabled: true
+            name: projects/project_name/billingInfo
+            projectId: project_name
+
+        Args:
+            gcloud_runner: A GcloudRunner class to run "gcloud" command.
+
+        Raises:
+            NoBillingError: gcp project doesn't enable billing account.
+        """
+        billing_info = gcloud_runner.RunGcloud(
+            ["alpha", "billing", "projects", "describe", self.project])
+        if _BILLING_ENABLE_MSG not in billing_info:
+            raise errors.NoBillingError(
+                "Please set billing account to project(%s) by following the "
+                "instructions here: "
+                "https://cloud.google.com/billing/docs/how-to/modify-project"
+                % self.project)
 
     def _SetupStorageBucket(self, gcloud_runner):
         """Setup storage_bucket_name in config file.
