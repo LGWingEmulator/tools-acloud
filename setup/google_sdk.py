@@ -119,6 +119,16 @@ class GoogleSDK(object):
         if not SDKInstalled():
             self.DownloadGcloudSDKAndExtract()
 
+    @staticmethod
+    def InstallGcloudComponent(gcloud_runner, component):
+        """Install gcloud component.
+
+        Args:
+            gcloud_runner: A GcloudRunner class to run "gcloud" command.
+            component: String, name of gcloud component.
+        """
+        gcloud_runner.RunGcloud(["components", "install", "--quiet", component])
+
     def GetSDKBinPath(self):
         """Get google SDK tools bin path.
 
