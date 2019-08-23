@@ -260,7 +260,6 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                        image_project=None,
                        gpu=None,
                        extra_disk_name=None,
-                       labels=None,
                        avd_spec=None,
                        extra_scopes=None,
                        tags=None):
@@ -283,7 +282,6 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                  None no gpus will be attached. For more details see:
                  https://cloud.google.com/compute/docs/gpus/add-gpus
             extra_disk_name: String,the name of the extra disk to attach.
-            labels: Dict, will be added to the instance's labels.
             avd_spec: AVDSpec object that tells us what we're going to create.
             extra_scopes: List, extra scopes (strings) to be passed to the
                           instance.
@@ -305,14 +303,10 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             avd_spec.hw_property[constants.HW_Y_RES],
             avd_spec.hw_property[constants.HW_ALIAS_DPI]))
 
-        # Add labels for giving the instances ability to be filter for
-        # acloud list/delete cmds.
-        labels = {constants.LABEL_CREATE_BY: getpass.getuser()}
-
         super(AndroidComputeClient, self).CreateInstance(
             instance, image_name, self._machine_type, metadata, self._network,
             self._zone, disk_args, image_project, gpu, extra_disk_name,
-            labels=labels, extra_scopes=extra_scopes, tags=tags)
+            extra_scopes=extra_scopes, tags=tags)
 
     def CheckBootFailure(self, serial_out, instance):
         """Determine if serial output has indicated any boot failure.
