@@ -206,6 +206,7 @@ def CreateDevices(avd_spec=None,
         A Report instance.
     """
     client_adb_port = None
+    unlock_screen = False
     if avd_spec:
         cfg = avd_spec.cfg
         build_target = avd_spec.remote_image[constants.BUILD_TARGET]
@@ -223,6 +224,7 @@ def CreateDevices(avd_spec=None,
         system_branch = avd_spec.system_build_info[constants.BUILD_BRANCH]
         system_build_id = avd_spec.system_build_info[constants.BUILD_ID]
         system_build_target = avd_spec.system_build_info[constants.BUILD_TARGET]
+        unlock_screen = avd_spec.unlock_screen
     logger.info(
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "
@@ -252,4 +254,5 @@ def CreateDevices(avd_spec=None,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
                                            serial_log_file, logcat_file,
-                                           client_adb_port, boot_timeout_secs)
+                                           client_adb_port, boot_timeout_secs,
+                                           unlock_screen)
