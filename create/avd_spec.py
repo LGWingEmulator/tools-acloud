@@ -99,6 +99,7 @@ class AVDSpec(object):
         # args afterwards.
         self._client_adb_port = args.adb_port
         self._autoconnect = None
+        self._unlock_screen = None
         self._report_internal_ip = None
         self._avd_type = None
         self._flavor = None
@@ -259,6 +260,7 @@ class AVDSpec(object):
             args: Namespace object from argparse.parse_args.
         """
         self._autoconnect = args.autoconnect
+        self._unlock_screen = args.unlock_screen
         self._report_internal_ip = args.report_internal_ip
         self._avd_type = args.avd_type
         self._flavor = args.flavor or constants.FLAVOR_PHONE
@@ -561,6 +563,11 @@ class AVDSpec(object):
     def autoconnect(self):
         """Return autoconnect."""
         return self._autoconnect
+
+    @property
+    def unlock_screen(self):
+        """Return unlock_screen."""
+        return self._unlock_screen
 
     @property
     def remote_image(self):
