@@ -30,6 +30,7 @@ from acloud.create import base_avd_create
 from acloud.delete import delete
 from acloud.internal import constants
 from acloud.internal.lib import utils
+from acloud.internal.lib.adb_tools import AdbTools
 from acloud.public import report
 
 
@@ -95,6 +96,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
+        if avd_spec.unlock_screen:
+            AdbTools(constants.CF_ADB_PORT).AutoUnlockScreen()
         return result_report
 
     @staticmethod

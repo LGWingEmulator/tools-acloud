@@ -73,6 +73,13 @@ def AddCommonCreateArgs(parser):
              "when instance created.")
     parser.set_defaults(autoconnect=True)
     parser.add_argument(
+        "--unlock",
+        action="store_true",
+        dest="unlock_screen",
+        required=False,
+        default=False,
+        help="This can unlock screen after invoke vnc client.")
+    parser.add_argument(
         "--report-internal-ip",
         action="store_true",
         dest="report_internal_ip",
@@ -408,3 +415,6 @@ def VerifyArgs(args):
                          % constants.TYPE_CHEEPS)
     if (args.username or args.password) and not (args.username and args.password):
         raise ValueError("--username and --password must both be set")
+    if not args.autoconnect and args.unlock_screen:
+        raise ValueError("--no-autoconnect and --unlock couldn't be "
+                         "passed in together.")
