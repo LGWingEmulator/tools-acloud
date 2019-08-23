@@ -100,6 +100,8 @@ creates a ssh tunnel to enable adb and vnc connection to the instance. For the
 local instance, acloud will just invoke the vnc client. If you don't want
 autoconnect, you can pass in `--no-autoconnect`
 
+* `--unlock`: This can unlock screen after invoke the vnc client.
+
 * `--hw-property`: This is a string where you can specify the different
 properties of the AVD. You can specify the cpu, resolution, dpi, memory,and/or
 disk in a key:value format like so:
