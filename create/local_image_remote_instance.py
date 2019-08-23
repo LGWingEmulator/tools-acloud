@@ -108,7 +108,8 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
             report_internal_ip=avd_spec.report_internal_ip,
             autoconnect=avd_spec.autoconnect,
             avd_type=constants.TYPE_CF,
-            boot_timeout_secs=avd_spec.boot_timeout_secs)
+            boot_timeout_secs=avd_spec.boot_timeout_secs,
+            unlock_screen=avd_spec.unlock_screen)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.autoconnect:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
