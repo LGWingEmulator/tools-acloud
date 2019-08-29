@@ -235,7 +235,6 @@ def CreateDevices(avd_spec=None,
                   gpu=None,
                   num=1,
                   serial_log_file=None,
-                  logcat_file=None,
                   autoconnect=False,
                   branch=None,
                   tags=None,
@@ -256,7 +255,6 @@ def CreateDevices(avd_spec=None,
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a file where serial output should
                         be saved to.
-        logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device
                      creation.
         branch: String, Branch name for system image.
@@ -279,7 +277,6 @@ def CreateDevices(avd_spec=None,
         emulator_build_id = avd_spec.emulator_build_id
         gpu = avd_spec.gpu
         serial_log_file = avd_spec.serial_log_file
-        logcat_file = avd_spec.logcat_file
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
         client_adb_port = avd_spec.client_adb_port
@@ -317,10 +314,10 @@ def CreateDevices(avd_spec=None,
         "Creating a goldfish device in project %s, build_target: %s, "
         "build_id: %s, emulator_bid: %s, kernel_build_id: %s, "
         "kernel_branh: %s, GPU: %s, num: %s, "
-        "serial_log_file: %s, logcat_file: %s, "
+        "serial_log_file: %s, "
         "autoconnect: %s", cfg.project, build_target, build_id,
         emulator_build_id, kernel_build_id, kernel_branch, gpu, num,
-        serial_log_file, logcat_file, autoconnect)
+        serial_log_file, autoconnect)
 
     device_factory = GoldfishDeviceFactory(cfg, build_target, build_id,
                                            cfg.emulator_build_target,
@@ -334,5 +331,5 @@ def CreateDevices(avd_spec=None,
     return common_operations.CreateDevices("create_gf", cfg, device_factory,
                                            num, constants.TYPE_GF,
                                            report_internal_ip, autoconnect,
-                                           serial_log_file, logcat_file,
-                                           client_adb_port, boot_timeout_secs)
+                                           serial_log_file, client_adb_port,
+                                           boot_timeout_secs)

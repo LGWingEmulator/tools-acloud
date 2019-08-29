@@ -282,10 +282,6 @@ def _VerifyArgs(parsed_args):
                 and not parsed_args.serial_log_file.endswith(".tar.gz")):
             raise errors.CommandArgError(
                 "--serial_log_file must ends with .tar.gz")
-        if (parsed_args.logcat_file
-                and not parsed_args.logcat_file.endswith(".tar.gz")):
-            raise errors.CommandArgError(
-                "--logcat_file must ends with .tar.gz")
 
 
 def _SetupLogging(log_file, verbose):
@@ -381,7 +377,6 @@ def main(argv=None):
             system_build_target=args.system_build_target,
             num=args.num,
             serial_log_file=args.serial_log_file,
-            logcat_file=args.logcat_file,
             autoconnect=args.autoconnect,
             report_internal_ip=args.report_internal_ip,
             boot_timeout_secs=args.boot_timeout_secs)
@@ -398,7 +393,6 @@ def main(argv=None):
             gpu=args.gpu,
             num=args.num,
             serial_log_file=args.serial_log_file,
-            logcat_file=args.logcat_file,
             autoconnect=args.autoconnect,
             tags=args.tags,
             report_internal_ip=args.report_internal_ip)
