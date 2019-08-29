@@ -23,7 +23,6 @@ directly.
 from __future__ import print_function
 import logging
 import os
-import subprocess
 
 from acloud import errors
 from acloud.public import avd
@@ -89,36 +88,6 @@ class DevicePool(object):
         self._device_factory = device_factory
         self._compute_client = device_factory.GetComputeClient()
 
-    def _CollectAdbLogcats(self, output_dir):
-        """Collect Adb logcats.
-
-        Args:
-            output_dir: String, the output file directory to store adb logcats.
-
-        Returns:
-            The file information dictionary with file path and file name.
-        """
-        file_dict = {}
-        for device in self._devices:
-            if not device.adb_port:
-                # If device adb tunnel is not established, do not do adb logcat
-                continue
-            file_name = "%s_adb_logcat.log" % device.instance_name
-            full_file_path = os.path.join(output_dir, file_name)
-            logger.info("Get adb %s:%s logcat for instance %s",
-                        constants.LOCALHOST, device.adb_port,
-                        device.instance_name)
-            try:
-                subprocess.check_call(
-                    ["adb -s %s:%s logcat -b all -d > %s" % (
-                        constants.LOCALHOST, device.adb_port, full_file_path)],
-                    shell=True)
-                file_dict[full_file_path] = file_name
-            except subprocess.CalledProcessError:
-                logging.error("Failed to get adb logcat for %s for instance %s",
-                              device.serial_number, device.instance_name)
-        return file_dict
-
     def CreateDevices(self, num):
         """Creates |num| devices for given build_target and build_id.
 
@@ -155,38 +124,6 @@ class DevicePool(object):
                 failures[device.instance_name] = e
         return failures
 
-    def PullLogs(self, source_files, output_dir, user=None, ssh_rsa_path=None):
-        """Tar logs from GCE instance into output_dir.
-
-        Args:
-            source_files: List of file names to be pulled.
-            output_dir: String. The output file dirtory
-            user: String, the ssh username to access GCE
-            ssh_rsa_path: String, the ssh rsa key path to access GCE
-
-        Returns:
-            The file dictionary with file_path and file_name
-        """
-
-        file_dict = {}
-        for device in self._devices:
-            if isinstance(source_files, basestring):
-                source_files = [source_files]
-            for source_file in source_files:
-                file_name = "%s_%s" % (device.instance_name,
-                                       os.path.basename(source_file))
-                dst_file = os.path.join(output_dir, file_name)
-                logger.info("Pull %s for instance %s with user %s to %s",
-                            source_file, device.instance_name, user, dst_file)
-                try:
-                    utils.ScpPullFile(source_file, dst_file, device.ip,
-                                      user_name=user, rsa_key_file=ssh_rsa_path)
-                    file_dict[dst_file] = file_name
-                except errors.DeviceConnectionError as e:
-                    logger.warning("Failed to pull %s from instance %s: %s",
-                                   source_file, device.instance_name, e)
-        return file_dict
-
     def CollectSerialPortLogs(self, output_file,
                               port=constants.DEFAULT_SERIAL_PORT):
         """Tar the instance serial logs into specified output_file.
@@ -211,26 +148,6 @@ class DevicePool(object):
                     f.write(serial_log.encode("utf-8"))
             utils.MakeTarFile(src_dict, output_file)
 
-    def CollectLogcats(self, output_file, ssh_user, ssh_rsa_path):
-        """Tar the instances' logcat and other logs into specified output_file.
-
-        Args:
-            output_file: String, the output tar file path
-            ssh_user: The ssh user name
-            ssh_rsa_path: The ssh rsa key path
-        """
-        with utils.TempDir() as tempdir:
-            file_dict = {}
-            if getattr(self._device_factory, "LOG_FILES", None):
-                file_dict = self.PullLogs(
-                    self._device_factory.LOG_FILES, tempdir, user=ssh_user,
-                    ssh_rsa_path=ssh_rsa_path)
-            # If the device is auto-connected, get adb logcat
-            for file_path, file_name in self._CollectAdbLogcats(
-                    tempdir).items():
-                file_dict[file_path] = file_name
-            utils.MakeTarFile(file_dict, output_file)
-
     def SetDeviceBuildInfo(self):
         """Add devices build info."""
         for device in self._devices:
@@ -245,14 +162,12 @@ class DevicePool(object):
         """
         return self._devices
 
-# TODO: Delete unused-argument when b/119614469 is resolved.
 # pylint: disable=unused-argument
 # pylint: disable=too-many-locals
 def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
-                  serial_log_file=None, logcat_file=None,
-                  client_adb_port=None, boot_timeout_secs=None,
-                  unlock_screen=False):
+                  serial_log_file=None, client_adb_port=None,
+                  boot_timeout_secs=None, unlock_screen=False):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -268,7 +183,6 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
         serial_log_file: String, the file path to tar the serial logs.
-        logcat_file: String, the file path to tar the logcats.
         autoconnect: Boolean, whether to auto connect to device.
         client_adb_port: Integer, Specify port for adb forwarding.
         boot_timeout_secs: Integer, boot timeout secs.
@@ -296,10 +210,6 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         if serial_log_file:
             device_pool.CollectSerialPortLogs(
                 serial_log_file, port=constants.DEFAULT_SERIAL_PORT)
-        # TODO(b/119614469): Refactor CollectLogcats into a utils lib and
-        #                    turn it on inside the reporting loop.
-        # if logcat_file:
-        #     device_pool.CollectLogcats(logcat_file, ssh_user, ssh_rsa_path)
 
         # Write result to report.
         for device in device_pool.devices:

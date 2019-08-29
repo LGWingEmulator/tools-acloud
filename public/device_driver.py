@@ -347,7 +347,6 @@ def CreateGCETypeAVD(cfg,
                      local_disk_image=None,
                      cleanup=True,
                      serial_log_file=None,
-                     logcat_file=None,
                      autoconnect=False,
                      report_internal_ip=False,
                      avd_spec=None):
@@ -367,7 +366,6 @@ def CreateGCETypeAVD(cfg,
                  disk image in storage after creating the instance.
         serial_log_file: A path to a file where serial output should
                          be saved to.
-        logcat_file: A path to a file where logcat logs should be saved.
         autoconnect: Create ssh tunnel(s) and adb connect after device creation.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
@@ -427,19 +425,13 @@ def CreateGCETypeAVD(cfg,
         else:
             r.SetStatus(report.Status.SUCCESS)
 
-        # Dump serial and logcat logs.
+        # Dump serial logs.
         if serial_log_file:
             _FetchSerialLogsFromDevices(
                 compute_client,
                 instance_names=[d.instance_name for d in device_pool.devices],
                 port=constants.DEFAULT_SERIAL_PORT,
                 output_file=serial_log_file)
-        if logcat_file:
-            _FetchSerialLogsFromDevices(
-                compute_client,
-                instance_names=[d.instance_name for d in device_pool.devices],
-                port=constants.LOGCAT_SERIAL_PORT,
-                output_file=logcat_file)
     except errors.DriverError as e:
         r.AddError(str(e))
         r.SetStatus(report.Status.FAIL)

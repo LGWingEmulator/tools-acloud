@@ -174,7 +174,6 @@ def CreateDevices(avd_spec=None,
                   system_build_target=None,
                   num=1,
                   serial_log_file=None,
-                  logcat_file=None,
                   autoconnect=False,
                   report_internal_ip=False,
                   boot_timeout_secs=None):
@@ -195,7 +194,6 @@ def CreateDevices(avd_spec=None,
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a tar file where serial output should
                          be saved to.
-        logcat_file: String, A path to a file where logcat logs should be saved.
         autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
@@ -215,7 +213,6 @@ def CreateDevices(avd_spec=None,
         autoconnect = avd_spec.autoconnect
         report_internal_ip = avd_spec.report_internal_ip
         serial_log_file = avd_spec.serial_log_file
-        logcat_file = avd_spec.logcat_file
         client_adb_port = avd_spec.client_adb_port
         boot_timeout_secs = avd_spec.boot_timeout_secs
         kernel_branch = avd_spec.kernel_build_info[constants.BUILD_BRANCH]
@@ -238,12 +235,11 @@ def CreateDevices(avd_spec=None,
         "system_build_target: %s, "
         "num: %s, "
         "serial_log_file: %s, "
-        "logcat_file: %s, "
         "autoconnect: %s, "
         "report_internal_ip: %s", cfg.project, build_target,
         build_id, branch, kernel_build_id, kernel_branch, kernel_build_target,
         system_branch, system_build_id, system_build_target, num,
-        serial_log_file, logcat_file, autoconnect, report_internal_ip)
+        serial_log_file, autoconnect, report_internal_ip)
     device_factory = CuttlefishDeviceFactory(
         cfg, build_target, build_id, branch=branch, avd_spec=avd_spec,
         kernel_build_id=kernel_build_id, kernel_branch=kernel_branch,
@@ -253,6 +249,5 @@ def CreateDevices(avd_spec=None,
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
-                                           serial_log_file, logcat_file,
-                                           client_adb_port, boot_timeout_secs,
-                                           unlock_screen)
+                                           serial_log_file, client_adb_port,
+                                           boot_timeout_secs, unlock_screen)
