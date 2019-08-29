@@ -482,34 +482,68 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
 
     def testListInstances(self):
         """Test ListInstances."""
-        fake_token = "fake_next_page_token"
         instance_1 = "instance_1"
         instance_2 = "instance_2"
-        response_1 = {"items": [instance_1], "nextPageToken": fake_token}
-        response_2 = {"items": [instance_2]}
+        response = {"items": {'zones/fake_zone': {"instances": [instance_1, instance_2]}}}
         self.Patch(
             gcompute_client.ComputeClient,
             "Execute",
-            side_effect=[response_1, response_2])
+            side_effect=[response])
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
-        resource_mock.list = mock.MagicMock()
-        instances = self.compute_client.ListInstances(self.ZONE)
+        resource_mock.aggregatedList = mock.MagicMock()
+        instances = self.compute_client.ListInstances()
         calls = [
             mock.call(
                 project=PROJECT,
-                zone=self.ZONE,
-                filter=None,
-                pageToken=None),
-            mock.call(
-                project=PROJECT,
-                zone=self.ZONE,
-                filter=None,
-                pageToken=fake_token),
+                filter=None),
         ]
-        resource_mock.list.assert_has_calls(calls)
+        resource_mock.aggregatedList.assert_has_calls(calls)
         self.assertEqual(instances, [instance_1, instance_2])
+
+    def testGetZoneByInstance(self):
+        """Test GetZoneByInstance."""
+        instance_1 = "instance_1"
+        response = {"items": {'zones/fake_zone': {"instances": [instance_1]}}}
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "Execute",
+            side_effect=[response])
+        expected_zone = "fake_zone"
+        self.assertEqual(self.compute_client.GetZoneByInstance(instance_1),
+                         expected_zone)
+
+        # Test unable to find 'zone' from instance name.
+        response = {"items": {'zones/fake_zone': {"warning": "No instances."}}}
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "Execute",
+            side_effect=[response])
+        with self.assertRaises(errors.GetGceZoneError):
+            self.compute_client.GetZoneByInstance(instance_1)
+
+    def testGetZonesByInstances(self):
+        """Test GetZonesByInstances."""
+        instances = ["instance_1", "instance_2"]
+        # Test instances in the same zone.
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "GetZoneByInstance",
+            side_effect=["zone_1", "zone_1"])
+        expected_result = {"zone_1": ["instance_1", "instance_2"]}
+        self.assertEqual(self.compute_client.GetZonesByInstances(instances),
+                         expected_result)
+
+        # Test instances in different zones.
+        self.Patch(
+            gcompute_client.ComputeClient,
+            "GetZoneByInstance",
+            side_effect=["zone_1", "zone_2"])
+        expected_result = {"zone_1": ["instance_1"],
+                           "zone_2": ["instance_2"]}
+        self.assertEqual(self.compute_client.GetZonesByInstances(instances),
+                         expected_result)
 
     @mock.patch.object(gcompute_client.ComputeClient, "GetImage")
     @mock.patch.object(gcompute_client.ComputeClient, "GetNetworkUrl")
@@ -1122,7 +1156,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             "ListInstances",
             return_value=[good_instance, bad_instance])
         ip_name_map = self.compute_client.GetInstanceNamesByIPs(
-            ips=["172.22.22.22", "172.22.22.23"], zone=self.ZONE)
+            ips=["172.22.22.22", "172.22.22.23"])
         self.assertEqual(ip_name_map, {"172.22.22.22": "instance_1",
                                        "172.22.22.23": None})
 
@@ -1330,6 +1364,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(os.path, "exists", return_value=True)
         m = mock.mock_open(read_data=self.SSHKEY)
         self.Patch(gcompute_client.ComputeClient, "WaitOnOperation")
+        self.Patch(gcompute_client.ComputeClient, "GetZoneByInstance",
+                   return_value="fake_zone")
         resource_mock = mock.MagicMock()
         self.compute_client._service.instances = mock.MagicMock(
             return_value=resource_mock)
@@ -1341,7 +1377,6 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             return_value=instance_metadata_key_not_exist)
         with mock.patch("__builtin__.open", m):
             self.compute_client.AddSshRsaInstanceMetadata(
-                "fake_zone",
                 fake_user,
                 "/path/to/test_rsa.pub",
                 "fake_instance")
@@ -1358,7 +1393,6 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             return_value=instance_metadata_key_exist)
         with mock.patch("__builtin__.open", m):
             self.compute_client.AddSshRsaInstanceMetadata(
-                "fake_zone",
                 fake_user,
                 "/path/to/test_rsa.pub",
                 "fake_instance")

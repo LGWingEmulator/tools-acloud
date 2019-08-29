@@ -32,6 +32,10 @@ class GceOperationTimeoutError(DriverError):
     """Error raised when a GCE operation timedout."""
 
 
+class GetGceZoneError(DriverError):
+    """Can't get GCE zones info."""
+
+
 class HttpError(DriverError):
     """Error related to http requests."""
 

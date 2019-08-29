@@ -449,13 +449,24 @@ def DeleteAndroidVirtualDevices(cfg, instance_names, default_report=None):
     Returns:
         A Report instance.
     """
+    # delete, failed, error_msgs are used to record result.
+    deleted = []
+    failed = []
+    error_msgs = []
+
     r = default_report if default_report else report.Report(command="delete")
     credentials = auth.CreateCredentials(cfg)
     compute_client = android_compute_client.AndroidComputeClient(cfg,
                                                                  credentials)
+    zone_instances = compute_client.GetZonesByInstances(instance_names)
+
     try:
-        deleted, failed, error_msgs = compute_client.DeleteInstances(
-            instance_names, cfg.zone)
+        for zone, instances in zone_instances.items():
+            deleted_ins, failed_ins, error_ins = compute_client.DeleteInstances(
+                instances, zone)
+            deleted.extend(deleted_ins)
+            failed.extend(failed_ins)
+            error_msgs.extend(error_ins)
         AddDeletionResultToReport(
             r, deleted,
             failed, error_msgs,
@@ -513,7 +524,7 @@ def Cleanup(cfg, expiration_mins):
         storage_client = gstorage_client.StorageClient(credentials)
 
         # Cleanup expired instances
-        items = compute_client.ListInstances(zone=cfg.zone)
+        items = compute_client.ListInstances()
         cleanup_list = [
             item["name"]
             for item in _FindOldItems(items, cut_time, "creationTimestamp")
