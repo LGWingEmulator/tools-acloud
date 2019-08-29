@@ -117,7 +117,6 @@ class AVDSpec(object):
         self._cfg = config.GetAcloudConfig(args)
         # Reporting args.
         self._serial_log_file = None
-        self._logcat_file = None
         # gpu and emulator_build_id is only used for goldfish avd_type.
         self._gpu = None
         self._emulator_build_id = None
@@ -269,7 +268,6 @@ class AVDSpec(object):
                                constants.INSTANCE_TYPE_REMOTE)
         self._num_of_instances = args.num
         self._serial_log_file = args.serial_log_file
-        self._logcat_file = args.logcat_file
         self._emulator_build_id = args.emulator_build_id
         self._gpu = args.gpu
 
@@ -613,11 +611,6 @@ class AVDSpec(object):
     def serial_log_file(self):
         """Return serial log file path."""
         return self._serial_log_file
-
-    @property
-    def logcat_file(self):
-        """Return logcat file path."""
-        return self._logcat_file
 
     @property
     def gpu(self):
