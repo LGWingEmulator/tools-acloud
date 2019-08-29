@@ -50,13 +50,6 @@ def AddCommonCreateArgs(parser):
         help="Path to a *tar.gz file where serial logs will be saved "
              "when a device fails on boot.")
     parser.add_argument(
-        "--logcat-file",
-        type=str,
-        dest="logcat_file",
-        required=False,
-        help="Path to a *tar.gz file where logcat logs will be saved "
-             "when a device fails on boot.")
-    parser.add_argument(
         "--autoconnect",
         action="store_true",
         dest="autoconnect",
@@ -190,12 +183,6 @@ def AddCommonCreateArgs(parser):
         "--serial_log_file",
         type=str,
         dest="serial_log_file",
-        required=False,
-        help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--logcat_file",
-        type=str,
-        dest="logcat_file",
         required=False,
         help=argparse.SUPPRESS)
     parser.add_argument(
