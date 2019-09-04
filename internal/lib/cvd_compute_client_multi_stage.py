@@ -258,6 +258,11 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             launch_cvd_args.append("-y_res=" + resolution[1])
             launch_cvd_args.append("-dpi=" + resolution[3])
 
+        if kernel_build_id or kernel_branch:
+            if _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target):
+                # Kernel was downloaded by fetch_cvd to path "kernel"
+                launch_cvd_args.append("-kernel_path=kernel")
+
         if self._launch_args:
             launch_cvd_args.append(self._launch_args)
 
