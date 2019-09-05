@@ -54,7 +54,6 @@ python_binary_host {
         "py-dateutil",
         "py-google-api-python-client",
         "py-oauth2client",
-        "py-pyopenssl",
     ],
     dist: {
         targets: ["droidcore"],
