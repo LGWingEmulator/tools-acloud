@@ -42,8 +42,6 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         build_target: String,Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
         kernel_build_id: String, Kernel build id.
-        avd_spec: An AVDSpec instance.
-
     """
 
     LOG_FILES = ["/home/vsoc-01/cuttlefish_runtime/kernel.log",
@@ -51,7 +49,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  "/home/vsoc-01/cuttlefish_runtime/cuttlefish_config.json"]
 
     def __init__(self, cfg, build_target, build_id, branch=None,
-                 kernel_build_id=None, avd_spec=None, kernel_branch=None,
+                 kernel_build_id=None, kernel_branch=None,
                  kernel_build_target=None, system_branch=None,
                  system_build_id=None, system_build_target=None):
 
@@ -72,7 +70,6 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         self._branch = branch
         self._kernel_build_id = kernel_build_id
         self._blank_data_disk_size_gb = cfg.extra_data_disk_size_gb
-        self._avd_spec = avd_spec
         self._extra_scopes = cfg.extra_scopes
 
         # Configure clients for interaction with GCE/Build servers
@@ -149,7 +146,6 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             kernel_build_id=self.kernel_build_info.build_id,
             kernel_build_target=self.kernel_build_info.build_target,
             blank_data_disk_size_gb=self._blank_data_disk_size_gb,
-            avd_spec=self._avd_spec,
             extra_scopes=self._extra_scopes,
             system_build_target=self.system_build_info.build_target,
             system_branch=self.system_build_info.branch,
@@ -161,8 +157,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
 
 
 #pylint: disable=too-many-locals
-def CreateDevices(avd_spec=None,
-                  cfg=None,
+def CreateDevices(cfg,
                   build_target=None,
                   build_id=None,
                   branch=None,
@@ -180,7 +175,6 @@ def CreateDevices(avd_spec=None,
     """Create one or multiple Cuttlefish devices.
 
     Args:
-        avd_spec: An AVDSpec instance.
         cfg: An AcloudConfig instance.
         build_target: String, Target name.
         build_id: String, Build id, e.g. "2263051", "P2804227"
@@ -205,23 +199,6 @@ def CreateDevices(avd_spec=None,
     """
     client_adb_port = None
     unlock_screen = False
-    if avd_spec:
-        cfg = avd_spec.cfg
-        build_target = avd_spec.remote_image[constants.BUILD_TARGET]
-        build_id = avd_spec.remote_image[constants.BUILD_ID]
-        num = avd_spec.num
-        autoconnect = avd_spec.autoconnect
-        report_internal_ip = avd_spec.report_internal_ip
-        serial_log_file = avd_spec.serial_log_file
-        client_adb_port = avd_spec.client_adb_port
-        boot_timeout_secs = avd_spec.boot_timeout_secs
-        kernel_branch = avd_spec.kernel_build_info[constants.BUILD_BRANCH]
-        kernel_build_id = avd_spec.kernel_build_info[constants.BUILD_ID]
-        kernel_build_target = avd_spec.kernel_build_info[constants.BUILD_TARGET]
-        system_branch = avd_spec.system_build_info[constants.BUILD_BRANCH]
-        system_build_id = avd_spec.system_build_info[constants.BUILD_ID]
-        system_build_target = avd_spec.system_build_info[constants.BUILD_TARGET]
-        unlock_screen = avd_spec.unlock_screen
     logger.info(
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "
@@ -241,7 +218,7 @@ def CreateDevices(avd_spec=None,
         system_branch, system_build_id, system_build_target, num,
         serial_log_file, autoconnect, report_internal_ip)
     device_factory = CuttlefishDeviceFactory(
-        cfg, build_target, build_id, branch=branch, avd_spec=avd_spec,
+        cfg, build_target, build_id, branch=branch,
         kernel_build_id=kernel_build_id, kernel_branch=kernel_branch,
         kernel_build_target=kernel_build_target, system_branch=system_branch,
         system_build_id=system_build_id,
