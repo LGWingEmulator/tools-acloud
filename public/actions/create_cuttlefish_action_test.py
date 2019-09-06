@@ -118,13 +118,10 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
                 self.SYSTEM_BRANCH, self.SYSTEM_BUILD_ID,
                 self.SYSTEM_BUILD_TARGET, None)]
 
-        # Setup avd_spec as None to use cfg to create devices
-        none_avd_spec = None
-
         # Call CreateDevices
         report = create_cuttlefish_action.CreateDevices(
-            none_avd_spec, cfg, self.BUILD_TARGET, self.BUILD_ID,
-            branch=self.BRANCH, kernel_build_id=self.KERNEL_BUILD_ID,
+            cfg, self.BUILD_TARGET, self.BUILD_ID, branch=self.BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
             system_build_target=self.SYSTEM_BUILD_TARGET,
             system_branch=self.SYSTEM_BRANCH,
             system_build_id=self.SYSTEM_BUILD_ID)
@@ -144,7 +141,6 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             system_build_id=self.SYSTEM_BUILD_ID,
             system_build_target=self.SYSTEM_BUILD_TARGET,
             blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
-            avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES)
 
         self.assertEquals(report.data, {
