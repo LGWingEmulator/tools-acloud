@@ -30,6 +30,7 @@ from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.ssh import Ssh
+from acloud.list import list as list_instances
 
 from acloud.internal.lib.cvd_compute_client_multi_stage import _ProcessBuild
 
@@ -84,6 +85,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitResourceHandle")
         self.Patch(android_build_client.AndroidBuildClient, "InitResourceHandle")
         self.Patch(android_build_client.AndroidBuildClient, "DownloadArtifact")
+        self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
+        self.Patch(list_instances, "ChooseOneRemoteInstance", return_value=mock.MagicMock())
         self.Patch(Ssh, "ScpPushFile")
         self.Patch(Ssh, "WaitForSsh")
         self.Patch(Ssh, "GetBaseCmd")
@@ -148,6 +151,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         remote_image_metadata = dict(expected_metadata)
         expected_disk_args = [{"fake_arg": "fake_value"}]
         fake_avd_spec = avd_spec.AVDSpec(self.args)
+        fake_avd_spec._instance_name_to_reuse = None
 
         created_subprocess = mock.MagicMock()
         created_subprocess.stdout = mock.MagicMock()

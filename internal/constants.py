@@ -152,3 +152,6 @@ TOOL_NAME = "acloud"
 EXIT_BY_USER = 1
 EXIT_BY_ERROR = -99
 RE_LAUNCH_CVD_PATTERN = "launch_cvd.*%(arg_name)s %(arg_value)s"
+
+# For reuse gce instance
+SELECT_ONE_GCE_INSTANCE = "select_one_gce_instance"
