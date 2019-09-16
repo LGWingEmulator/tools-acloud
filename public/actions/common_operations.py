@@ -167,7 +167,8 @@ class DevicePool(object):
 def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
                   serial_log_file=None, client_adb_port=None,
-                  boot_timeout_secs=None, unlock_screen=False):
+                  boot_timeout_secs=None, unlock_screen=False,
+                  wait_for_boot=True):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -187,6 +188,8 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         client_adb_port: Integer, Specify port for adb forwarding.
         boot_timeout_secs: Integer, boot timeout secs.
         unlock_screen: Boolean, whether to unlock screen after invoke vnc client.
+        wait_for_boot: Boolean, True to check serial log include boot up
+                       message.
 
     Raises:
         errors: Create instance fail.
@@ -200,7 +203,11 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         device_pool = DevicePool(device_factory)
         device_pool.CreateDevices(num)
         device_pool.SetDeviceBuildInfo()
-        failures = device_pool.WaitForBoot(boot_timeout_secs)
+        if wait_for_boot:
+            failures = device_pool.WaitForBoot(boot_timeout_secs)
+        else:
+            failures = device_factory.GetFailures()
+
         if failures:
             reporter.SetStatus(report.Status.BOOT_FAIL)
         else:
