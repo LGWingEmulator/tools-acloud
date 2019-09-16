@@ -129,12 +129,14 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
     DATA_POLICY_CREATE_IF_MISSING = "create_if_missing"
 
-    def __init__(self, acloud_config, oauth2_credentials):
+    def __init__(self, acloud_config, oauth2_credentials, boot_timeout_secs=None):
         """Initialize.
 
         Args:
             acloud_config: An AcloudConfig object.
             oauth2_credentials: An oauth2client.OAuth2Credentials instance.
+            boot_timeout_secs: Integer, the maximum time to wait for the
+                               command to respond.
         """
         super(CvdComputeClient, self).__init__(acloud_config, oauth2_credentials)
 
@@ -142,30 +144,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._build_api = (
             android_build_client.AndroidBuildClient(oauth2_credentials))
         self._ssh_private_key_path = acloud_config.ssh_private_key_path
-        self._instance_to_args = dict()
-        self._instance_to_ip = dict()
-
-    def WaitForBoot(self, instance, boot_timeout_secs=None):
-        """Optionally initiates the boot, then waits for the boot to complete.
-
-        For the local-image use case, the local image wrapper code will already launch the device
-        so for parity this will not attempt to launch it in the local-image case.
-
-        For the remote-image case, because this knows the files are present and unlaunched it will
-        run "launch_cvd -daemon" which exits when the device has successfully booted.
-
-        Args:
-            instance: String, name of instance.
-            boot_timeout_secs: Integer, the maximum time in seconds used to
-                               wait for the AVD to boot.
-        Returns:
-            True if devcie bootup successful.
-        """
-        if instance in self._instance_to_args:
-            ssh_command = "./bin/launch_cvd -daemon " + " ".join(self._instance_to_args[instance])
-            self.SshCommand(self._instance_to_ip[instance], ssh_command, boot_timeout_secs)
-            return True
-        return super(CvdComputeClient, self).WaitForBoot(instance, boot_timeout_secs)
+        self._boot_timeout_secs = boot_timeout_secs
+        # Store all failures result when creating one or multiple instances.
+        self._all_failures = dict()
 
     # pylint: disable=arguments-differ,too-many-locals
     def CreateInstance(self, instance, image_name, image_project,
@@ -224,9 +205,29 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self.FetchBuild(ip, build_id, branch, build_target, system_build_id,
                         system_branch, system_build_target, kernel_build_id,
                         kernel_branch, kernel_build_target)
+        kernel_build = self.GetKernelBuild(kernel_build_id,
+                                           kernel_branch,
+                                           kernel_build_target)
+        self.LaunchCvd(instance, ip,
+                       blank_data_disk_size_gb=blank_data_disk_size_gb,
+                       kernel_build=kernel_build,
+                       boot_timeout_secs=self._boot_timeout_secs)
 
+        return instance
+
+    def _GetLaunchCvdArgs(self, avd_spec=None, blank_data_disk_size_gb=None,
+                          kernel_build=None):
+        """Get launch_cvd args.
+
+        Args:
+            avd_spec: An AVDSpec instance.
+            blank_data_disk_size_gb: Size of the blank data disk in GB.
+            kernel_build: String, kernel build info.
+
+        Returns:
+            String, args of launch_cvd.
+        """
         launch_cvd_args = []
-
         if blank_data_disk_size_gb > 0:
             # Policy 'create_if_missing' would create a blank userdata disk if
             # missing. If already exist, reuse the disk.
@@ -248,7 +249,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                     "-blank_data_image_mb="
                     + avd_spec.hw_property[constants.HW_ALIAS_DISK])
             if constants.HW_ALIAS_CPUS in avd_spec.hw_property:
-                launch_cvd_args.append("-cpus=%s" % avd_spec.hw_property[constants.HW_ALIAS_CPUS])
+                launch_cvd_args.append(
+                    "-cpus=%s" % avd_spec.hw_property[constants.HW_ALIAS_CPUS])
             if constants.HW_ALIAS_MEMORY in avd_spec.hw_property:
                 launch_cvd_args.append(
                     "-memory_mb=%s" % avd_spec.hw_property[constants.HW_ALIAS_MEMORY])
@@ -258,18 +260,69 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             launch_cvd_args.append("-y_res=" + resolution[1])
             launch_cvd_args.append("-dpi=" + resolution[3])
 
-        if kernel_build_id or kernel_branch:
-            if _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target):
-                # Kernel was downloaded by fetch_cvd to path "kernel"
-                launch_cvd_args.append("-kernel_path=kernel")
+        if kernel_build:
+            launch_cvd_args.append("-kernel_path=kernel")
 
         if self._launch_args:
             launch_cvd_args.append(self._launch_args)
+        return launch_cvd_args
 
-        self._instance_to_args[instance] = launch_cvd_args
-        self._instance_to_ip[instance] = ip
+    @staticmethod
+    def GetKernelBuild(kernel_build_id, kernel_branch, kernel_build_target):
+        """Get kernel build args for fetch_cvd.
 
-        return instance
+        Args:
+            kernel_branch: Kernel branch name, e.g. "kernel-common-android-4.14"
+            kernel_build_id: Kernel build id, a string, e.g. "223051", "P280427"
+            kernel_build_target: String, Kernel build target name.
+
+        Returns:
+            String of kernel build args for fetch_cvd.
+            If no kernel build then return None.
+        """
+        # kernel_target have default value "kernel". If user provide kernel_build_id
+        # or kernel_branch, then start to process kernel image.
+        if kernel_build_id or kernel_branch:
+            return _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target)
+        return None
+
+    @utils.TimeExecute(function_description="Launching AVD(s) and waiting for boot up",
+                       result_evaluator=utils.BootEvaluator)
+    def LaunchCvd(self, instance, ip, avd_spec=None,
+                  blank_data_disk_size_gb=None, kernel_build=None,
+                  boot_timeout_secs=None):
+        """Launch CVD.
+
+        Args:
+            instance: String, instance name.
+            ip: Namedtuple of (internal, external) IP of the instance.
+            avd_spec: An AVDSpec instance.
+            blank_data_disk_size_gb: Size of the blank data disk in GB.
+            kernel_build: String, kernel build info.
+            boot_timeout_secs: Integer, the maximum time to wait for the
+                               command to respond.
+
+        Returns:
+           dict of faliures, return this dict for BootEvaluator to handle
+           LaunchCvd success or fail messages.
+        """
+        error_msg = ""
+        launch_cvd_args = self._GetLaunchCvdArgs(avd_spec,
+                                                 blank_data_disk_size_gb,
+                                                 kernel_build)
+        boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
+        ssh_command = "./bin/launch_cvd -daemon " + " ".join(launch_cvd_args)
+        try:
+            self.SshCommand(ip, ssh_command, boot_timeout_secs)
+        except (subprocess.CalledProcessError, errors.DeviceConnectionError) as e:
+            # TODO(b/140475060): Distinguish the error is command return error
+            # or timeout error.
+            error_msg = ("Device %s did not finish on boot within timeout (%s secs)"
+                         % (instance, boot_timeout_secs))
+            self._all_failures[instance] = error_msg
+            utils.PrintColorString(str(e), utils.TextColors.FAIL)
+
+        return {instance: error_msg} if error_msg else {}
 
     def GetSshBaseCmd(self, ip):
         """Run a shell command over SSH on a remote instance.
@@ -443,11 +496,15 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         system_build = _ProcessBuild(system_build_id, system_branch, system_build_target)
         if system_build:
             fetch_cvd_args.append("-system_build=" + system_build)
-        # kernel_target have default value "kernel". If user provide kernel_build_id
-        # or kernel_branch, then start to process kernel image.
-        if kernel_build_id or kernel_branch:
-            kernel_build = _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target)
-            if kernel_build:
-                fetch_cvd_args.append("-kernel_build=" + kernel_build)
+        kernel_build = self.GetKernelBuild(kernel_build_id,
+                                           kernel_branch,
+                                           kernel_build_target)
+        if kernel_build:
+            fetch_cvd_args.append("-kernel_build=" + kernel_build)
 
         self.SshCommand(ip, "./fetch_cvd " + " ".join(fetch_cvd_args))
+
+    @property
+    def all_failures(self):
+        """Return all_failures"""
+        return self._all_failures
