@@ -51,13 +51,14 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
     def __init__(self, cfg, build_target, build_id, branch=None,
                  kernel_build_id=None, kernel_branch=None,
                  kernel_build_target=None, system_branch=None,
-                 system_build_id=None, system_build_target=None):
+                 system_build_id=None, system_build_target=None,
+                 boot_timeout_secs=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
         if cfg.enable_multi_stage:
             compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
-                cfg, self.credentials)
+                cfg, self.credentials, boot_timeout_secs)
         else:
             compute_client = cvd_compute_client.CvdComputeClient(
                 cfg, self.credentials)
@@ -103,6 +104,16 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
              for key, val in self.system_build_info.__dict__.items() if val}
         )
         return build_info_dict
+
+    def GetFailures(self):
+        """Get failures from all devices.
+
+        Returns:
+            A dictionary that contains all the failures.
+            The key is the name of the instance that fails to boot,
+            and the value is an errors.DeviceBootError object.
+        """
+        return self._compute_client.all_failures
 
     @staticmethod
     def _GetGcsBucketBuildId(build_id, release_id):
@@ -199,6 +210,7 @@ def CreateDevices(cfg,
     """
     client_adb_port = None
     unlock_screen = False
+    wait_for_boot = True
     logger.info(
         "Creating a cuttlefish device in project %s, "
         "build_target: %s, "
@@ -217,14 +229,20 @@ def CreateDevices(cfg,
         build_id, branch, kernel_build_id, kernel_branch, kernel_build_target,
         system_branch, system_build_id, system_build_target, num,
         serial_log_file, autoconnect, report_internal_ip)
+    # If multi_stage enable, launch_cvd don't write serial log to instance. So
+    # it doesn't go WaitForBoot function.
+    if cfg.enable_multi_stage:
+        wait_for_boot = False
     device_factory = CuttlefishDeviceFactory(
         cfg, build_target, build_id, branch=branch,
         kernel_build_id=kernel_build_id, kernel_branch=kernel_branch,
         kernel_build_target=kernel_build_target, system_branch=system_branch,
         system_build_id=system_build_id,
-        system_build_target=system_build_target)
+        system_build_target=system_build_target,
+        boot_timeout_secs=boot_timeout_secs)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
                                            serial_log_file, client_adb_port,
-                                           boot_timeout_secs, unlock_screen)
+                                           boot_timeout_secs, unlock_screen,
+                                           wait_for_boot)

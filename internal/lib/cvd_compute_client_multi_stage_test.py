@@ -87,6 +87,32 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(utils, "ScpPushFile")
         self.cvd_compute_client_multi_stage = cvd_compute_client_multi_stage.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
+        self.args = mock.MagicMock()
+        self.args.local_image = None
+        self.args.config_file = ""
+        self.args.avd_type = constants.TYPE_CF
+        self.args.flavor = "phone"
+        self.args.adb_port = None
+        self.args.hw_property = "cpu:2,resolution:1080x1920,dpi:240,memory:4g"
+
+    # pylint: disable=protected-access
+    @mock.patch.object(utils, "GetBuildEnvironmentVariable", return_value="fake_env")
+    @mock.patch.object(glob, "glob", return_value=["fake.img"])
+    def testGetLaunchCvdArgs(self, _mock_check_img, _mock_env):
+        """test GetLaunchCvdArgs."""
+        # test GetLaunchCvdArgs with avd_spec
+        fake_avd_spec = avd_spec.AVDSpec(self.args)
+        expeted_args = ['-x_res=1080', '-y_res=1920', '-dpi=240', '-cpus=2',
+                        '-memory_mb=4096', '--setupwizard_mode=REQUIRED']
+        launch_cvd_args = self.cvd_compute_client_multi_stage._GetLaunchCvdArgs(fake_avd_spec)
+        self.assertEquals(launch_cvd_args, expeted_args)
+
+        # test GetLaunchCvdArgs without avd_spec
+        expeted_args = ['-x_res=720', '-y_res=1280', '-dpi=160',
+                        '--setupwizard_mode=REQUIRED']
+        launch_cvd_args = self.cvd_compute_client_multi_stage._GetLaunchCvdArgs(
+            avd_spec=None)
+        self.assertEquals(launch_cvd_args, expeted_args)
 
     # pylint: disable=protected-access
     def testSSHExecuteWithRetry(self):
@@ -130,13 +156,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         expected_metadata_local_image.update(self.METADATA)
         remote_image_metadata = dict(expected_metadata)
         expected_disk_args = [{"fake_arg": "fake_value"}]
-        args = mock.MagicMock()
-        args.local_image = None
-        args.config_file = ""
-        args.avd_type = constants.TYPE_CF
-        args.flavor = "phone"
-        args.adb_port = None
-        fake_avd_spec = avd_spec.AVDSpec(args)
+        fake_avd_spec = avd_spec.AVDSpec(self.args)
 
         created_subprocess = mock.MagicMock()
         created_subprocess.stdout = mock.MagicMock()
