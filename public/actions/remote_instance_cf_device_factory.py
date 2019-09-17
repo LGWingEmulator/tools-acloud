@@ -211,10 +211,13 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             boot_timeout_secs: Integer, the maximum time to wait for the
                                command to respond.
         """
-        kernel_build = self._compute_client.GetKernelBuild(
-            self._avd_spec.kernel_build_info[constants.BUILD_ID],
-            self._avd_spec.kernel_build_info[constants.BUILD_BRANCH],
-            self._avd_spec.kernel_build_info[constants.BUILD_TARGET])
+        kernel_build = None
+        # TODO(b/140076771) Support kernel image for local image mode.
+        if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
+            kernel_build = self._compute_client.GetKernelBuild(
+                self._avd_spec.kernel_build_info[constants.BUILD_ID],
+                self._avd_spec.kernel_build_info[constants.BUILD_BRANCH],
+                self._avd_spec.kernel_build_info[constants.BUILD_TARGET])
         self._compute_client.LaunchCvd(
             instance,
             self._ip,
