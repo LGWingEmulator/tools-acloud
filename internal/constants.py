@@ -122,6 +122,7 @@ LOCALHOST = "127.0.0.1"
 LOCALHOST_ADB_SERIAL = LOCALHOST + ":%d"
 
 SSH_BIN = "ssh"
+SCP_BIN = "scp"
 ADB_BIN = "adb"
 
 LABEL_CREATE_BY = "created_by"

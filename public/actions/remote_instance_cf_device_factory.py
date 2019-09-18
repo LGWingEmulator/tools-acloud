@@ -23,6 +23,7 @@ from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import utils
+from acloud.internal.lib import ssh
 from acloud.public.actions import base_device_factory
 
 
@@ -56,9 +57,11 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         self.credentials = auth.CreateCredentials(avd_spec.cfg)
         # Control compute_client with enable_multi_stage
         compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
-            avd_spec.cfg, self.credentials)
+            acloud_config=avd_spec.cfg,
+            oauth2_credentials=self.credentials,
+            report_internal_ip=avd_spec.report_internal_ip)
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
-        self._ip = None
+        self._ssh = None
 
     def CreateInstance(self):
         """Create a single configured cuttlefish device.
@@ -94,7 +97,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                                   self._cvd_host_package_artifact,
                                   self._avd_spec.local_image_dir)
         elif image_source == constants.IMAGE_SRC_REMOTE:
-            self._compute_client.UpdateFetchCvd(self._ip)
+            self._compute_client.UpdateFetchCvd()
             self._FetchBuild(
                 self._avd_spec.remote_image[constants.BUILD_ID],
                 self._avd_spec.remote_image[constants.BUILD_BRANCH],
@@ -125,7 +128,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
 
         """
         self._compute_client.FetchBuild(
-            self._ip, build_id, branch, build_target, system_build_id,
+            build_id, branch, build_target, system_build_id,
             system_branch, system_build_target, kernel_build_id,
             kernel_branch, kernel_build_target)
 
@@ -154,7 +157,12 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             image_project=self._cfg.stable_host_image_project,
             blank_data_disk_size_gb=self._cfg.extra_data_disk_size_gb,
             avd_spec=self._avd_spec)
-        self._ip = self._compute_client.GetInstanceIP(instance)
+        ip = self._compute_client.GetInstanceIP(instance)
+        self._ssh = ssh.Ssh(ip=ip,
+                            gce_user=constants.GCE_USER,
+                            ssh_private_key_path=self._cfg.ssh_private_key_path,
+                            extra_args_ssh_tunnel=self._cfg.extra_args_ssh_tunnel,
+                            report_internal_ip=self._report_internal_ip)
         return instance
 
     @utils.TimeExecute(function_description="Processing and uploading local images")
@@ -184,7 +192,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             remote_cmd = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s"
                           % (cvd_user, local_image_zip))
             logger.debug("remote_cmd:\n %s", remote_cmd)
-            self._compute_client.SshCommand(self._ip, remote_cmd)
+            self._ssh.Run(remote_cmd)
         else:
             # Compress image files for faster upload.
             artifact_files = [os.path.basename(image) for image in glob.glob(
@@ -193,15 +201,15 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                    "{ssh_cmd} -- tar -xf - --lzop -S".format(
                        images_dir=images_dir,
                        artifact_files=" ".join(artifact_files),
-                       ssh_cmd=self._compute_client.GetSshBaseCmd(self._ip)))
+                       ssh_cmd=self._ssh.GetBaseCmd(constants.SSH_BIN)))
             logger.debug("cmd:\n %s", cmd)
-            self._compute_client.ShellCmdWithRetry(cmd)
+            ssh.ShellCmdWithRetry(cmd)
 
         # host_package
         remote_cmd = ("\"sudo su -c 'tar -x -z -f -' - '%s'\" < %s" %
                       (cvd_user, cvd_host_package_artifact))
         logger.debug("remote_cmd:\n %s", remote_cmd)
-        self._compute_client.SshCommand(self._ip, remote_cmd)
+        self._ssh.Run(remote_cmd)
 
     def _LaunchCvd(self, instance, boot_timeout_secs=None):
         """Launch CVD.
@@ -220,7 +228,6 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                 self._avd_spec.kernel_build_info[constants.BUILD_TARGET])
         self._compute_client.LaunchCvd(
             instance,
-            self._ip,
             self._avd_spec,
             self._cfg.extra_data_disk_size_gb,
             kernel_build,
