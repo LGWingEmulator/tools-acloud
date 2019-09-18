@@ -52,13 +52,13 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  kernel_build_id=None, kernel_branch=None,
                  kernel_build_target=None, system_branch=None,
                  system_build_id=None, system_build_target=None,
-                 boot_timeout_secs=None):
+                 boot_timeout_secs=None, report_internal_ip=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
         if cfg.enable_multi_stage:
             compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
-                cfg, self.credentials, boot_timeout_secs)
+                cfg, self.credentials, boot_timeout_secs, report_internal_ip)
         else:
             compute_client = cvd_compute_client.CvdComputeClient(
                 cfg, self.credentials)
@@ -239,7 +239,8 @@ def CreateDevices(cfg,
         kernel_build_target=kernel_build_target, system_branch=system_branch,
         system_build_id=system_build_id,
         system_build_target=system_build_target,
-        boot_timeout_secs=boot_timeout_secs)
+        boot_timeout_secs=boot_timeout_secs,
+        report_internal_ip=report_internal_ip)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, constants.TYPE_CF,
                                            report_internal_ip, autoconnect,
