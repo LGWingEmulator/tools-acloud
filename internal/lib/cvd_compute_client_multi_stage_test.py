@@ -22,7 +22,6 @@ import subprocess
 import unittest
 import mock
 
-from acloud import errors
 from acloud.create import avd_spec
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
@@ -30,6 +29,7 @@ from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
+from acloud.internal.lib.ssh import Ssh
 
 from acloud.internal.lib.cvd_compute_client_multi_stage import _ProcessBuild
 
@@ -84,7 +84,9 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitResourceHandle")
         self.Patch(android_build_client.AndroidBuildClient, "InitResourceHandle")
         self.Patch(android_build_client.AndroidBuildClient, "DownloadArtifact")
-        self.Patch(utils, "ScpPushFile")
+        self.Patch(Ssh, "ScpPushFile")
+        self.Patch(Ssh, "WaitForSsh")
+        self.Patch(Ssh, "GetBaseCmd")
         self.cvd_compute_client_multi_stage = cvd_compute_client_multi_stage.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
         self.args = mock.MagicMock()
@@ -115,16 +117,6 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.assertEquals(launch_cvd_args, expeted_args)
 
     # pylint: disable=protected-access
-    def testSSHExecuteWithRetry(self):
-        """test SSHExecuteWithRetry method."""
-        compute_client = cvd_compute_client_multi_stage.CvdComputeClient
-        self.Patch(subprocess, "check_call",
-                   side_effect=errors.DeviceConnectionError(
-                       None, "ssh command fail."))
-        self.assertRaises(subprocess.CalledProcessError,
-                          compute_client.ShellCmdWithRetry,
-                          "fake cmd")
-
     def testProcessBuild(self):
         """Test creating "cuttlefish build" strings."""
         self.assertEqual(_ProcessBuild(build_id="123", branch="abc", build_target="def"), "123/def")
@@ -145,8 +137,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     @mock.patch.object(cvd_compute_client_multi_stage.CvdComputeClient, "_GetDiskArgs",
                        return_value=[{"fake_arg": "fake_value"}])
     @mock.patch("getpass.getuser", return_value="fake_user")
-    @mock.patch.object(cvd_compute_client_multi_stage.CvdComputeClient, "SshCommand")
-    def testCreateInstance(self, _mock_ssh, _get_user, _get_disk_args, mock_create,
+    def testCreateInstance(self, _get_user, _get_disk_args, mock_create,
                            _get_image, _compare_machine_size, mock_check_img,
                            _mock_env):
         """Test CreateInstance."""
