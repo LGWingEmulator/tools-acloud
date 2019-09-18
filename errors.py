@@ -221,3 +221,6 @@ class ZipImageError(Exception):
 
 class UnknownAvdType(Exception):
     """Unknow AVD type."""
+
+class UnknownType(Exception):
+    """Unknow type."""
