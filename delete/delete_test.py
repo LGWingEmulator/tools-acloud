@@ -42,7 +42,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         """Test DeleteLocalInstance."""
         mock_subprocess.return_value = True
         delete_report = delete.DeleteLocalInstance()
-        self.assertEquals(delete_report.data, {
+        self.assertEqual(delete_report.data, {
             "deleted": [
                 {
                     "type": "instance",
@@ -50,8 +50,8 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
                 },
             ],
         })
-        self.assertEquals(delete_report.command, "delete")
-        self.assertEquals(delete_report.status, "SUCCESS")
+        self.assertEqual(delete_report.command, "delete")
+        self.assertEqual(delete_report.status, "SUCCESS")
 
     # pylint: disable=protected-access, no-member
     def testCleanupSSVncviwer(self):

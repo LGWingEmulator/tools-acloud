@@ -143,7 +143,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             extra_scopes=self.EXTRA_SCOPES,
             tags=None)
 
-        self.assertEquals(report.data, {
+        self.assertEqual(report.data, {
             "devices": [
                 {
                     "instance_name": self.INSTANCE,
@@ -160,8 +160,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 },
             ],
         })
-        self.assertEquals(report.command, "create_gf")
-        self.assertEquals(report.status, "SUCCESS")
+        self.assertEqual(report.command, "create_gf")
+        self.assertEqual(report.status, "SUCCESS")
 
         # Call CreateDevices with avd_spec
         self.build_client.GetBranch.side_effect = [
@@ -259,7 +259,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             extra_scopes=self.EXTRA_SCOPES,
             tags=None)
 
-        self.assertEquals(report.data, {
+        self.assertEqual(report.data, {
             "devices": [{
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
@@ -274,8 +274,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "kernel_build_target": self.KERNEL_BUILD_TARGET,
             },],
         })
-        self.assertEquals(report.command, "create_gf")
-        self.assertEquals(report.status, "SUCCESS")
+        self.assertEqual(report.command, "create_gf")
+        self.assertEqual(report.status, "SUCCESS")
 
         # Call CreateDevices with avd_spec
         self.build_client.GetBranch.side_effect = [
@@ -368,7 +368,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             extra_scopes=self.EXTRA_SCOPES,
             tags=None)
 
-        self.assertEquals(report.data, {
+        self.assertEqual(report.data, {
             "devices": [{
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
@@ -383,8 +383,8 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
                 "kernel_build_target": self.KERNEL_BUILD_TARGET,
             },],
         })
-        self.assertEquals(report.command, "create_gf")
-        self.assertEquals(report.status, "SUCCESS")
+        self.assertEqual(report.command, "create_gf")
+        self.assertEqual(report.status, "SUCCESS")
 
         # Call CreateDevices with avd_spec
         self.build_client.GetBranch.side_effect = [

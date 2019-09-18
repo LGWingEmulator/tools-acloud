@@ -143,7 +143,7 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
             blank_data_disk_size_gb=self.EXTRA_DATA_DISK_GB,
             extra_scopes=self.EXTRA_SCOPES)
 
-        self.assertEquals(report.data, {
+        self.assertEqual(report.data, {
             "devices": [
                 {
                     "branch": self.BRANCH,
@@ -160,8 +160,8 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
                 },
             ],
         })
-        self.assertEquals(report.command, "create_cf")
-        self.assertEquals(report.status, "SUCCESS")
+        self.assertEqual(report.command, "create_cf")
+        self.assertEqual(report.status, "SUCCESS")
 
 
 if __name__ == "__main__":
