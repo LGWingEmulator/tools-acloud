@@ -148,8 +148,11 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             self._local_image_artifact) if self._local_image_artifact else ""
         build_target = (os.environ.get(constants.ENV_BUILD_TARGET) if "-" not
                         in image_name else image_name.split("-")[0])
+        build_id = _USER_BUILD
+        if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
+            build_id = self._avd_spec.remote_image[constants.BUILD_ID]
         instance = self._compute_client.GenerateInstanceName(
-            build_target=build_target, build_id=_USER_BUILD)
+            build_target=build_target, build_id=build_id)
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
