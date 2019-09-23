@@ -32,12 +32,23 @@ logger = logging.getLogger(__name__)
 
 # APIs that need to be enabled for GCP project.
 _ANDROID_BUILD_SERVICE = "androidbuildinternal.googleapis.com"
+_ANDROID_BUILD_MSG = (
+    "This service (%s) help to download images from Android Build. If it isn't "
+    "enabled, acloud only supports local images to create AVD."
+    % _ANDROID_BUILD_SERVICE)
 _COMPUTE_ENGINE_SERVICE = "compute.googleapis.com"
+_COMPUTE_ENGINE_MSG = (
+    "This service (%s) help to create instance in google cloud platform. If it "
+    "isn't enabled, acloud can't work anymore." % _COMPUTE_ENGINE_SERVICE)
 _GOOGLE_CLOUD_STORAGE_SERVICE = "storage-component.googleapis.com"
-_GOOGLE_APIS = [
-    _GOOGLE_CLOUD_STORAGE_SERVICE, _ANDROID_BUILD_SERVICE,
-    _COMPUTE_ENGINE_SERVICE
-]
+_GOOGLE_CLOUD_STORAGE_MSG = (
+    "This service (%s) help to manage storage in google cloud platform. If it "
+    "isn't enabled, acloud can't work anymore." % _GOOGLE_CLOUD_STORAGE_SERVICE)
+_OPEN_SERVICE_FAILED_MSG = (
+    "\n[Open Service Failed]\n"
+    "Service name: %(service_name)s\n"
+    "%(service_msg)s\n")
+
 _BUILD_SERVICE_ACCOUNT = "android-build-prod@system.gserviceaccount.com"
 _BILLING_ENABLE_MSG = "billingEnabled: true"
 _DEFAULT_SSH_FOLDER = os.path.expanduser("~/.ssh")
@@ -176,6 +187,56 @@ class GoogleSDKBins(object):
             String, return message after execute gsutil command.
         """
         return subprocess.check_output([self.gsutil_command_path] + cmd, **kwargs)
+
+
+class GoogleAPIService(object):
+    """Class to enable api service in the gcp project."""
+
+    def __init__(self, service_name, error_msg, required=False):
+        """GoogleAPIService initialize.
+
+        Args:
+            service_name: String, name of api service.
+            error_msg: String, show messages if api service enable failed.
+            required: Boolean, True for service must be enabled for acloud.
+        """
+        self._name = service_name
+        self._error_msg = error_msg
+        self._required = required
+
+    def EnableService(self, gcloud_runner):
+        """Enable api service.
+
+        Args:
+            gcloud_runner: A GcloudRunner class to run "gcloud" command.
+        """
+        try:
+            gcloud_runner.RunGcloud(["services", "enable", self._name],
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as error:
+            self.ShowFailMessages(error.output)
+
+    def ShowFailMessages(self, error):
+        """Show fail messages.
+
+        Show the fail messages to hint users the impact if the api service
+        isn't enabled.
+
+        Args:
+            error: String of error message when opening api service failed.
+        """
+        msg_color = (utils.TextColors.FAIL if self._required else
+                     utils.TextColors.WARNING)
+        utils.PrintColorString(
+            error + _OPEN_SERVICE_FAILED_MSG % {
+                "service_name": self._name,
+                "service_msg": self._error_msg}
+            , msg_color)
+
+    @property
+    def name(self):
+        """Return name."""
+        return self._name
 
 
 class GcpTaskRunner(base_task_runner.BaseTaskRunner):
@@ -584,6 +645,15 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         Args:
             gcloud_runner: A GcloudRunner class to run "gcloud" command.
         """
-        for service in _GOOGLE_APIS:
-            gcloud_runner.RunGcloud(["services", "enable", service],
-                                    stderr=subprocess.STDOUT)
+        google_apis = [
+            GoogleAPIService(_GOOGLE_CLOUD_STORAGE_SERVICE, _GOOGLE_CLOUD_STORAGE_MSG),
+            GoogleAPIService(_ANDROID_BUILD_SERVICE, _ANDROID_BUILD_MSG),
+            GoogleAPIService(_COMPUTE_ENGINE_SERVICE, _COMPUTE_ENGINE_MSG, required=True)
+        ]
+        enabled_services = gcloud_runner.RunGcloud(
+            ["services", "list", "--enabled", "--format", "value(NAME)"],
+            stderr=subprocess.STDOUT).splitlines()
+
+        for service in google_apis:
+            if service.name not in enabled_services:
+                service.EnableService(gcloud_runner)
