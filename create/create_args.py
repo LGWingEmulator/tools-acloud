@@ -120,8 +120,8 @@ def AddCommonCreateArgs(parser):
         dest="kernel_build_id",
         required=False,
         help="Android kernel build id, e.g. 4586590. This is to test a new"
-        " kernel build with a particular Android build (--build_id). If neither"
-        " kernel_branch nor kernel_build_id are specified, the kernel that's"
+        " kernel build with a particular Android build (--build-id). If neither"
+        " kernel-branch nor kernel-build-id are specified, the kernel that's"
         " bundled with the Android build would be used.")
     parser.add_argument(
         "--kernel-branch",
@@ -131,8 +131,8 @@ def AddCommonCreateArgs(parser):
         help="Android kernel build branch name, e.g."
         " kernel-common-android-4.14. This is to test a new kernel build with a"
         " particular Android build (--build-id). If specified without"
-        " specifying kernel_build_id, the last green build in the branch will"
-        " be used. If neither kernel_branch nor kernel_build_id are specified,"
+        " specifying kernel-build-id, the last green build in the branch will"
+        " be used. If neither kernel-branch nor kernel-build-id are specified,"
         " the kernel that's bundled with the Android build would be used.")
     parser.add_argument(
         "--kernel-build-target",
@@ -160,7 +160,7 @@ def AddCommonCreateArgs(parser):
         type=str,
         dest="system_build_target",
         help="'cuttlefish only' System image build target, specify if different "
-        "from --build_target",
+        "from --build-target",
         required=False)
     parser.add_argument(
         "--multi-stage-launch",
