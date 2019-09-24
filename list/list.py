@@ -151,6 +151,34 @@ def ChooseInstances(cfg, select_all_instances=False):
     return instances_list
 
 
+def ChooseOneRemoteInstance(cfg):
+    """Get one remote cuttlefish instance.
+
+    Retrieve all remote cuttlefish instances and if there is more than 1 instance
+    found, ask user which instance they'd like.
+
+    Args:
+        cfg: AcloudConfig object.
+
+    Raises:
+        errors.NoInstancesFound: No cuttlefish remote instance found.
+
+    Returns:
+        list.Instance() object.
+    """
+    instances_list = GetCFRemoteInstances(cfg)
+    if not instances_list:
+        raise errors.NoInstancesFound(
+            "Can't find any cuttlefish remote instances, please try "
+            "'$acloud create' to create instances")
+    if len(instances_list) > 1:
+        print("Multiple instances detected, choose any one to proceed:")
+        instances = utils.GetAnswerFromList(instances_list,
+                                            enable_choose_all=False)
+        return instances[0]
+
+    return instances_list[0]
+
 def GetInstancesFromInstanceNames(cfg, instance_names):
     """Get instances from instance names.
 
@@ -211,6 +239,19 @@ def GetInstanceFromAdbPort(cfg, adb_port):
     else:
         hint_message = "No instances to delete."
     raise errors.NoInstancesFound(hint_message)
+
+
+def GetCFRemoteInstances(cfg):
+    """Look for cuttlefish remote instances.
+
+    Args:
+        cfg: AcloudConfig object.
+
+    Returns:
+        instance_list: List of instance names.
+    """
+    instances = GetRemoteInstances(cfg)
+    return [ins for ins in instances if ins.avd_type == constants.TYPE_CF]
 
 
 def Run(args):

@@ -113,6 +113,8 @@ from acloud.public import config
 from acloud.public import device_driver
 from acloud.public.actions import create_cuttlefish_action
 from acloud.public.actions import create_goldfish_action
+from acloud.pull import pull
+from acloud.pull import pull_args
 from acloud.setup import setup
 from acloud.setup import setup_args
 
@@ -142,6 +144,7 @@ def _ParseArgs(args):
         list_args.CMD_LIST,
         delete_args.CMD_DELETE,
         reconnect_args.CMD_RECONNECT,
+        pull_args.CMD_PULL,
     ])
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -231,8 +234,11 @@ def _ParseArgs(args):
     # Command "list"
     subparser_list.append(list_args.GetListArgParser(subparsers))
 
-    # Command "Reconnect"
+    # Command "reconnect"
     subparser_list.append(reconnect_args.GetReconnectArgParser(subparsers))
+
+    # Command "pull"
+    subparser_list.append(pull_args.GetPullArgParser(subparsers))
 
     # Add common arguments.
     for subparser in subparser_list:
@@ -404,6 +410,8 @@ def main(argv=None):
         list_instances.Run(args)
     elif args.which == reconnect_args.CMD_RECONNECT:
         reconnect.Run(args)
+    elif args.which == pull_args.CMD_PULL:
+        report = pull.Run(args)
     elif args.which == setup_args.CMD_SETUP:
         setup.Run(args)
     else:
