@@ -180,6 +180,12 @@ class AVDSpec(object):
         # If user didn't specify --local-image, infer remote image args
         if args.local_image == "":
             self._image_source = constants.IMAGE_SRC_REMOTE
+            if (self._avd_type == constants.TYPE_GF and
+                    self._instance_type != constants.INSTANCE_TYPE_REMOTE):
+                raise errors.UnsupportedInstanceImageType(
+                    "unsupported creation of avd type: %s, "
+                    "instance type: %s, image source: %s" %
+                    (self._avd_type, self._instance_type, self._image_source))
             self._ProcessRemoteBuildArgs(args)
         else:
             self._image_source = constants.IMAGE_SRC_LOCAL
@@ -310,6 +316,9 @@ class AVDSpec(object):
         """
         if self._avd_type == constants.TYPE_CF:
             self._ProcessCFLocalImageArgs(args.local_image, args.flavor)
+        elif self._avd_type == constants.TYPE_GF:
+            self._local_image_dir = self._ProcessGFLocalImageArgs(
+                args.local_image)
         elif self._avd_type == constants.TYPE_GCE:
             self._local_image_artifact = self._GetGceLocalImagePath(
                 args.local_image)
@@ -352,6 +361,32 @@ class AVDSpec(object):
         raise errors.ImgDoesNotExist("Could not find any GCE images (%s), you "
                                      "can build them via \"m dist\"" %
                                      ", ".join(_GCE_LOCAL_IMAGE_CANDIDATES))
+
+    @staticmethod
+    def _ProcessGFLocalImageArgs(local_image_arg):
+        """Get local built image path for goldfish.
+
+        Args:
+            local_image_arg: The path to the unzipped SDK repository,
+                             i.e., sdk-repo-<os>-system-images-<build>.zip.
+                             If the value is None, this method finds the
+                             directory in build environment.
+
+        Returns:
+            String, the path to the image directory.
+
+        Raises:
+            errors.GetLocalImageError if the directory is not found.
+        """
+        image_dir = (local_image_arg if local_image_arg else
+                     utils.GetBuildEnvironmentVariable(
+                         constants.ENV_ANDROID_PRODUCT_OUT))
+
+        if not os.path.isdir(image_dir):
+            raise errors.GetLocalImageError(
+                "%s is not a directory." % image_dir)
+
+        return image_dir
 
     def _ProcessCFLocalImageArgs(self, local_image_arg, flavor_arg):
         """Get local built image path for cuttlefish-type AVD.
