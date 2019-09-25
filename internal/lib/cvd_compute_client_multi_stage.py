@@ -54,12 +54,6 @@ logger = logging.getLogger(__name__)
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
 _FETCHER_NAME = "fetch_cvd"
-_SSH_BIN = "ssh"
-_SSH_CMD = (" -i %(rsa_key_file)s "
-            "-q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
-            "-l %(login_user)s %(ip_addr)s ")
-_SSH_CMD_MAX_RETRY = 4
-_SSH_CMD_RETRY_SLEEP = 3
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -309,9 +303,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         Returns:
             Namedtuple of (internal, external) IP of the instance.
         """
-        disk_args = self._GetDiskArgs(
-            instance, image_name, image_project, boot_disk_size_gb)
-
         metadata = self._metadata.copy()
 
         if avd_spec:
