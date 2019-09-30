@@ -86,15 +86,15 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
             build_id=self.ANDROID_BUILD_ID,
             avd_spec=avd_spec)
 
-        self.assertEquals(report.data, {
+        self.assertEqual(report.data, {
             "devices": [{
                 "build_id": self.ANDROID_BUILD_ID,
                 "instance_name": self.INSTANCE,
                 "ip": self.IP.external,
             },],
         })
-        self.assertEquals(report.command, "create_cheeps")
-        self.assertEquals(report.status, "SUCCESS")
+        self.assertEqual(report.command, "create_cheeps")
+        self.assertEqual(report.status, "SUCCESS")
 
 if __name__ == "__main__":
     unittest.main()
