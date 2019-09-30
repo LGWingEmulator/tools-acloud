@@ -107,14 +107,14 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         expeted_args = ['-x_res=1080', '-y_res=1920', '-dpi=240', '-cpus=2',
                         '-memory_mb=4096', '--setupwizard_mode=REQUIRED']
         launch_cvd_args = self.cvd_compute_client_multi_stage._GetLaunchCvdArgs(fake_avd_spec)
-        self.assertEquals(launch_cvd_args, expeted_args)
+        self.assertEqual(launch_cvd_args, expeted_args)
 
         # test GetLaunchCvdArgs without avd_spec
         expeted_args = ['-x_res=720', '-y_res=1280', '-dpi=160',
                         '--setupwizard_mode=REQUIRED']
         launch_cvd_args = self.cvd_compute_client_multi_stage._GetLaunchCvdArgs(
             avd_spec=None)
-        self.assertEquals(launch_cvd_args, expeted_args)
+        self.assertEqual(launch_cvd_args, expeted_args)
 
     # pylint: disable=protected-access
     def testProcessBuild(self):
