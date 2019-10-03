@@ -45,28 +45,42 @@ class AdbTools(object):
     Attributes:
         _adb_command: String, combine adb commands then execute it.
         _adb_port: Integer, Specified adb port to establish connection.
-        _device_serial: String, adb devices serial.
+        _device_address: String, the device's host and port for adb to connect
+                         to. For example, adb connect 127.0.0.1:5555.
+        _device_serial: String, adb device's serial number. The value can be
+                        different from _device_address. For example,
+                        adb -s emulator-5554 shell.
         _device_information: Dict, will be added to adb information include usb,
                             product model, device and transport_id
     """
-    def __init__(self, adb_port=None):
+    def __init__(self, adb_port=None, device_serial=""):
         """Initialize.
 
         Args:
             adb_port: String of adb port number.
+            device_serial: String, adb device's serial number.
         """
         self._adb_command = ""
         self._adb_port = adb_port
+        self._device_address = ""
         self._device_serial = ""
+        self._SetDeviceSerial(device_serial)
         self._device_information = {}
-        self._SetDeviceSerial()
         self._CheckAdb()
         self._GetAdbInformation()
 
-    def _SetDeviceSerial(self):
-        """Set device serial."""
-        if self._adb_port:
-            self._device_serial = "127.0.0.1:%s" % self._adb_port
+    def _SetDeviceSerial(self, device_serial):
+        """Set device serial and address.
+
+        Args:
+            device_serial: String, the device's serial number. If this
+                           argument is empty, the serial number is set to the
+                           network address.
+        """
+        self._device_address = ("127.0.0.1:%s" % self._adb_port if
+                                self._adb_port else "")
+        self._device_serial = (device_serial if device_serial else
+                               self._device_address)
 
     def _CheckAdb(self):
         """Find adb bin path.
@@ -163,33 +177,35 @@ class AdbTools(object):
     def DisconnectAdb(self):
         """Disconnect adb.
 
-        Only disconnect if the devices shows up in adb devices.
+        Disconnect from the device's network address if it shows up in adb
+        devices. For example, adb disconnect 127.0.0.1:5555.
         """
         try:
             if self.IsAdbConnected():
                 adb_disconnect_args = [self._adb_command,
                                        _ADB_DISCONNECT,
-                                       self._device_serial]
+                                       self._device_address]
                 subprocess.check_call(adb_disconnect_args)
         except subprocess.CalledProcessError:
             utils.PrintColorString("Failed to adb disconnect %s" %
-                                   self._device_serial,
+                                   self._device_address,
                                    utils.TextColors.FAIL)
 
     def ConnectAdb(self):
         """Connect adb.
 
-        Only connect if adb connection is not alive.
+        Connect adb to the device's network address if the connection is not
+        alive. For example, adb connect 127.0.0.1:5555.
         """
         try:
             if not self.IsAdbConnectionAlive():
                 adb_connect_args = [self._adb_command,
                                     _ADB_CONNECT,
-                                    self._device_serial]
+                                    self._device_address]
                 subprocess.check_call(adb_connect_args)
         except subprocess.CalledProcessError:
             utils.PrintColorString("Failed to adb connect %s" %
-                                   self._device_serial,
+                                   self._device_address,
                                    utils.TextColors.FAIL)
 
     def AutoUnlockScreen(self):
@@ -206,6 +222,25 @@ class AdbTools(object):
             utils.PrintColorString("Failed to unlock screen."
                                    "(adb_port: %s)" % self._adb_port,
                                    utils.TextColors.WARNING)
+
+    def EmuCommand(self, *args):
+        """Send an emulator command to the device.
+
+        Args:
+            args: List of strings, the emulator command.
+
+        Returns:
+            Integer, the return code of the adb command.
+            The return code is 0 if adb successfully sends the command to
+            emulator. It is irrelevant to the result of the command.
+        """
+        adb_cmd = [self._adb_command, "-s", self._device_serial, "emu"]
+        adb_cmd.extend(args)
+        proc = subprocess.Popen(adb_cmd, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        proc.communicate()
+        return proc.returncode
 
     @property
     def device_information(self):

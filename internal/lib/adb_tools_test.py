@@ -13,8 +13,9 @@
 # limitations under the License.
 """Tests for AdbTools."""
 
-import unittest
 import subprocess
+import unittest
+import mock
 
 from acloud.internal.lib import adb_tools
 from acloud.internal.lib import driver_test_lib
@@ -135,6 +136,27 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         adb_cmd.DisconnectAdb()
         self.assertEqual(adb_cmd.IsAdbConnected(), False)
         subprocess.check_call.assert_not_called()
+
+    def testEmuCommand(self):
+        """Test emu command."""
+        fake_adb_port = "48451"
+        fake_device_serial = "fake_device_serial"
+        self.Patch(adb_tools, "find_executable", return_value="path/adb")
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
+
+        mock_popen_obj = mock.Mock(returncode=1)
+        self.Patch(subprocess, "Popen", return_value=mock_popen_obj)
+
+        adb_cmd = adb_tools.AdbTools(adb_port=fake_adb_port,
+                                     device_serial=fake_device_serial)
+        returncode = adb_cmd.EmuCommand("unit", "test")
+        self.assertEqual(returncode, 1)
+        subprocess.Popen.assert_called_once_with(
+            ["path/adb", "-s", "fake_device_serial", "emu", "unit", "test"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        mock_popen_obj.communicate.assert_called_once_with()
 
 
 if __name__ == "__main__":

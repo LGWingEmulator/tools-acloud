@@ -76,6 +76,26 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(self.AvdSpec._local_image_dir, "test_environ")
         self.assertEqual(self.AvdSpec.local_image_artifact, expected_image_artifact)
 
+        # Specified --avd-type=goldfish --local-image with a dir
+        self.Patch(utils, "GetBuildEnvironmentVariable",
+                   return_value="test_environ")
+        self.Patch(os.path, "isdir", return_value=True)
+        self.args.local_image = "/path-to-image-dir"
+        self.AvdSpec._avd_type = constants.TYPE_GF
+        self.AvdSpec._instance_type = constants.INSTANCE_TYPE_LOCAL
+        self.AvdSpec._ProcessLocalImageArgs(self.args)
+        self.assertEqual(self.AvdSpec._local_image_dir, expected_image_dir)
+
+        # Specified --avd-type=goldfish --local_image without arg
+        self.Patch(utils, "GetBuildEnvironmentVariable",
+                   return_value="test_environ")
+        self.Patch(os.path, "isdir", return_value=True)
+        self.args.local_image = None
+        self.AvdSpec._avd_type = constants.TYPE_GF
+        self.AvdSpec._instance_type = constants.INSTANCE_TYPE_LOCAL
+        self.AvdSpec._ProcessLocalImageArgs(self.args)
+        self.assertEqual(self.AvdSpec._local_image_dir, "test_environ")
+
     def testProcessImageArgs(self):
         """Test process image source."""
         self.Patch(glob, "glob", return_value=["fake.img"])

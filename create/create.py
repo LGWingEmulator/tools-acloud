@@ -32,6 +32,7 @@ from acloud.create import avd_spec
 from acloud.create import cheeps_remote_image_remote_instance
 from acloud.create import gce_local_image_remote_instance
 from acloud.create import gce_remote_image_remote_instance
+from acloud.create import goldfish_local_image_local_instance
 from acloud.create import goldfish_remote_image_remote_instance
 from acloud.create import local_image_local_instance
 from acloud.create import local_image_remote_instance
@@ -68,6 +69,8 @@ _CREATOR_CLASS_DICT = {
     # GF types
     (constants.TYPE_GF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
         goldfish_remote_image_remote_instance.GoldfishRemoteImageRemoteInstance,
+    (constants.TYPE_GF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_LOCAL):
+        goldfish_local_image_local_instance.GoldfishLocalImageLocalInstance,
 }
 
 
