@@ -183,6 +183,10 @@ class GetCvdLocalHostPackageError(CreateError):
     """Can't find the lost host package."""
 
 
+class GetSdkRepoPackageError(CreateError):
+    """Can't find the local SDK repository package for goldfish."""
+
+
 class NoCuttlefishCommonInstalled(SetupError):
     """Can't find cuttlefish_common lib."""
 
@@ -197,6 +201,10 @@ class UnsupportedCompressionFileType(SetupError):
 
 class LaunchCVDFail(CreateError):
     """Cuttlefish AVD launch failed."""
+
+
+class EmulatorFail(CreateError):
+    """Goldfish AVD launch failed."""
 
 
 class NoExecuteCmd(CreateError):
