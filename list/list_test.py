@@ -18,6 +18,7 @@ import mock
 
 from acloud import errors
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import utils
 from acloud.list import list as list_instance
 
 
@@ -60,6 +61,29 @@ class ListTest(driver_test_lib.BaseDriverTest):
             list_instance.GetInstancesFromInstanceNames,
             cfg=cfg,
             instance_names=instance_names)
+
+    def testChooseOneRemoteInstance(self):
+        """test choose one remote instance from instance names."""
+        cfg = mock.MagicMock()
+
+        # Test only one instance case
+        instance_names = ["cf_instance1"]
+        self.Patch(list_instance, "GetCFRemoteInstances", return_value=instance_names)
+        expected_instance = "cf_instance1"
+        self.assertEqual(list_instance.ChooseOneRemoteInstance(cfg), expected_instance)
+
+        # Test no instance case
+        self.Patch(list_instance, "GetCFRemoteInstances", return_value=[])
+        with self.assertRaises(errors.NoInstancesFound):
+            list_instance.ChooseOneRemoteInstance(cfg)
+
+        # Test two instances case.
+        instance_names = ["cf_instance1", "cf_instance2"]
+        choose_instance = ["cf_instance2"]
+        self.Patch(list_instance, "GetCFRemoteInstances", return_value=instance_names)
+        self.Patch(utils, "GetAnswerFromList", return_value=choose_instance)
+        expected_instance = "cf_instance2"
+        self.assertEqual(list_instance.ChooseOneRemoteInstance(cfg), expected_instance)
 
     # pylint: disable=attribute-defined-outside-init
     def testGetInstanceFromAdbPort(self):
