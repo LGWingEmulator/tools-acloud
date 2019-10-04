@@ -23,7 +23,6 @@ import mock
 from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
-from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import ssh
 
 
@@ -32,7 +31,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
 
     FAKE_SSH_PRIVATE_KEY_PATH = "/fake/acloud_rea"
     FAKE_SSH_USER = "fake_user"
-    FAKE_IP = gcompute_client.IP(external="1.1.1.1", internal="10.1.1.1")
+    FAKE_IP = ssh.IP(external="1.1.1.1", internal="10.1.1.1")
     FAKE_EXTRA_ARGS_SSH = "-o ProxyCommand='ssh fake_user@2.2.2.2 Server 22'"
     FAKE_REPORT_INTERNAL_IP = True
 
@@ -168,6 +167,31 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             stderr=-2,
                                             stdin=None,
                                             stdout=-1)
+
+    # pylint: disable=protected-access
+    def testIPAddress(self):
+        """Test IP class to get ip address."""
+        # Internal ip case.
+        ssh_object = ssh.Ssh(ip=ssh.IP(external="1.1.1.1", internal="10.1.1.1"),
+                             gce_user=self.FAKE_SSH_USER,
+                             ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH,
+                             report_internal_ip=True)
+        expected_ip = "10.1.1.1"
+        self.assertEqual(ssh_object._ip, expected_ip)
+
+        # External ip case.
+        ssh_object = ssh.Ssh(ip=ssh.IP(external="1.1.1.1", internal="10.1.1.1"),
+                             gce_user=self.FAKE_SSH_USER,
+                             ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH)
+        expected_ip = "1.1.1.1"
+        self.assertEqual(ssh_object._ip, expected_ip)
+
+        # Only one ip case.
+        ssh_object = ssh.Ssh(ip=ssh.IP(ip="1.1.1.1"),
+                             gce_user=self.FAKE_SSH_USER,
+                             ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH)
+        expected_ip = "1.1.1.1"
+        self.assertEqual(ssh_object._ip, expected_ip)
 
 
 if __name__ == "__main__":
