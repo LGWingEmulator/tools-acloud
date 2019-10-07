@@ -326,14 +326,39 @@ class AcloudGCPSetupTest(unittest.TestCase):
     @mock.patch("subprocess.check_output")
     def testEnableGcloudServices(self, mock_run):
         """test enable Gcloud services."""
+        mock_run.return_value = ""
         self.gcp_env_runner._EnableGcloudServices(self.gcloud_runner)
         mock_run.assert_has_calls([
             mock.call(["gcloud", "services", "enable",
-                       "storage-component.googleapis.com"], stderr=-2),
+                       gcp_setup_runner._GOOGLE_CLOUD_STORAGE_SERVICE], stderr=-2),
             mock.call(["gcloud", "services", "enable",
-                       "androidbuildinternal.googleapis.com"], stderr=-2),
+                       gcp_setup_runner._ANDROID_BUILD_SERVICE], stderr=-2),
             mock.call(["gcloud", "services", "enable",
-                       "compute.googleapis.com"], stderr=-2)])
+                       gcp_setup_runner._COMPUTE_ENGINE_SERVICE], stderr=-2)])
+
+    @mock.patch("subprocess.check_output")
+    def testGoogleAPIService(self, mock_run):
+        """Test GoogleAPIService"""
+        api_service = gcp_setup_runner.GoogleAPIService("service_name",
+                                                        "error_message")
+        api_service.EnableService(self.gcloud_runner)
+        mock_run.assert_has_calls([
+            mock.call(["gcloud", "services", "enable", "service_name"], stderr=-2)])
+
+    @mock.patch("subprocess.check_output")
+    def testCheckBillingEnable(self, mock_run):
+        """Test CheckBillingEnable"""
+        # Test billing account in gcp project already enabled.
+        mock_run.return_value = "billingEnabled: true"
+        self.gcp_env_runner._CheckBillingEnable(self.gcloud_runner)
+        mock_run.assert_has_calls([
+            mock.call(["gcloud", "alpha", "billing", "projects", "describe",
+                       self.gcp_env_runner.project])])
+
+        # Test billing account in gcp project was not enabled.
+        mock_run.return_value = "billingEnabled: false"
+        with self.assertRaises(errors.NoBillingError):
+            self.gcp_env_runner._CheckBillingEnable(self.gcloud_runner)
 
 
 if __name__ == "__main__":
