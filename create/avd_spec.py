@@ -424,8 +424,12 @@ class AVDSpec(object):
                     "No image found(Did you choose a lunch target and run `m`?)"
                     ": %s.\n " % self.local_image_dir)
 
-            flavor_from_build_string = self._GetFlavorFromString(
-                utils.GetBuildEnvironmentVariable(constants.ENV_BUILD_TARGET))
+            try:
+                flavor_from_build_string = self._GetFlavorFromString(
+                    utils.GetBuildEnvironmentVariable(constants.ENV_BUILD_TARGET))
+            except errors.GetAndroidBuildEnvVarError:
+                logger.debug("Unable to determine flavor from env variable: %s",
+                             constants.ENV_BUILD_TARGET)
 
         if flavor_from_build_string and not flavor_arg:
             self._flavor = flavor_from_build_string
