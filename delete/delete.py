@@ -36,18 +36,18 @@ from acloud.public import report
 
 logger = logging.getLogger(__name__)
 
-_COMMAND_GET_PROCESS_ID = ["pgrep", "launch_cvd"]
+_COMMAND_GET_PROCESS_ID = ["pgrep", "run_cvd"]
 _COMMAND_GET_PROCESS_COMMAND = ["ps", "-o", "command", "-p"]
-_RE_LAUNCH_CVD = re.compile(r"^(?P<launch_cvd>.+launch_cvd)(.*--daemon ).+")
+_RE_RUN_CVD = re.compile(r"^(?P<run_cvd>.+run_cvd)")
 _SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 
 
 def _GetStopCvd():
     """Get stop_cvd path.
 
-    "stop_cvd" and "launch_cvd" are in the same folder(host package folder).
-    Try to get directory of "launch_cvd" by "ps -o command -p <pid>." command.
-    For example: "/tmp/bin/launch_cvd --daemon --cpus 2 ..."
+    "stop_cvd" and "run_cvd" are in the same folder(host package folder).
+    Try to get directory of "run_cvd" by "ps -o command -p <pid>." command.
+    For example: "/tmp/bin/run_cvd"
 
     Raises:
         errors.NoExecuteCmd: Can't find stop_cvd.
@@ -59,10 +59,10 @@ def _GetStopCvd():
     process_info = subprocess.check_output(
         _COMMAND_GET_PROCESS_COMMAND + process_id.splitlines())
     for process in process_info.splitlines():
-        match = _RE_LAUNCH_CVD.match(process)
+        match = _RE_RUN_CVD.match(process)
         if match:
-            launch_cvd_path = match.group("launch_cvd")
-            stop_cvd_cmd = os.path.join(os.path.dirname(launch_cvd_path),
+            run_cvd_path = match.group("run_cvd")
+            stop_cvd_cmd = os.path.join(os.path.dirname(run_cvd_path),
                                         constants.CMD_STOP_CVD)
             if os.path.exists(stop_cvd_cmd):
                 logger.debug("stop_cvd command: %s", stop_cvd_cmd)

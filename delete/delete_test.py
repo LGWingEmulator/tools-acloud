@@ -32,7 +32,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
     def testGetStopcvd(self, mock_subprocess, mock_path_exist):
         """Test _GetStopCvd."""
         mock_subprocess.side_effect = ["fack_id",
-                                       "/tmp/bin/launch_cvd --daemon --cpus 2"]
+                                       "/tmp/bin/run_cvd"]
         expected_value = "/tmp/bin/stop_cvd"
         self.assertEqual(expected_value, delete._GetStopCvd())
 

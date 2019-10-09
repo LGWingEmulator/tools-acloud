@@ -27,7 +27,9 @@ The details include:
 """
 
 import datetime
+import json
 import logging
+import os
 import re
 import subprocess
 
@@ -35,6 +37,7 @@ import subprocess
 import dateutil.parser
 import dateutil.tz
 
+from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
@@ -51,13 +54,7 @@ _RE_SSH_TUNNEL_PATTERN = (r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
 _RE_TIMEZONE = re.compile(r"^(?P<time>[0-9\-\.:T]*)(?P<timezone>[+-]\d+:\d+)$")
 
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
-_RE_LAUNCH_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*launch_cvd --daemon )+"
-                            r"((.*\s*-cpus\s)(?P<cpu>\d+))?"
-                            r"((.*\s*-x_res\s)(?P<x_res>\d+))?"
-                            r"((.*\s*-y_res\s)(?P<y_res>\d+))?"
-                            r"((.*\s*-dpi\s)(?P<dpi>\d+))?"
-                            r"((.*\s*-memory_mb\s)(?P<memory>\d+))?"
-                            r"((.*\s*-blank_data_image_mb\s)(?P<disk>\d+))?")
+_RE_RUN_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*run_cvd)")
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
 
@@ -219,12 +216,13 @@ class LocalInstance(Instance):
 
         process_output = subprocess.check_output(_COMMAND_PS_LAUNCH_CVD)
         for line in process_output.splitlines():
-            match = _RE_LAUNCH_CVD.match(line)
+            match = _RE_RUN_CVD.match(line)
             if match:
                 local_instance = Instance()
-                x_res = match.group("x_res")
-                y_res = match.group("y_res")
-                dpi = match.group("dpi")
+                cf_runtime_config_dict = GetCuttlefishRuntimeConfig()
+                x_res = cf_runtime_config_dict["x_res"]
+                y_res = cf_runtime_config_dict["y_res"]
+                dpi = cf_runtime_config_dict["dpi"]
                 date_str = match.group("date_str").strip()
                 local_instance._name = constants.LOCAL_INS_NAME
                 local_instance._createtime = date_str
@@ -249,6 +247,24 @@ class LocalInstance(Instance):
                 return local_instance
         return None
 
+def GetCuttlefishRuntimeConfig():
+    """Get and parse cuttlefish_config.json.
+
+    Returns:
+        Dict parsing json file from cuttlefish runtime config.
+
+    Raises:
+        errors.ConfigError: if file not found or config load failed.
+    """
+    runtime_cf_config_path = os.path.join(os.path.expanduser("~"),
+                                          "cuttlefish_runtime",
+                                          "cuttlefish_config.json")
+    if os.path.exists(runtime_cf_config_path):
+        with open(runtime_cf_config_path, "r") as cf_config:
+            return json.load(cf_config)
+    else:
+        raise errors.ConfigError("file does not exist: %s" % runtime_cf_config_path)
+    raise errors.ConfigError("Could not load cuttlefish_config.json.")
 
 class RemoteInstance(Instance):
     """Class to store data of remote instance."""
