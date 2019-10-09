@@ -166,7 +166,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # different dir (e.g. downloaded image).
         os.environ[_ENV_ANDROID_HOST_OUT] = host_bins_path
         # Cuttlefish support launch single AVD at one time currently.
-        if utils.IsCommandRunning(constants.CMD_LAUNCH_CVD):
+        if (utils.IsCommandRunning(constants.CMD_LAUNCH_CVD) or
+                utils.IsCommandRunning(constants.CMD_RUN_CVD)):
             logger.info("Cuttlefish AVD is already running.")
             if no_prompts or utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
                 stop_cvd_cmd = os.path.join(host_bins_path,
