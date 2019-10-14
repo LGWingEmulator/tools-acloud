@@ -40,11 +40,8 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                      "-o UserKnownHostsFile=/dev/null "
                      "-o StrictHostKeyChecking=no -L 12345:127.0.0.1:6444 "
                      "-L 54321:127.0.0.1:6520 -N -f -l user 1.1.1.1")
-    PS_LAUNCH_CVD = ("Sat Nov 10 21:55:10 2018 /fake_path/bin/launch_cvd "
-                     "--daemon --cpus 2 --x_res 1080 --y_res 1920 --dpi 480"
-                     " --memory_mb 4096 --blank_data_image_mb 4096 --data_policy"
-                     " always_create --system_image_dir /fake "
-                     "--vnc_server_port 6444")
+    PS_LAUNCH_CVD = ("Sat Nov 10 21:55:10 2018 /fake_path/bin/run_cvd ")
+    PS_RUNTIME_CF_CONFIG = {"x_res": "1080", "y_res": "1920", "dpi": "480"}
     GCE_INSTANCE = {
         constants.INS_KEY_NAME: "fake_ins_name",
         constants.INS_KEY_CREATETIME: "fake_create_time",
@@ -64,6 +61,8 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         """"Test get local instance info from launch_cvd process."""
         self.Patch(subprocess, "check_output", return_value=self.PS_LAUNCH_CVD)
         self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
+        self.Patch(instance, "GetCuttlefishRuntimeConfig",
+                   return_value=self.PS_RUNTIME_CF_CONFIG)
         local_instance = instance.LocalInstance()
         self.assertEqual(constants.LOCAL_INS_NAME, local_instance.name)
         self.assertEqual(True, local_instance.islocal)
