@@ -128,13 +128,25 @@ def ShellCmdWithRetry(cmd, timeout=None):
         timeout=timeout)
 
 
+class IP(object):
+    """ A class that control the IP address."""
+    def __init__(self, external=None, internal=None, ip=None):
+        """Init for IP.
+            Args:
+                external: String, external ip.
+                internal: String, internal ip.
+                ip: String, default ip to set for either external and internal
+                if neither is set.
+        """
+        self.external = external or ip
+        self.internal = internal or ip
+
+
 class Ssh(object):
     """A class that control the remote instance via the IP address.
 
     Attributes:
-        _ip: Namedtuple of (internal, external) IP of the instance.
-        _report_internal_ip: Boolean to report the internal ip instead of
-                             external ip.
+        _ip: an IP object.
         _gce_user: String of user login into the instance.
         _ssh_private_key_path: Path to the private key file.
         _extra_args_ssh_tunnel: String, extra args for ssh or scp.
