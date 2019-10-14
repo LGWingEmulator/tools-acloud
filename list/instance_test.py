@@ -49,6 +49,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         constants.INS_KEY_NAME: "fake_ins_name",
         constants.INS_KEY_CREATETIME: "fake_create_time",
         constants.INS_KEY_STATUS: "fake_status",
+        constants.INS_KEY_ZONE: "test/zones/fake_zone",
         "networkInterfaces": [{"accessConfigs": [{"natIP": "1.1.1.1"}]}],
         "labels": {constants.INS_KEY_AVD_TYPE: "fake_type",
                    constants.INS_KEY_AVD_FLAVOR: "fake_flavor"},
@@ -155,6 +156,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         """"Test Get forwarding adb and vnc port from ssh tunnel."""
         self.Patch(subprocess, "check_output", return_value=self.PS_SSH_TUNNEL)
         self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
+        self.Patch(instance.RemoteInstance, "_GetZoneName", return_value="fake_zone")
         forwarded_ports = instance.RemoteInstance(
             mock.MagicMock()).GetAdbVncPortFromSSHTunnel(
                 "1.1.1.1", constants.TYPE_CF)
@@ -237,6 +239,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                           "   avd type: fake_type\n "
                           "   display: None\n "
                           "   vnc: 127.0.0.1:654321\n "
+                          "   zone: fake_zone\n "
                           "   adb serial: 127.0.0.1:123456\n "
                           "   product: None\n "
                           "   model: None\n "
@@ -259,6 +262,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                           "   avd type: fake_type\n "
                           "   display: None\n "
                           "   vnc: 127.0.0.1:None\n "
+                          "   zone: fake_zone\n "
                           "   adb serial: disconnected")
         self.assertEqual(remote_instance.Summary(), result_summary)
 
@@ -274,6 +278,16 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         with mock.patch.object(six.moves.builtins, "open", mock_open):
             self.assertEqual({u'y_res': 1280, u'x_res': 720, u'x_display': u':20'},
                              instance.GetCuttlefishRuntimeConfig(1))
+
+    def testGetZoneName(self):
+        """Test GetZoneName."""
+        zone_info = "v1/projects/project/zones/us-central1-c"
+        expected_result = "us-central1-c"
+        self.assertEqual(instance.RemoteInstance._GetZoneName(zone_info),
+                         expected_result)
+        # Test can't get zone name from zone info.
+        zone_info = "v1/projects/project/us-central1-c"
+        self.assertEqual(instance.RemoteInstance._GetZoneName(zone_info), None)
 
 
 if __name__ == "__main__":
