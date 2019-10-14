@@ -38,6 +38,8 @@ import time
 import uuid
 import zipfile
 
+import six
+
 from acloud import errors
 from acloud.internal import constants
 
@@ -1197,3 +1199,30 @@ def GetBuildEnvironmentVariable(variable_name):
             "Try to run 'source build/envsetup.sh && lunch <target>'"
             % variable_name
         )
+
+
+# pylint: disable=no-member
+def FindExecutable(filename):
+    """A compatibility function to find execution file path.
+
+    Args:
+        filename: String of execution filename.
+
+    Returns:
+        String: execution file path.
+    """
+    return find_executable(filename) if six.PY2 else shutil.which(filename)
+
+
+def GetDictItems(namedtuple_object):
+    """A compatibility function to access the OrdereDict object from the given namedtuple object.
+
+    Args:
+        namedtuple_object: namedtuple object.
+
+    Returns:
+        collections.namedtuple.__dict__.items() when using python2.
+        collections.namedtuple._asdict().items() when using python3.
+    """
+    return (namedtuple_object.__dict__.items() if six.PY2
+            else namedtuple_object._asdict().items())
