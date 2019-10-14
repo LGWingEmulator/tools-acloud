@@ -29,8 +29,8 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import driver_test_lib
-from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import gstorage_client
+from acloud.internal.lib import ssh
 from acloud.public import device_driver
 
 
@@ -81,7 +81,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         """Test CreateGCETypeAVD."""
         cfg = _CreateCfg()
         fake_gs_url = "fake_gs_url"
-        fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
+        fake_ip = ssh.IP(external="140.1.1.1", internal="10.1.1.1")
         fake_instance = "fake-instance"
         fake_image = "fake-image"
         fake_build_target = "fake_target"
@@ -136,7 +136,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
     def testCreateGCETypeAVDInternalIP(self):
         """Test CreateGCETypeAVD with internal IP."""
         cfg = _CreateCfg()
-        fake_ip = gcompute_client.IP(external="140.1.1.1", internal="10.1.1.1")
+        fake_ip = ssh.IP(external="140.1.1.1", internal="10.1.1.1")
         fake_instance = "fake-instance"
         fake_build_target = "fake_target"
         fake_build_id = "12345"
