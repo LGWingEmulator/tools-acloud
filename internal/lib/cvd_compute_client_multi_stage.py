@@ -48,6 +48,8 @@ from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.ssh import Ssh
+from acloud.internal.lib.ssh import IP
+
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +154,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         ip = self._CreateGceInstance(instance, image_name, image_project,
                                      extra_scopes, boot_disk_size_gb, avd_spec)
-        self._ssh = Ssh(ip=ip,
+        self._ssh = Ssh(ip=IP(internal=ip.internal, external=ip.external),
                         gce_user=constants.GCE_USER,
                         ssh_private_key_path=self._ssh_private_key_path,
                         extra_args_ssh_tunnel=self._extra_args_ssh_tunnel,
