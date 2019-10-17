@@ -17,6 +17,7 @@ import subprocess
 import unittest
 import mock
 
+from acloud import errors
 from acloud.internal.lib import adb_tools
 from acloud.internal.lib import driver_test_lib
 
@@ -119,12 +120,13 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(adb_cmd.IsAdbConnected(), True)
         subprocess.check_call.assert_not_called()
 
-        self.Patch(subprocess, "check_output", return_value=self.DEVICE_OFFLINE)
+        self.Patch(subprocess, "check_output", side_effect=[self.DEVICE_OFFLINE,
+                                                            self.DEVICE_NONE])
         self.Patch(subprocess, "check_call", return_value=True)
         subprocess.check_call.call_count = 0
         adb_cmd = adb_tools.AdbTools(fake_adb_port)
         adb_cmd.DisconnectAdb()
-        self.assertEqual(adb_cmd.IsAdbConnected(), True)
+        self.assertEqual(adb_cmd.IsAdbConnected(), False)
         subprocess.check_call.assert_called_with([adb_cmd._adb_command,
                                                   adb_tools._ADB_DISCONNECT,
                                                   adb_cmd._device_serial])
@@ -136,6 +138,14 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         adb_cmd.DisconnectAdb()
         self.assertEqual(adb_cmd.IsAdbConnected(), False)
         subprocess.check_call.assert_not_called()
+
+        # test raise error if adb still alive after disconnect
+        self.Patch(subprocess, "check_output", return_value=self.DEVICE_OFFLINE)
+        self.Patch(subprocess, "check_call", return_value=True)
+        subprocess.check_call.call_count = 0
+        adb_cmd = adb_tools.AdbTools(fake_adb_port)
+        with self.assertRaises(errors.AdbDisconnectFailed):
+            adb_cmd.DisconnectAdb()
 
     def testEmuCommand(self):
         """Test emu command."""
