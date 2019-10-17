@@ -34,9 +34,12 @@ _RE_ADB_DEVICE_INFO = (r"%s\s*(?P<adb_status>[\S]+)? ?"
                        r"(device:(?P<device>[\S]+))? ?"
                        r"(transport_id:(?P<transport_id>[\S]+))? ?")
 _DEVICE_ATTRIBUTES = ["adb_status", "usb", "product", "model", "device", "transport_id"]
+_MAX_RETRIES_ON_WAIT_ADB_GONE = 5
 #KEY_CODE 82 = KEY_MENU
 _UNLOCK_SCREEN_KEYEVENT = ("%(adb_bin)s -s %(device_serial)s "
                            "shell input keyevent 82")
+_WAIT_ADB_RETRY_BACKOFF_FACTOR = 1.5
+_WAIT_ADB_SLEEP_MULTIPLIER = 2
 
 
 class AdbTools(object):
@@ -174,11 +177,14 @@ class AdbTools(object):
         """
         return self.GetAdbConnectionStatus() is not None
 
-    def DisconnectAdb(self):
+    def _DisconnectAndRaiseError(self):
         """Disconnect adb.
 
         Disconnect from the device's network address if it shows up in adb
         devices. For example, adb disconnect 127.0.0.1:5555.
+
+        Raises:
+            errors.WaitForAdbDieError: adb is alive after disconnect adb.
         """
         try:
             if self.IsAdbConnected():
@@ -186,10 +192,35 @@ class AdbTools(object):
                                        _ADB_DISCONNECT,
                                        self._device_address]
                 subprocess.check_call(adb_disconnect_args)
+                # check adb device status
+                self._GetAdbInformation()
+                if self.IsAdbConnected():
+                    raise errors.AdbDisconnectFailed(
+                        "adb disconnect failed, device is still connected and "
+                        "has status: [%s]" % self.GetAdbConnectionStatus())
+
         except subprocess.CalledProcessError:
             utils.PrintColorString("Failed to adb disconnect %s" %
                                    self._device_address,
                                    utils.TextColors.FAIL)
+
+    def DisconnectAdb(self, retry=False):
+        """Retry to disconnect adb.
+
+        When retry=True, this method will retry to disconnect adb until adb
+        device is completely gone.
+
+        Args:
+            retry: Boolean, True to retry disconnect on error.
+        """
+        retry_count = _MAX_RETRIES_ON_WAIT_ADB_GONE if retry else 0
+        # Wait for adb device is reset and gone.
+        utils.RetryExceptionType(exception_types=errors.AdbDisconnectFailed,
+                                 max_retries=retry_count,
+                                 functor=self._DisconnectAndRaiseError,
+                                 sleep_multiplier=_WAIT_ADB_SLEEP_MULTIPLIER,
+                                 retry_backoff_factor=
+                                 _WAIT_ADB_RETRY_BACKOFF_FACTOR)
 
     def ConnectAdb(self):
         """Connect adb.
