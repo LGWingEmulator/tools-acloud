@@ -49,6 +49,7 @@ from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
 from acloud.internal.lib.ssh import Ssh
 from acloud.internal.lib.ssh import IP
+from acloud.pull import pull
 
 
 logger = logging.getLogger(__name__)
@@ -258,6 +259,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                   boot_timeout_secs=None):
         """Launch CVD.
 
+        Launch AVD with launch_cvd. If the process is failed, acloud would show
+        error messages and atuo download log files from remote instance.
+
         Args:
             instance: String, instance name.
             avd_spec: An AVDSpec instance.
@@ -285,8 +289,22 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                          % (instance, boot_timeout_secs))
             self._all_failures[instance] = error_msg
             utils.PrintColorString(str(e), utils.TextColors.FAIL)
+            self._PullAllLogFiles(instance)
 
         return {instance: error_msg} if error_msg else {}
+
+    def _PullAllLogFiles(self, instance):
+        """Pull all log files from instance.
+
+        1. Download log files to temp folder.
+        2. Show messages about the download folder for users.
+
+        Args:
+            instance: String, instance name.
+        """
+        log_files = pull.GetAllLogFilePaths(self._ssh)
+        download_folder = pull.GetDownloadLogFolder(instance)
+        pull.PullLogs(self._ssh, log_files, download_folder)
 
     @utils.TimeExecute(function_description="Creating GCE instance")
     def _CreateGceInstance(self, instance, image_name, image_project,
