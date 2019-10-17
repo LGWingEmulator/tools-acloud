@@ -233,3 +233,11 @@ class UnknownAvdType(Exception):
 
 class UnknownType(Exception):
     """Unknown type."""
+
+
+class AdbDisconnectFailed(Exception):
+    """Adb still be alive after disconnect instance."""
+
+
+class UnsupportedLocalInstanceId(Exception):
+    """Unsupported local instance id."""
