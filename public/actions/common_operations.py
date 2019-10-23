@@ -99,8 +99,11 @@ class DevicePool(object):
         for _ in range(num):
             instance = self._device_factory.CreateInstance()
             ip = self._compute_client.GetInstanceIP(instance)
+            time_info = self._compute_client.execution_time if hasattr(
+                self._compute_client, "execution_time") else {}
             self.devices.append(
-                avd.AndroidVirtualDevice(ip=ip, instance_name=instance))
+                avd.AndroidVirtualDevice(ip=ip, instance_name=instance,
+                                         time_info=time_info))
 
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up",
                        result_evaluator=utils.BootEvaluator)
@@ -162,8 +165,7 @@ class DevicePool(object):
         """
         return self._devices
 
-# pylint: disable=unused-argument
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,unused-argument,too-many-branches
 def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
                   serial_log_file=None, client_adb_port=None,
@@ -228,6 +230,8 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
             }
             if device.build_info:
                 device_dict.update(device.build_info)
+            if device.time_info:
+                device_dict.update(device.time_info)
             if autoconnect:
                 forwarded_ports = utils.AutoConnect(
                     ip_addr=ip,
