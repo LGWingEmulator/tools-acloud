@@ -25,6 +25,7 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
+from acloud.list import list as list_instances
 
 
 # pylint: disable=invalid-name,protected-access
@@ -40,6 +41,8 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.args.config_file = ""
         self.args.build_target = "fake_build_target"
         self.args.adb_port = None
+        self.Patch(list_instances, "ChooseOneRemoteInstance", return_value=mock.MagicMock())
+        self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
         self.AvdSpec = avd_spec.AVDSpec(self.args)
 
     # pylint: disable=protected-access
@@ -194,6 +197,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         # Checking wrong resolution.
         args = mock.MagicMock()
         args.hw_property = "cpu:3,resolution:1280"
+        args.reuse_instance_name = None
         with self.assertRaises(errors.InvalidHWPropertyError):
             self.AvdSpec._ProcessHWPropertyArgs(args)
 

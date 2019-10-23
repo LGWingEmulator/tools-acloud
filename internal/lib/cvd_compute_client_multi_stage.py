@@ -119,8 +119,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                        system_build_target=None, system_branch=None,
                        system_build_id=None):
 
-        """Create a single configured cuttlefish device.
-        1. Create gcp instance.
+        """Create/Reuse a single configured cuttlefish device.
+        1. Prepare GCE instance.
+           Create a new instnace or get IP address for reusing the specific instance.
         2. Put fetch_cvd on the instance.
         3. Invoke fetch_cvd to fetch and run the instance.
 
@@ -153,8 +154,12 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             int(self.GetImage(image_name, image_project)["diskSizeGb"]) +
             blank_data_disk_size_gb)
 
-        ip = self._CreateGceInstance(instance, image_name, image_project,
-                                     extra_scopes, boot_disk_size_gb, avd_spec)
+        if avd_spec and avd_spec.instance_name_to_reuse:
+            ip = self._ReusingGceInstance(avd_spec)
+        else:
+            ip = self._CreateGceInstance(instance, image_name, image_project,
+                                         extra_scopes, boot_disk_size_gb,
+                                         avd_spec)
         self._ssh = Ssh(ip=IP(internal=ip.internal, external=ip.external),
                         gce_user=constants.GCE_USER,
                         ssh_private_key_path=self._ssh_private_key_path,
@@ -163,6 +168,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._ssh.WaitForSsh()
 
         if avd_spec:
+            if avd_spec.instance_name_to_reuse:
+                self.StopCvd()
+                self.CleanUpImages()
             return instance
 
         # TODO: Remove following code after create_cf deprecated.
@@ -252,6 +260,30 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             return _ProcessBuild(kernel_build_id, kernel_branch, kernel_build_target)
         return None
 
+    def StopCvd(self):
+        """Stop CVD.
+
+        If stop_cvd fails, assume that it's because there was no previously
+        running device.
+        """
+        ssh_command = "./bin/stop_cvd"
+        try:
+            self._ssh.Run(ssh_command)
+        except subprocess.CalledProcessError as e:
+            logger.debug("Failed to stop_cvd (possibly no running device): %s", e)
+
+    def CleanUpImages(self):
+        """Clean up the images on the existing instance.
+
+        If previous AVD have these images, reusing the instance may have
+        side effects if didn't clean it.
+        """
+        ssh_command = "/bin/rm ./*.img"
+        try:
+            self._ssh.Run(ssh_command)
+        except subprocess.CalledProcessError as e:
+            logger.debug("Failed to clean up the images failed: %s", e)
+
     @utils.TimeExecute(function_description="Launching AVD(s) and waiting for boot up",
                        result_evaluator=utils.BootEvaluator)
     def LaunchCvd(self, instance, avd_spec=None,
@@ -305,6 +337,24 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         log_files = pull.GetAllLogFilePaths(self._ssh)
         download_folder = pull.GetDownloadLogFolder(instance)
         pull.PullLogs(self._ssh, log_files, download_folder)
+
+    @utils.TimeExecute(function_description="Reusing GCE instance")
+    def _ReusingGceInstance(self, avd_spec):
+        """Reusing a cuttlefish existing instance.
+
+        Args:
+            avd_spec: An AVDSpec instance.
+
+        Returns:
+            Namedtuple of (internal, external) IP of the instance.
+        """
+        gcompute_client.ComputeClient.AddSshRsaInstanceMetadata(
+            self, self._zone, constants.GCE_USER,
+            avd_spec.cfg.ssh_public_key_path, avd_spec.instance_name_to_reuse)
+        ip = gcompute_client.ComputeClient.GetInstanceIP(
+            self, instance=avd_spec.instance_name_to_reuse, zone=self._zone)
+
+        return ip
 
     @utils.TimeExecute(function_description="Creating GCE instance")
     def _CreateGceInstance(self, instance, image_name, image_project,

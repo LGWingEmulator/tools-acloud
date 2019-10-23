@@ -26,6 +26,7 @@ from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
+from acloud.list import list as list_instances
 
 
 class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
@@ -76,6 +77,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         """Set up the test."""
         super(CvdComputeClientTest, self).setUp()
         self.Patch(cvd_compute_client.CvdComputeClient, "InitResourceHandle")
+        self.Patch(list_instances, "ChooseOneRemoteInstance", return_value=mock.MagicMock())
+        self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
         self.cvd_compute_client = cvd_compute_client.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 

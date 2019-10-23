@@ -33,6 +33,7 @@ from acloud.internal import constants
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import utils
+from acloud.list import list as list_instance
 from acloud.public import config
 
 
@@ -99,6 +100,7 @@ class AVDSpec(object):
         # args afterwards.
         self._client_adb_port = args.adb_port
         self._autoconnect = None
+        self._instance_name_to_reuse = None
         self._unlock_screen = None
         self._report_internal_ip = None
         self._avd_type = None
@@ -286,6 +288,15 @@ class AVDSpec(object):
         self._password = args.password
 
         self._boot_timeout_secs = args.boot_timeout_secs
+
+        if args.reuse_gce:
+            if args.reuse_gce != constants.SELECT_ONE_GCE_INSTANCE:
+                if list_instance.GetInstancesFromInstanceNames(
+                        self._cfg, [args.reuse_gce]):
+                    self._instance_name_to_reuse = args.reuse_gce
+            if self._instance_name_to_reuse is None:
+                instance = list_instance.ChooseOneRemoteInstance(self._cfg)
+                self._instance_name_to_reuse = instance.name
 
     @staticmethod
     def _GetFlavorFromString(flavor_string):
@@ -695,3 +706,8 @@ class AVDSpec(object):
     def local_instance_id(self):
         """Return local_instance_id."""
         return self._local_instance_id
+
+    @property
+    def instance_name_to_reuse(self):
+        """Return instance_name_to_reuse."""
+        return self._instance_name_to_reuse
