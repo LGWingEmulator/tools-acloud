@@ -40,6 +40,7 @@ import os
 import stat
 import subprocess
 import tempfile
+import time
 
 from acloud import errors
 from acloud.internal import constants
@@ -57,6 +58,10 @@ logger = logging.getLogger(__name__)
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
 _FETCHER_NAME = "fetch_cvd"
+# Time info to write in report.
+_FETCH_ARTIFACT = "fetch_artifact_time"
+_GCE_CREATE = "gce_create_time"
+_LAUNCH_CVD = "launch_cvd_time"
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -109,6 +114,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._all_failures = dict()
         self._extra_args_ssh_tunnel = acloud_config.extra_args_ssh_tunnel
         self._ssh = None
+        self._execution_time = {_FETCH_ARTIFACT: 0, _GCE_CREATE: 0, _LAUNCH_CVD: 0}
 
     # pylint: disable=arguments-differ,too-many-locals
     def CreateInstance(self, instance, image_name, image_project,
@@ -306,6 +312,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
            dict of faliures, return this dict for BootEvaluator to handle
            LaunchCvd success or fail messages.
         """
+        timestart = time.time()
         error_msg = ""
         launch_cvd_args = self._GetLaunchCvdArgs(avd_spec,
                                                  blank_data_disk_size_gb,
@@ -323,6 +330,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             utils.PrintColorString(str(e), utils.TextColors.FAIL)
             self._PullAllLogFiles(instance)
 
+        self._execution_time[_LAUNCH_CVD] = round(time.time() - timestart, 2)
         return {instance: error_msg} if error_msg else {}
 
     def _PullAllLogFiles(self, instance):
@@ -373,6 +381,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         Returns:
             Namedtuple of (internal, external) IP of the instance.
         """
+        timestart = time.time()
         metadata = self._metadata.copy()
 
         if avd_spec:
@@ -399,6 +408,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=instance, zone=self._zone)
 
+        self._execution_time[_GCE_CREATE] = round(time.time() - timestart, 2)
         return ip
 
     @utils.TimeExecute(function_description="Uploading build fetcher to instance")
@@ -434,6 +444,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         Args:
             fetch_args: String of arguments to pass to fetch_cvd.
         """
+        timestart = time.time()
         fetch_cvd_args = ["-credential_source=gce"]
 
         default_build = _ProcessBuild(build_id, branch, build_target)
@@ -449,8 +460,14 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             fetch_cvd_args.append("-kernel_build=" + kernel_build)
 
         self._ssh.Run("./fetch_cvd " + " ".join(fetch_cvd_args))
+        self._execution_time[_FETCH_ARTIFACT] = round(time.time() - timestart, 2)
 
     @property
     def all_failures(self):
         """Return all_failures"""
         return self._all_failures
+
+    @property
+    def execution_time(self):
+        """Return execution_time"""
+        return self._execution_time

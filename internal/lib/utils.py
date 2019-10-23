@@ -741,7 +741,7 @@ class TimeExecute(object):
                 return result
             except:
                 if self._print_status:
-                    PrintColorString("Fail! (%ds)" % (time.time()-timestart),
+                    PrintColorString("Fail! (%ds)" % (time.time() - timestart),
                                      TextColors.FAIL)
                 raise
         return DecoratorFunction
