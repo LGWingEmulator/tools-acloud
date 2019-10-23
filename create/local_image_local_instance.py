@@ -70,9 +70,9 @@ _CVD_CONFIG_NAME = "cuttlefish_config.json"
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 _ENV_CVD_HOME = "HOME"
 _ENV_CUTTLEFISH_INSTANCE = "CUTTLEFISH_INSTANCE"
-_LAUNCH_CVD_TIMEOUT_SECS = 60  # setup timeout as 60 seconds
+_LAUNCH_CVD_TIMEOUT_SECS = 60  # default timeout as 60 seconds
 _LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
-                             "within %d secs." % _LAUNCH_CVD_TIMEOUT_SECS)
+                             "within %d secs.")
 _LOCAL_INSTANCE_HOME = "instance_home_%s"
 _RE_LOCAL_CVD_PORT = re.compile(r"^127\.0\.0\.1:65(?P<cvd_port_suffix>\d{2})\s+")
 _VIRTUAL_DISK_PATHS = "virtual_disk_paths"
@@ -112,8 +112,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        local_image_path,
                                        avd_spec.local_instance_id)
         try:
-            self.CheckLaunchCVD(cmd, host_bins_path, avd_spec.local_instance_id,
-                                local_image_path, no_prompts)
+            self.CheckLaunchCVD(
+                cmd, host_bins_path, avd_spec.local_instance_id, local_image_path,
+                no_prompts, avd_spec.boot_timeout_secs or _LAUNCH_CVD_TIMEOUT_SECS)
         except errors.LaunchCVDFail as launch_error:
             raise launch_error
 
@@ -187,7 +188,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return launch_cmd
 
     def CheckLaunchCVD(self, cmd, host_bins_path, local_instance_id,
-                       local_image_path, no_prompts=False):
+                       local_image_path, no_prompts=False,
+                       timeout_secs=_LAUNCH_CVD_TIMEOUT_SECS):
         """Execute launch_cvd command and wait for boot up completed.
 
         1. Check if the provided image files are in use by any launch_cvd process.
@@ -200,6 +202,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             local_instance_id: Integer of instance id.
             local_image_path: String of local image directory.
             no_prompts: Boolean, True to skip all prompts.
+            timeout_secs: Integer, the number of seconds to wait for the AVD to boot up.
         """
         # launch_cvd assumes host bins are in $ANDROID_HOST_OUT, let's overwrite
         # it to wherever we're running launch_cvd since they could be in a
@@ -224,7 +227,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                     utils.TextColors.FAIL)
                 sys.exit(constants.EXIT_BY_USER)
 
-        self._LaunchCvd(cmd, local_instance_id)
+        timeout_exception = utils.TimeoutException(timeout_secs,
+                                                   _LAUNCH_CVD_TIMEOUT_ERROR % timeout_secs)
+        timeout_exception(self._LaunchCvd)(cmd, local_instance_id)
 
     def _StopCvd(self, host_bins_path, local_instance_id):
         """Execute stop_cvd to stop cuttlefish instance.
@@ -256,7 +261,6 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         adb_cmd.DisconnectAdb(retry=True)
 
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up")
-    @utils.TimeoutException(_LAUNCH_CVD_TIMEOUT_SECS, _LAUNCH_CVD_TIMEOUT_ERROR)
     def _LaunchCvd(self, cmd, local_instance_id):
         """Execute Launch CVD.
 
