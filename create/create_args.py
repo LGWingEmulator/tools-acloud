@@ -301,6 +301,17 @@ def GetCreateArgParser(subparser):
         required=False,
         help=("Automatic yes to prompts. Assume 'yes' as answer to all prompts "
               "and run non-interactively."))
+    create_parser.add_argument(
+        "--reuse-gce",
+        type=str,
+        const=constants.SELECT_ONE_GCE_INSTANCE,
+        nargs="?",
+        dest="reuse_gce",
+        required=False,
+        help="'cuttlefish only' This can help users use their own instance. "
+        "Reusing specific gce instance if --reuse-gce [instance_name] is "
+        "provided. Select one gce instance to reuse if --reuse-gce is "
+        "provided.")
     # User should not specify --spec and --hw_property at the same time.
     hw_spec_group = create_parser.add_mutually_exclusive_group()
     hw_spec_group.add_argument(

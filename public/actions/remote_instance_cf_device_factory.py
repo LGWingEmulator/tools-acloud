@@ -151,8 +151,13 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         build_id = _USER_BUILD
         if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
             build_id = self._avd_spec.remote_image[constants.BUILD_ID]
-        instance = self._compute_client.GenerateInstanceName(
-            build_target=build_target, build_id=build_id)
+
+        if self._avd_spec.instance_name_to_reuse:
+            instance = self._avd_spec.instance_name_to_reuse
+        else:
+            instance = self._compute_client.GenerateInstanceName(
+                build_target=build_target, build_id=build_id)
+
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,

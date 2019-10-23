@@ -27,6 +27,7 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
+from acloud.list import list as list_instances
 from acloud.public.actions import remote_instance_cf_device_factory
 
 
@@ -39,6 +40,8 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
         self.Patch(android_build_client.AndroidBuildClient, "InitResourceHandle")
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitResourceHandle")
+        self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
+        self.Patch(list_instances, "ChooseOneRemoteInstance", return_value=mock.MagicMock())
         self.Patch(utils, "GetBuildEnvironmentVariable",
                    return_value="test_environ")
         self.Patch(glob, "glob", return_vale=["fake.img"])
@@ -97,6 +100,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         args.adb_port = None
         fake_avd_spec = avd_spec.AVDSpec(args)
         fake_avd_spec.cfg.enable_multi_stage = True
+        fake_avd_spec._instance_name_to_reuse = None
 
         fake_uuid = mock.MagicMock(hex="1234")
         self.Patch(uuid, "uuid4", return_value=fake_uuid)
@@ -125,6 +129,28 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             fake_image_name,
             fake_host_package_name)
         self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-fake-target")
+
+    def testReuseInstanceNameMultiStage(self):
+        """Test reuse instance name."""
+        args = mock.MagicMock()
+        args.config_file = ""
+        args.avd_type = constants.TYPE_CF
+        args.flavor = "phone"
+        args.local_image = None
+        args.adb_port = None
+        fake_avd_spec = avd_spec.AVDSpec(args)
+        fake_avd_spec.cfg.enable_multi_stage = True
+        fake_avd_spec._instance_name_to_reuse = "fake-1234-userbuild-fake-target"
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "CreateInstance")
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._CreateGceInstance(), "fake-1234-userbuild-fake-target")
 
 
 if __name__ == "__main__":
