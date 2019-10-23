@@ -1320,9 +1320,9 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                     "Malformed machine size record: Can't find '%s' in %s or %s"
                     % (metric, machine_info_1, machine_info_2))
             cmp_result = machine_info_1[metric] - machine_info_2[metric]
-            if  cmp_result < 0:
+            if cmp_result < 0:
                 return -1
-            elif cmp_result > 0:
+            if cmp_result > 0:
                 result = 1
         return result
 
