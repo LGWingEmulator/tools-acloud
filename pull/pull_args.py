@@ -39,5 +39,19 @@ def GetPullArgParser(subparser):
         type=str,
         required=False,
         help="The name of the remote instance that need to pull log files.")
+    pull_parser.add_argument(
+        "--file-name",
+        dest="file_name",
+        type=str,
+        required=False,
+        help="The log file name to pull from the remote instance, "
+             "e.g. launcher.log, kernel.log.")
+    pull_parser.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        dest="no_prompt",
+        required=False,
+        help="Assume 'yes' as an answer to the prompt when asking users about "
+             "file streaming.")
 
     return pull_parser
