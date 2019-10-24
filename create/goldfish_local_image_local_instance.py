@@ -113,8 +113,11 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                 os.makedirs(build_porp_dir)
             shutil.copyfile(build_prop_src_path, build_porp_path)
 
-        console_port = _EMULATOR_DEFAULT_CONSOLE_PORT
-        adb_port = constants.GF_ADB_PORT
+        instance_id = avd_spec.local_instance_id
+        # Emulator requires the console port to be an even number.
+        # By convention, adb port is console port + 1.
+        console_port = _EMULATOR_DEFAULT_CONSOLE_PORT + (instance_id - 1) * 2
+        adb_port = console_port + 1
         adb = adb_tools.AdbTools(
             adb_port=adb_port,
             device_serial=_GF_ADB_DEVICE_SERIAL % {
@@ -122,9 +125,10 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         self._CheckRunningEmulator(adb, no_prompts)
 
-        instance_dir = os.path.join(tempfile.gettempdir(), "acloud_gf_temp")
+        instance_dir = os.path.join(tempfile.gettempdir(), "acloud_gf_temp",
+                                    "instance-" + str(instance_id))
         shutil.rmtree(instance_dir, ignore_errors=True)
-        os.mkdir(instance_dir)
+        os.makedirs(instance_dir)
 
         logger.info("Instance directory: %s", instance_dir)
         proc = self._StartEmulatorProcess(emulator_path, instance_dir,
@@ -220,7 +224,8 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             pass
 
         emulator_cmd = [
-            os.path.abspath(emulator_path), "-verbose", "-show-kernel",
+            os.path.abspath(emulator_path),
+            "-verbose", "-show-kernel", "-read-only",
             "-ports", str(console_port) + "," + str(adb_port),
             "-logcat-output", logcat_path,
             "-stdouterr-file", stdouterr_path
