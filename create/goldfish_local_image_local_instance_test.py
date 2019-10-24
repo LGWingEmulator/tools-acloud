@@ -102,7 +102,8 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         mock_environ = {"ANDROID_EMULATOR_PREBUILTS":
                         os.path.join(self._temp_dir, "emulator")}
 
-        mock_avd_spec = mock.Mock(local_image_dir=self._image_dir)
+        mock_avd_spec = mock.Mock(local_instance_id=1,
+                                  local_image_dir=self._image_dir)
 
         # Test deleting an existing instance.
         self._emulator_is_running = True
@@ -112,9 +113,10 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                              mock_environ, clear=True):
             self._goldfish._CreateAVD(mock_avd_spec, no_prompts=False)
 
-        instance_dir = os.path.join(self._temp_dir, "acloud_gf_temp")
+        instance_dir = os.path.join(self._temp_dir, "acloud_gf_temp",
+                                    "instance-1")
         expected_cmd = [
-            self._emulator_path, "-verbose", "-show-kernel",
+            self._emulator_path, "-verbose", "-show-kernel", "-read-only",
             "-ports", "5554,5555",
             "-logcat-output", os.path.join(instance_dir, "logcat.txt"),
             "-stdouterr-file", os.path.join(instance_dir, "stdouterr.txt")
@@ -141,17 +143,19 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
 
         mock_environ = {"ANDROID_HOST_OUT": self._temp_dir}
 
-        mock_avd_spec = mock.Mock(local_image_dir=self._image_dir)
+        mock_avd_spec = mock.Mock(local_instance_id=2,
+                                  local_image_dir=self._image_dir)
 
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
                              mock_environ, clear=True):
             self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
 
-        instance_dir = os.path.join(self._temp_dir, "acloud_gf_temp")
+        instance_dir = os.path.join(self._temp_dir, "acloud_gf_temp",
+                                    "instance-2")
         expected_cmd = [
-            self._emulator_path, "-verbose", "-show-kernel",
-            "-ports", "5554,5555",
+            self._emulator_path, "-verbose", "-show-kernel", "-read-only",
+            "-ports", "5556,5557",
             "-logcat-output", os.path.join(instance_dir, "logcat.txt"),
             "-stdouterr-file", os.path.join(instance_dir, "stdouterr.txt")
         ]
