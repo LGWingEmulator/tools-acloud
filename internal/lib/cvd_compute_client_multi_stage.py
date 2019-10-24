@@ -297,7 +297,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         """Launch CVD.
 
         Launch AVD with launch_cvd. If the process is failed, acloud would show
-        error messages and atuo download log files from remote instance.
+        error messages and auto download log files from remote instance.
 
         Args:
             instance: String, instance name.

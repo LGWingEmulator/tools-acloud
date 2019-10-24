@@ -41,7 +41,7 @@ _KERNEL = "kernel"
 _IMG_FILE_EXTENSION = ".img"
 
 
-def PullFileFromInstance(cfg, instance):
+def PullFileFromInstance(cfg, instance, file_name=None, no_prompts=False):
     """Pull file from remote CF instance.
 
     1. Download log files to temp folder.
@@ -51,6 +51,8 @@ def PullFileFromInstance(cfg, instance):
     Args:
         cfg: AcloudConfig object.
         instance: list.Instance() object.
+        file_name: String of file name.
+        no_prompts: Boolean, True to skip the prompt about file streaming.
 
     Returns:
         A Report instance.
@@ -59,11 +61,11 @@ def PullFileFromInstance(cfg, instance):
               gce_user=constants.GCE_USER,
               ssh_private_key_path=cfg.ssh_private_key_path,
               extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
-    log_files = SelectLogFileToPull(ssh)
+    log_files = SelectLogFileToPull(ssh, file_name)
     download_folder = GetDownloadLogFolder(instance.name)
     PullLogs(ssh, log_files, download_folder)
     if len(log_files) == 1:
-        DisplayLog(ssh, log_files[0])
+        DisplayLog(ssh, log_files[0], no_prompts)
     return report.Report(command="pull")
 
 
@@ -81,17 +83,18 @@ def PullLogs(ssh, log_files, download_folder):
     _DisplayPullResult(download_folder)
 
 
-def DisplayLog(ssh, log_file):
+def DisplayLog(ssh, log_file, no_prompts=False):
     """Display the content of log file in the screen.
 
     Args:
         ssh: Ssh object.
         log_file: String of the log file path.
+        no_prompts: Boolean, True to skip all prompts.
     """
     warning_msg = ("It will stream log to show on screen. If you want to stop "
                    "streaming, please press CTRL-C to exit.\nPress 'y' to show "
                    "log or read log by myself[y/N]:")
-    if utils.GetUserAnswerYes(warning_msg):
+    if no_prompts or utils.GetUserAnswerYes(warning_msg):
         ssh.Run("tail -f -n +1 %s" % log_file, show_output=True)
 
 
@@ -122,22 +125,29 @@ def GetDownloadLogFolder(instance):
     return log_folder
 
 
-def SelectLogFileToPull(ssh):
+def SelectLogFileToPull(ssh, file_name=None):
     """Select one log file or all log files to downalod.
 
     1. Get all log file paths as selection list
-    2. Get user selected file path
+    2. Get user selected file path or user provided file name.
 
     Args:
         ssh: Ssh object.
-
-    Raises:
-        errors.CheckPathError: Can't find log files.
+        file_name: String of file name.
 
     Returns:
         List of selected file paths.
+
+    Raises:
+        errors.CheckPathError: Can't find log files.
     """
     log_files = GetAllLogFilePaths(ssh)
+    if file_name:
+        file_path = os.path.join(_REMOTE_LOG_FOLDER, file_name)
+        if file_path in log_files:
+            return [file_path]
+        raise errors.CheckPathError("Can't find this log file(%s) from remote "
+                                    "instance." % file_path)
 
     if len(log_files) == 1:
         return log_files
@@ -147,7 +157,7 @@ def SelectLogFileToPull(ssh):
         return utils.GetAnswerFromList(log_files, enable_choose_all=True)
 
     raise errors.CheckPathError("Can't find any log file in folder(%s) from "
-                                "remote instance" % _REMOTE_LOG_FOLDER)
+                                "remote instance." % _REMOTE_LOG_FOLDER)
 
 
 def GetAllLogFilePaths(ssh):
@@ -207,5 +217,8 @@ def Run(args):
     if args.instance_name:
         instance = list_instances.GetInstancesFromInstanceNames(
             cfg, [args.instance_name])
-        return PullFileFromInstance(cfg, instance[0])
-    return PullFileFromInstance(cfg, list_instances.ChooseOneRemoteInstance(cfg))
+        return PullFileFromInstance(cfg, instance[0], args.file_name, args.no_prompt)
+    return PullFileFromInstance(cfg,
+                                list_instances.ChooseOneRemoteInstance(cfg),
+                                args.file_name,
+                                args.no_prompt)
