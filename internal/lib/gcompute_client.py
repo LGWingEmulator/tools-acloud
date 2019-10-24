@@ -26,7 +26,6 @@ and it only keeps states about authentication. ComputeClient should be very
 generic, and only knows how to talk to Compute Engine APIs.
 """
 # pylint: disable=too-many-lines
-import collections
 import copy
 import functools
 import getpass
@@ -37,6 +36,7 @@ from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import base_cloud_client
 from acloud.internal.lib import utils
+from acloud.internal.lib.ssh import IP
 
 
 logger = logging.getLogger(__name__)
@@ -55,8 +55,6 @@ BASE_DISK_ARGS = {
     "autoDelete": True,
     "initializeParams": {},
 }
-
-IP = collections.namedtuple("IP", ["external", "internal"])
 
 
 class OperationScope(object):
@@ -1382,7 +1380,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             zone: String, name of the zone.
 
         Returns:
-            NamedTuple of (internal, external) IP of the instance.
+            ssh.IP object, that stores internal and external ip of the instance.
         """
         instance = self.GetInstance(instance, zone)
         internal_ip = instance["networkInterfaces"][0]["networkIP"]

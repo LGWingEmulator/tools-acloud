@@ -26,14 +26,14 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import android_compute_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
-from acloud.internal.lib import gcompute_client
+from acloud.internal.lib import ssh
 from acloud.public import report
 from acloud.public.actions import common_operations
 
 
 class CommonOperationsTest(driver_test_lib.BaseDriverTest):
     """Test Common Operations."""
-    IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
+    IP = ssh.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     CMD = "test-cmd"
     AVD_TYPE = "fake-type"
