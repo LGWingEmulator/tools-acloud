@@ -29,14 +29,14 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import driver_test_lib
-from acloud.internal.lib import gcompute_client
+from acloud.internal.lib import ssh
 from acloud.public.actions import create_cuttlefish_action
 
 
 class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
     """Test create_cuttlefish_action."""
 
-    IP = gcompute_client.IP(external="127.0.0.1", internal="10.0.0.1")
+    IP = ssh.IP(external="127.0.0.1", internal="10.0.0.1")
     INSTANCE = "fake-instance"
     IMAGE = "fake-image"
     BUILD_TARGET = "fake-build-target"
