@@ -30,6 +30,7 @@ _SSH_CMD = ("-i %(rsa_key_file)s "
 _SSH_IDENTITY = "-l %(login_user)s %(ip_addr)s"
 _SSH_CMD_MAX_RETRY = 4
 _SSH_CMD_RETRY_SLEEP = 3
+_WAIT_FOR_SSH_MAX_TIMEOUT = 20
 
 
 def _SshCall(cmd, timeout=None):
@@ -217,9 +218,8 @@ class Ssh(object):
 
         raise errors.UnknownType("Don't support the execute bin %s." % execute_bin)
 
-    @utils.TimeExecute(function_description="Waiting for SSH server")
-    def WaitForSsh(self, timeout=20, max_retry=_SSH_CMD_MAX_RETRY):
-        """Wait until the remote instance is ready to accept commands over SSH.
+    def CheckSshConnection(self, timeout):
+        """Run remote 'uptime' ssh command to check ssh connection.
 
         Args:
             timeout: Integer, the maximum time to wait for the command to respond.
@@ -229,18 +229,41 @@ class Ssh(object):
         """
         remote_cmd = [self.GetBaseCmd(constants.SSH_BIN)]
         remote_cmd.append("uptime")
-        for _ in range(max_retry):
-            if _SshCall(" ".join(remote_cmd), timeout) == 0:
-                return
+
+        if _SshCall(" ".join(remote_cmd), timeout) == 0:
+            return
         raise errors.DeviceConnectionError(
             "Ssh isn't ready in the remote instance.")
+
+    @utils.TimeExecute(function_description="Waiting for SSH server")
+    def WaitForSsh(self, timeout=_WAIT_FOR_SSH_MAX_TIMEOUT,
+                   sleep_for_retry=_SSH_CMD_RETRY_SLEEP,
+                   max_retry=_SSH_CMD_MAX_RETRY):
+        """Wait until the remote instance is ready to accept commands over SSH.
+
+        Args:
+            timeout: Integer, the maximum time in seconds to wait for the
+                     command to respond.
+            sleep_for_retry: Integer, the sleep time in seconds for retry.
+            max_retry: Integer, the maximum number of retry.
+
+        Raises:
+            errors.DeviceConnectionError: Ssh isn't ready in the remote instance.
+        """
+        utils.RetryExceptionType(
+            exception_types=errors.DeviceConnectionError,
+            max_retries=max_retry,
+            functor=self.CheckSshConnection,
+            sleep_multiplier=sleep_for_retry,
+            retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
+            timeout=timeout)
 
     def ScpPushFile(self, src_file, dst_file):
         """Scp push file to remote.
 
         Args:
             src_file: The source file path to be pulled.
-            dst_file: The destiation file path the file is pulled to.
+            dst_file: The destination file path the file is pulled to.
         """
         scp_command = [self.GetBaseCmd(constants.SCP_BIN)]
         scp_command.append(src_file)
@@ -252,7 +275,7 @@ class Ssh(object):
 
         Args:
             src_file: The source file path to be pulled.
-            dst_file: The destiation file path the file is pulled to.
+            dst_file: The destination file path the file is pulled to.
         """
         scp_command = [self.GetBaseCmd(constants.SCP_BIN)]
         scp_command.append("%s@%s:%s" %(self._gce_user, self._ip, src_file))
