@@ -54,8 +54,7 @@ class LocalImageRemoteInstance(base_avd_create.BaseAVDCreate):
         Return:
             A string, the path to the host package.
         """
-        dirs_to_check = filter(None,
-                               [os.environ.get(constants.ENV_ANDROID_HOST_OUT)])
+        dirs_to_check = list(filter(None, [os.environ.get(constants.ENV_ANDROID_HOST_OUT)]))
         dist_dir = utils.GetDistDir()
         if dist_dir:
             dirs_to_check.append(dist_dir)
