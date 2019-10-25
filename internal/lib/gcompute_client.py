@@ -32,6 +32,7 @@ import getpass
 import logging
 import os
 import re
+import six
 
 from acloud import errors
 from acloud.internal import constants
@@ -965,7 +966,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         done = []
         # Wait for the executing operations to finish.
         logger.info("Waiting for executing operations")
-        for resource_name in requests.iterkeys():
+        for resource_name in six.iterkeys(requests):
             operation, _ = results[resource_name]
             if operation:
                 try:
