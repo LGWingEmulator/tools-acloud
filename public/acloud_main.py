@@ -56,6 +56,13 @@ This a tool to create Android Virtual Devices locally/remotely.
    To show more detail info on the list.
    $ acloud list -vv
 
+-  Pull:
+   Pull will download log files or show the log file in screen from one remote
+   cuttlefish instance:
+   $ acloud pull
+   Pull from a specified instance:
+   $ acloud pull --instance-name "your_instance_name"
+
 Try $acloud [cmd] --help for further details.
 
 """
