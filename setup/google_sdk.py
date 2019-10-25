@@ -34,7 +34,7 @@ import platform
 import shutil
 import sys
 import tempfile
-import urllib2
+from six.moves import urllib
 
 from acloud import errors
 from acloud.internal.lib import utils
@@ -165,9 +165,9 @@ class GoogleSDK(object):
         file_path = os.path.join(self._tmp_path, filename)
         logger.info("Download file from: %s", url)
         logger.info("Save the file to: %s", file_path)
-        url_stream = urllib2.urlopen(url)
+        url_stream = urllib.request.urlopen(url)
         metadata = url_stream.info()
-        file_size = int(metadata.getheaders("Content-Length")[0])
+        file_size = int(metadata.get("Content-Length"))
         logger.info("Downloading google SDK: %s bytes.", file_size)
         with open(file_path, 'wb') as output:
             output.write(url_stream.read())
