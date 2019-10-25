@@ -46,6 +46,8 @@ TODO:
 import logging
 import os
 
+import six
+
 from google.protobuf import text_format
 
 # pylint: disable=no-name-in-module,import-error
@@ -124,21 +126,21 @@ class AcloudConfig(object):
         self.storage_bucket_name = usr_cfg.storage_bucket_name
         self.metadata_variable = {
             key: val for key, val in
-            internal_cfg.default_usr_cfg.metadata_variable.iteritems()
+            six.iteritems(internal_cfg.default_usr_cfg.metadata_variable)
         }
         self.metadata_variable.update(usr_cfg.metadata_variable)
 
         self.device_resolution_map = {
             device: resolution for device, resolution in
-            internal_cfg.device_resolution_map.iteritems()
+            six.iteritems(internal_cfg.device_resolution_map)
         }
         self.device_default_orientation_map = {
             device: orientation for device, orientation in
-            internal_cfg.device_default_orientation_map.iteritems()
+            six.iteritems(internal_cfg.device_default_orientation_map)
         }
         self.no_project_access_msg_map = {
             project: msg for project, msg in
-            internal_cfg.no_project_access_msg_map.iteritems()
+            six.iteritems(internal_cfg.no_project_access_msg_map)
         }
         self.min_machine_size = internal_cfg.min_machine_size
         self.disk_image_name = internal_cfg.disk_image_name
@@ -148,11 +150,11 @@ class AcloudConfig(object):
         self.disk_raw_image_extension = internal_cfg.disk_raw_image_extension
         self.valid_branch_and_min_build_id = {
             branch: min_build_id for branch, min_build_id in
-            internal_cfg.valid_branch_and_min_build_id.iteritems()
+            six.iteritems(internal_cfg.valid_branch_and_min_build_id)
         }
         self.precreated_data_image_map = {
             size_gb: image_name for size_gb, image_name in
-            internal_cfg.precreated_data_image.iteritems()
+            six.iteritems(internal_cfg.precreated_data_image)
         }
         self.extra_data_disk_size_gb = (
             usr_cfg.extra_data_disk_size_gb or

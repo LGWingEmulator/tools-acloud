@@ -22,6 +22,8 @@ import logging
 import socket
 import ssl
 
+import six
+
 # pylint: disable=import-error
 from apiclient import errors as gerrors
 from apiclient.discovery import build
@@ -245,7 +247,7 @@ class BaseCloudApiClient(object):
             results[request_id] = (response, self._TranslateError(exception))
 
         batch = apiclient.http.BatchHttpRequest()
-        for request_id, request in requests.iteritems():
+        for request_id, request in six.iteritems(requests):
             batch.add(
                 request=request, callback=_CallBack, request_id=request_id)
         batch.execute()

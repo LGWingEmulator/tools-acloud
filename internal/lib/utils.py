@@ -304,7 +304,7 @@ def MakeTarFile(src_dict, dest):
     """
     logger.info("Compressing %s into %s.", src_dict.keys(), dest)
     with tarfile.open(dest, "w:gz") as tar:
-        for src, arcname in src_dict.iteritems():
+        for src, arcname in six.iteritems(src_dict):
             tar.add(src, arcname=arcname)
 
 def CreateSshKeyPairIfNotExist(private_key_path, public_key_path):
@@ -576,7 +576,7 @@ class BatchHttpRequestExecutor(object):
         self._final_results.update(results)
         # Clear pending_requests
         self._pending_requests.clear()
-        for request_id, result in results.iteritems():
+        for request_id, result in six.iteritems(results):
             exception = result[1]
             if exception is not None and self._ShoudRetry(exception):
                 # If this is a retriable exception, put it in pending_requests
