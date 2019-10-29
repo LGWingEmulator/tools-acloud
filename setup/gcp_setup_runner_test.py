@@ -18,6 +18,7 @@
 import unittest
 import os
 import mock
+import six
 
 # pylint: disable=no-name-in-module,import-error,no-member
 from acloud import errors
@@ -104,7 +105,7 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.assertEqual(self.gcp_env_runner.project, "new_project")
         self.assertEqual(self.gcp_env_runner.zone, "new_zone")
 
-    @mock.patch("__builtin__.raw_input")
+    @mock.patch.object(six.moves, "input")
     def testSetupClientIDSecret(self, mock_id):
         """Test setup client ID and client secret."""
         self.gcp_env_runner.client_id = "fake_client_id"

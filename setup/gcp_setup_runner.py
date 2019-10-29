@@ -21,6 +21,8 @@ import os
 import re
 import subprocess
 
+import six
+
 from acloud import errors
 from acloud.internal.lib import utils
 from acloud.public import config
@@ -417,9 +419,9 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
         self.client_id = None
         self.client_secret = None
         while _InputIsEmpty(self.client_id):
-            self.client_id = str(raw_input("Enter Client ID: ").strip())
+            self.client_id = str(six.moves.input("Enter Client ID: ").strip())
         while _InputIsEmpty(self.client_secret):
-            self.client_secret = str(raw_input("Enter Client Secret: ").strip())
+            self.client_secret = str(six.moves.input("Enter Client Secret: ").strip())
         UpdateConfigFile(self.config_path, "client_id", self.client_id)
         UpdateConfigFile(self.config_path, "client_secret", self.client_secret)
 
