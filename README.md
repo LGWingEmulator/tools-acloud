@@ -29,9 +29,6 @@ $ lunch aosp_cf_x86_phone-userdebug
 
 You should now be able to call acloud from anywhere.
 
-> If you're a googler, please check https://goto.google.com/acloud-googler-setup
-> to ensure a smooth setup experience.
-
 ### **Basic Usage**
 
 Acloud commands take the following form:
