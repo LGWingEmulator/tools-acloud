@@ -193,6 +193,19 @@ class SshTest(driver_test_lib.BaseDriverTest):
         expected_ip = "1.1.1.1"
         self.assertEqual(ssh_object._ip, expected_ip)
 
+    def testWaitForSsh(self):
+        """Test WaitForSsh."""
+        ssh_object = ssh.Ssh(ip=self.FAKE_IP,
+                             gce_user=self.FAKE_SSH_USER,
+                             ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH,
+                             report_internal_ip=self.FAKE_REPORT_INTERNAL_IP)
+        self.Patch(ssh, "_SshCall", return_value=-1)
+        self.assertRaises(errors.DeviceConnectionError,
+                          ssh_object.WaitForSsh,
+                          timeout=1,
+                          sleep_for_retry=1,
+                          max_retry=1)
+
 
 if __name__ == "__main__":
     unittest.main()
