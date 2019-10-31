@@ -76,7 +76,6 @@ def AddPublicSshRsaToInstance(cfg, user, instance_name):
     compute_client = android_compute_client.AndroidComputeClient(
         cfg, credentials)
     compute_client.AddSshRsaInstanceMetadata(
-        cfg.zone,
         user,
         cfg.ssh_public_key_path,
         instance_name)

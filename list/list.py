@@ -102,10 +102,10 @@ def GetRemoteInstances(cfg):
     credentials = auth.CreateCredentials(cfg)
     compute_client = gcompute_client.ComputeClient(cfg, credentials)
     filter_item = "labels.%s=%s" % (constants.LABEL_CREATE_BY, getpass.getuser())
-    all_instances = compute_client.ListInstances(cfg.zone,
-                                                 instance_filter=filter_item)
-    logger.debug("Instance list from: %s (filter: %s\n%s):",
-                 cfg.zone, filter_item, all_instances)
+    all_instances = compute_client.ListInstances(instance_filter=filter_item)
+
+    logger.debug("Instance list from: (filter: %s\n%s):",
+                 filter_item, all_instances)
 
     return _ProcessInstances(all_instances)
 
