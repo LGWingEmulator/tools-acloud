@@ -42,6 +42,7 @@ Available commands:
 * [delete](#delete)
 * [reconnect](#reconnect)
 * [setup](#setup)
+* [pull](#pull)
 
 #### **create**
 
@@ -165,6 +166,27 @@ Cheatsheet:
 * Reconnect a specific instance
 
 > $ acloud reconnect --instance-names [instance-name]
+
+
+### **pull**
+
+Pull will provide all log files to download or show in screen. It is helpful
+to debug about AVD boot up fail or AVD has abnromal behaviors.
+
+Cheatsheet:
+
+* Pull logs from a sole instance or prompt user to choose one to pull if where
+are more than one active instances.
+
+> $ acloud pull
+
+* Pull logs from the specific instance.
+
+> $ acloud pull --instance-name "instance-name"
+
+* Pull a specific log file from a specific instance
+
+> $ acloud pull --instance-name "instance-name" --file-name "file-name"
 
 
 #### **setup**
