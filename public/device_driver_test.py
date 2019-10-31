@@ -162,10 +162,12 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
 
     def testDeleteAndroidVirtualDevices(self):
         """Test DeleteAndroidVirtualDevices."""
+        cfg = _CreateCfg()
         instance_names = ["fake-instance-1", "fake-instance-2"]
+        self.compute_client.GetZonesByInstances.return_value = (
+            {cfg.zone: instance_names})
         self.compute_client.DeleteInstances.return_value = (instance_names, [],
                                                             [])
-        cfg = _CreateCfg()
         report = device_driver.DeleteAndroidVirtualDevices(cfg, instance_names)
         self.compute_client.DeleteInstances.assert_called_once_with(
             instance_names, cfg.zone)
@@ -267,8 +269,7 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         }
         self.assertEqual(report.data, expected_report_data)
 
-        self.compute_client.ListInstances.assert_called_once_with(
-            zone=cfg.zone)
+        self.compute_client.ListInstances.assert_called_once_with()
         self.compute_client.DeleteInstances.assert_called_once_with(
             instances=["fake_instance_1"], zone=cfg.zone)
 
