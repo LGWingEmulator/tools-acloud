@@ -60,6 +60,7 @@ _RE_TIMEZONE = re.compile(r"^(?P<time>[0-9\-\.:T]*)(?P<timezone>[+-]\d+:\d+)$")
 
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
 _RE_RUN_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*run_cvd)")
+_DISPLAY_STRING = "%(x_res)sx%(y_res)s (%(dpi)s)"
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
 LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
@@ -281,7 +282,7 @@ class Instance(object):
 
 
 class LocalInstance(Instance):
-    """Class to store data of local instance."""
+    """Class to store data of local cuttlefish instance."""
 
     def __init__(self, local_instance_id, x_res, y_res, dpi, create_time,
                  ins_dir=None):
@@ -295,7 +296,8 @@ class LocalInstance(Instance):
             date_str: String of create time.
             ins_dir: String, path of instance idr.
         """
-        display = ("%sx%s (%s)" % (x_res, y_res, dpi))
+        display = _DISPLAY_STRING % {"x_res": x_res, "y_res": y_res,
+                                     "dpi": dpi}
         elapsed_time = _GetElapsedTime(create_time) if create_time else None
         name = "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
         local_ports = GetLocalPortsbyInsId(local_instance_id)
@@ -322,6 +324,90 @@ class LocalInstance(Instance):
     def instance_dir(self):
         """Return _instance_dir."""
         return self._instance_dir
+
+
+class LocalGoldfishInstance(Instance):
+    """Class to store data of local goldfish instance."""
+
+    _INSTANCE_DIR_PATTERN = re.compile(r"^instance-(?P<id>\d+)$")
+    _INSTANCE_DIR_FORMAT = "instance-%(id)s"
+    _INSTANCE_NAME_FORMAT = "local-goldfish-instance-%(id)s"
+    _EMULATOR_DEFAULT_CONSOLE_PORT = 5554
+    _GF_ADB_DEVICE_SERIAL = "emulator-%(console_port)s"
+
+    def __init__(self, local_instance_id, avd_flavor=None, x_res=None,
+                 y_res=None, dpi=None):
+        """Initialize a LocalGoldfishInstance object.
+
+        Args:
+            local_instance_id: Integer of instance id.
+            avd_flavor: String, the flavor of the virtual device.
+            x_res: Integer of x dimension.
+            y_res: Integer of y dimension.
+            dpi: Integer of dpi.
+        """
+        self._id = local_instance_id
+        # By convention, adb port is console port + 1.
+        adb_port = self.console_port + 1
+
+        name = self._INSTANCE_NAME_FORMAT % {"id": local_instance_id}
+
+        fullname = (_FULL_NAME_STRING %
+                    {"device_serial": self.device_serial,
+                     "instance_name": name,
+                     "elapsed_time": None})
+
+        if x_res and y_res and dpi:
+            display = _DISPLAY_STRING % {"x_res": x_res, "y_res": y_res,
+                                         "dpi": dpi}
+        else:
+            display = "unknown"
+
+        adb = AdbTools(adb_port)
+        device_information = (adb.device_information if
+                              adb.device_information else None)
+
+        super(LocalGoldfishInstance, self).__init__(
+            name=name, fullname=fullname, display=display, ip="127.0.0.1",
+            status=None, adb_port=adb_port, avd_type=constants.TYPE_GF,
+            avd_flavor=avd_flavor, is_local=True,
+            device_information=device_information)
+
+    @staticmethod
+    def _GetInstanceDirRoot():
+        """Return the root directory of all instance directories."""
+        return os.path.join(tempfile.gettempdir(), "acloud_gf_temp")
+
+    @property
+    def console_port(self):
+        """Return the console port as an integer"""
+        # Emulator requires the console port to be an even number.
+        return self._EMULATOR_DEFAULT_CONSOLE_PORT + (self._id - 1) * 2
+
+    @property
+    def device_serial(self):
+        """Return the serial number that contains the console port."""
+        return self._GF_ADB_DEVICE_SERIAL % {"console_port": self.console_port}
+
+    @property
+    def instance_dir(self):
+        """Return the path to instance directory."""
+        return os.path.join(self._GetInstanceDirRoot(),
+                            self._INSTANCE_DIR_FORMAT % {"id": self._id})
+
+    @classmethod
+    def GetExistingInstances(cls):
+        """Get a list of instances from existing instance directories."""
+        instance_root = cls._GetInstanceDirRoot()
+        if not os.path.isdir(instance_root):
+            return []
+        instances = []
+        for name in os.listdir(instance_root):
+            match = cls._INSTANCE_DIR_PATTERN.match(name)
+            if match and os.path.isdir(os.path.join(instance_root, name)):
+                instance_id = int(match.group("id"))
+                instances.append(LocalGoldfishInstance(instance_id))
+        return instances
 
 
 class RemoteInstance(Instance):
