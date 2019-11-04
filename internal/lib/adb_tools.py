@@ -13,8 +13,6 @@
 # limitations under the License.
 """A tool that help to run adb to check device status."""
 
-from distutils.spawn import find_executable
-
 import re
 import subprocess
 
@@ -91,7 +89,7 @@ class AdbTools(object):
         Raises:
             errors.NoExecuteCmd: Can't find the execute adb bin.
         """
-        self._adb_command = find_executable(constants.ADB_BIN)
+        self._adb_command = utils.FindExecutable(constants.ADB_BIN)
         if not self._adb_command:
             raise errors.NoExecuteCmd("Can't find the adb command.")
 
