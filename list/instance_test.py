@@ -21,6 +21,7 @@ import subprocess
 
 import unittest
 import mock
+from six import b
 
 # pylint: disable=import-error
 import dateutil.parser
@@ -35,13 +36,13 @@ from acloud.list import instance
 
 class InstanceTest(driver_test_lib.BaseDriverTest):
     """Test instance."""
-    PS_SSH_TUNNEL = ("/fake_ps_1 --fake arg \n"
-                     "/fake_ps_2 --fake arg \n"
-                     "/usr/bin/ssh -i ~/.ssh/acloud_rsa "
-                     "-o UserKnownHostsFile=/dev/null "
-                     "-o StrictHostKeyChecking=no -L 12345:127.0.0.1:6444 "
-                     "-L 54321:127.0.0.1:6520 -N -f -l user 1.1.1.1")
-    PS_LAUNCH_CVD = ("Sat Nov 10 21:55:10 2018 /fake_path/bin/run_cvd ")
+    PS_SSH_TUNNEL = b("/fake_ps_1 --fake arg \n"
+                      "/fake_ps_2 --fake arg \n"
+                      "/usr/bin/ssh -i ~/.ssh/acloud_rsa "
+                      "-o UserKnownHostsFile=/dev/null "
+                      "-o StrictHostKeyChecking=no -L 12345:127.0.0.1:6444 "
+                      "-L 54321:127.0.0.1:6520 -N -f -l user 1.1.1.1")
+    PS_LAUNCH_CVD = b("Sat Nov 10 21:55:10 2018 /fake_path/bin/run_cvd ")
     PS_RUNTIME_CF_CONFIG = {"x_res": "1080", "y_res": "1920", "dpi": "480"}
     GCE_INSTANCE = {
         constants.INS_KEY_NAME: "fake_ins_name",

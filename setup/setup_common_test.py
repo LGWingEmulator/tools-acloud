@@ -14,6 +14,7 @@
 """Tests for host_setup_runner."""
 import subprocess
 import unittest
+from six import b
 
 from acloud import errors
 from acloud.internal.lib import driver_test_lib
@@ -22,21 +23,21 @@ from acloud.setup import setup_common
 
 class SetupCommonTest(driver_test_lib.BaseDriverTest):
     """Test HostPkgTaskRunner."""
-    PKG_INFO_INSTALLED = """fake_pkg:
+    PKG_INFO_INSTALLED = b("""fake_pkg:
   Installed: 0.7
   Candidate: 0.7
   Version table:
-"""
-    PKG_INFO_NONE_INSTALL = """fake_pkg:
+""")
+    PKG_INFO_NONE_INSTALL = b("""fake_pkg:
   Installed: (none)
   Candidate: 0.7
   Version table:
-"""
-    PKG_INFO_OLD_VERSION = """fake_pkg:
+""")
+    PKG_INFO_OLD_VERSION = b("""fake_pkg:
   Installed: 0.2
   Candidate: 0.7
   Version table:
-"""
+""")
 
     # pylint: disable=invalid-name
     def testPackageNotInstalled(self):

@@ -19,6 +19,7 @@ import unittest
 import os
 import mock
 import six
+from six import b
 
 # pylint: disable=no-name-in-module,import-error,no-member
 from acloud import errors
@@ -27,7 +28,7 @@ from acloud.internal.proto import user_config_pb2
 from acloud.public import config
 from acloud.setup import gcp_setup_runner
 
-_GCP_USER_CONFIG = """
+_GCP_USER_CONFIG = b("""
 [compute]
 region = new_region
 zone = new_zone
@@ -35,7 +36,7 @@ zone = new_zone
 account = new@google.com
 disable_usage_reporting = False
 project = new_project
-"""
+""")
 
 
 def _CreateCfgFile():
