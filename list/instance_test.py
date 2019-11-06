@@ -61,21 +61,23 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         """"Test get local instance info from launch_cvd process."""
         self.Patch(subprocess, "check_output", return_value=self.PS_LAUNCH_CVD)
         self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
-        self.Patch(instance, "GetCuttlefishRuntimeConfig",
-                   return_value=self.PS_RUNTIME_CF_CONFIG)
-        local_instance = instance.LocalInstance()
-        self.assertEqual(constants.LOCAL_INS_NAME, local_instance.name)
+        local_instance = instance.LocalInstance(2,
+                                                "1080",
+                                                "1920",
+                                                "480",
+                                                "Sat Nov 10 21:55:10 2018",
+                                                "fake_instance_dir")
+        self.assertEqual(constants.LOCAL_INS_NAME + "-2", local_instance.name)
         self.assertEqual(True, local_instance.islocal)
         self.assertEqual("1080x1920 (480)", local_instance.display)
         self.assertEqual("Sat Nov 10 21:55:10 2018", local_instance.createtime)
-        expected_full_name = "device serial: 127.0.0.1:%s (%s) elapsed time: %s" % (
-            constants.CF_ADB_PORT, constants.LOCAL_INS_NAME, "fake_time")
+        expected_full_name = ("device serial: 127.0.0.1:%s (%s) elapsed time: %s"
+                              % ("6521",
+                                 constants.LOCAL_INS_NAME + "-2",
+                                 "fake_time"))
         self.assertEqual(expected_full_name, local_instance.fullname)
-
-        # test return None if no launch_cvd process found
-        self.Patch(subprocess, "check_output", return_value="no launch_cvd "
-                                                            "found")
-        self.assertEqual(None, instance.LocalInstance())
+        self.assertEqual(6521, local_instance.forwarding_adb_port)
+        self.assertEqual(6445, local_instance.forwarding_vnc_port)
 
     def testGetElapsedTime(self):
         """Test _GetElapsedTime"""
