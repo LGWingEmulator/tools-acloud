@@ -19,6 +19,7 @@ import unittest
 import mock
 
 from acloud.create import local_image_local_instance
+from acloud.list import instance
 from acloud.internal import constants
 from acloud.internal.lib import utils
 
@@ -41,8 +42,7 @@ EOF"""
         self.local_image_local_instance = local_image_local_instance.LocalImageLocalInstance()
 
     # pylint: disable=protected-access
-    @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
-                       "GetLocalInstanceRuntimeDir")
+    @mock.patch.object(instance, "GetLocalInstanceRuntimeDir")
     @mock.patch.object(utils, "CheckUserInGroups")
     def testPrepareLaunchCVDCmd(self, mock_usergroups, mock_cvd_dir):
         """test PrepareLaunchCVDCmd."""

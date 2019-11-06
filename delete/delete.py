@@ -28,7 +28,6 @@ from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.list import list as list_instances
-from acloud.list import instance as instance_class
 from acloud.public import config
 from acloud.public import device_driver
 from acloud.public import report
@@ -49,11 +48,11 @@ def _GetStopCvd():
     Try to get directory of "run_cvd" by "ps -o command -p <pid>." command.
     For example: "/tmp/bin/run_cvd"
 
-    Raises:
-        errors.NoExecuteCmd: Can't find stop_cvd.
-
     Returns:
         String of stop_cvd file path.
+
+    Raises:
+        errors.NoExecuteCmd: Can't find stop_cvd.
     """
     process_id = subprocess.check_output(_COMMAND_GET_PROCESS_ID)
     process_info = subprocess.check_output(
@@ -103,7 +102,7 @@ def DeleteInstances(cfg, instances_to_delete):
     remote_instance_list = []
     for instance in instances_to_delete:
         if instance.islocal:
-            delete_report = DeleteLocalInstance()
+            delete_report = DeleteLocalInstance(instance, delete_report)
         else:
             remote_instance_list.append(instance.name)
         # Delete ssvnc viewer
@@ -150,32 +149,42 @@ def DeleteRemoteInstances(cfg, instances_to_delete, delete_report=None):
 
 @utils.TimeExecute(function_description="Deleting local instances",
                    result_evaluator=utils.ReportEvaluator)
-def DeleteLocalInstance():
+def DeleteLocalInstance(instance, delete_report=None):
     """Delete local instance.
 
     Delete local instance with stop_cvd command and write delete instance
     information to report.
 
+    Args:
+        instance: instance.LocalInstance object.
+        delete_report: Report object.
+
     Returns:
         A Report instance.
     """
-    delete_report = report.Report(command="delete")
+    if not delete_report:
+        delete_report = report.Report(command="delete")
+
     try:
         with open(os.devnull, "w") as dev_null:
+            cvd_env = os.environ.copy()
+            if instance.instance_dir:
+                cvd_env[constants.ENV_CUTTLEFISH_CONFIG_FILE] = os.path.join(
+                    instance.instance_dir, constants.CUTTLEFISH_CONFIG_FILE)
             subprocess.check_call(
                 utils.AddUserGroupsToCmd(_GetStopCvd(),
                                          constants.LIST_CF_USER_GROUPS),
-                stderr=dev_null, stdout=dev_null, shell=True)
+                stderr=dev_null, stdout=dev_null, shell=True, env=cvd_env)
             delete_report.SetStatus(report.Status.SUCCESS)
             device_driver.AddDeletionResultToReport(
-                delete_report, [constants.LOCAL_INS_NAME], failed=[],
+                delete_report, [instance.name], failed=[],
                 error_msgs=[],
                 resource_name="instance")
+            CleanupSSVncviewer(instance.vnc_port)
     except subprocess.CalledProcessError as e:
         delete_report.AddError(str(e))
         delete_report.SetStatus(report.Status.FAIL)
-    # Only CF supports local instances so assume it's a CF VNC port.
-    CleanupSSVncviewer(constants.CF_VNC_PORT)
+
     return delete_report
 
 
@@ -192,16 +201,12 @@ def Run(args):
         A Report instance.
     """
     cfg = config.GetAcloudConfig(args)
-    remote_instances_to_delete = args.instance_names
+    instances_to_delete = args.instance_names
 
-    if remote_instances_to_delete:
-        return DeleteRemoteInstances(cfg, remote_instances_to_delete)
-
-    if args.local_instance:
-        if instance_class.LocalInstance():
-            return DeleteLocalInstance()
-        print("There is no local instance AVD to delete.")
-        return report.Report(command="delete")
+    if instances_to_delete:
+        return DeleteInstances(cfg,
+                               list_instances.GetInstancesFromInstanceNames(
+                                   cfg, instances_to_delete))
 
     if args.adb_port:
         return DeleteInstances(

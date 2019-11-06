@@ -78,7 +78,6 @@ AVD_PORT_DICT = {
 
 _VNC_BIN = "ssvnc"
 _CMD_KILL = ["pkill", "-9", "-f"]
-_CMD_PGREP = "pgrep"
 _CMD_SG = "sg "
 _CMD_START_VNC = "%(bin)s vnc://127.0.0.1:%(port)d"
 _CMD_INSTALL_SSVNC = "sudo apt-get --assume-yes install ssvnc"
@@ -1028,7 +1027,7 @@ def IsCommandRunning(command):
     """
     try:
         with open(os.devnull, "w") as dev_null:
-            subprocess.check_call([_CMD_PGREP, "-af", command],
+            subprocess.check_call([constants.CMD_PGREP, "-af", command],
                                   stderr=dev_null, stdout=dev_null)
         return True
     except subprocess.CalledProcessError:

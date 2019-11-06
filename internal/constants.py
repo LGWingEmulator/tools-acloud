@@ -113,6 +113,7 @@ GF_VNC_PORT = 6444
 
 COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"
+CMD_PGREP = "pgrep"
 CMD_STOP_CVD = "stop_cvd"
 CMD_RUN_CVD = "run_cvd"
 ENV_ANDROID_BUILD_TOP = "ANDROID_BUILD_TOP"
@@ -144,6 +145,7 @@ INS_KEY_AVD_FLAVOR = "flavor"
 INS_KEY_IS_LOCAL = "remote"
 INS_STATUS_RUNNING = "RUNNING"
 LOCAL_INS_NAME = "local-instance"
+LOCAL_INS_HOME_PREFIX = "instance_home_"
 ENV_CUTTLEFISH_CONFIG_FILE = "CUTTLEFISH_CONFIG_FILE"
 CUTTLEFISH_CONFIG_FILE = "cuttlefish_config.json"
 
@@ -151,7 +153,6 @@ TEMP_ARTIFACTS_FOLDER = "acloud_image_artifacts"
 TOOL_NAME = "acloud"
 EXIT_BY_USER = 1
 EXIT_BY_ERROR = -99
-RE_LAUNCH_CVD_PATTERN = "launch_cvd.*%(arg_name)s %(arg_value)s"
 
 # For reuse gce instance
 SELECT_ONE_GCE_INSTANCE = "select_one_gce_instance"
