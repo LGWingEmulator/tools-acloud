@@ -105,6 +105,10 @@ properties of the AVD. You can specify the cpu, resolution, dpi, memory,and/or
 disk in a key:value format like so:
 `cpu:2,resolution:1280x700,dpi:160,memory:2g,disk:2g`
 
+* `--reuse-gce`: 'cuttlefish only' This can help users use their own instance.
+Reusing specific gce instance if `--reuse-gce` [instance-name] is provided.
+Select one gce instance to reuse if `--reuse-gce` is provided.
+
 The full list of options are available via `--help`
 
 > $ acloud create --help
