@@ -1584,7 +1584,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             # in the metadata. There may not be an actual ssh key value so
             # that's why we filter for None to avoid an empty line in front.
             ssh_key_item[_METADATA_KEY_VALUE] = "\n".join(
-                filter(None, [ssh_key_item[_METADATA_KEY_VALUE], entry]))
+                list(filter(None, [ssh_key_item[_METADATA_KEY_VALUE], entry])))
         else:
             # Since there is no ssh key item in the metadata, we need to add it in.
             ssh_key_item = {_METADATA_KEY: _SSH_KEYS_NAME,
