@@ -37,6 +37,8 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
     BUILD_ID = "2263051"
     KERNEL_BRANCH = "kernel-p-dev-android-goldfish-4.14-x86-64"
     KERNEL_BUILD_ID = "112233"
+    KERNEL_BUILD_TARGET = "kernel_x86_64"
+    KERNEL_BUILD_ARTIFACT = "bzImage"
     EMULATOR_BRANCH = "aosp-emu-master-dev"
     EMULATOR_BUILD_ID = "1234567"
     DPI = 160
@@ -105,6 +107,8 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
             "cvd_01_fetch_kernel_bid":
                 "{branch}/{build_id}".format(
                     branch=self.KERNEL_BRANCH, build_id=self.KERNEL_BUILD_ID),
+            "cvd_01_fetch_kernel_build_target": self.KERNEL_BUILD_TARGET,
+            "cvd_01_fetch_kernel_build_artifact": self.KERNEL_BUILD_ARTIFACT,
             "cvd_01_use_custom_kernel": "true",
             "cvd_01_fetch_emulator_bid":
                 "{branch}/{build_id}".format(
@@ -120,8 +124,11 @@ class GoldfishComputeClientTest(driver_test_lib.BaseDriverTest):
 
         self.goldfish_compute_client.CreateInstance(
             self.INSTANCE, self.IMAGE, self.IMAGE_PROJECT, self.TARGET,
-            self.BRANCH, self.BUILD_ID, self.KERNEL_BRANCH,
-            self.KERNEL_BUILD_ID, self.EMULATOR_BRANCH,
+            self.BRANCH, self.BUILD_ID,
+            self.KERNEL_BRANCH,
+            self.KERNEL_BUILD_ID,
+            self.KERNEL_BUILD_TARGET,
+            self.EMULATOR_BRANCH,
             self.EMULATOR_BUILD_ID, self.EXTRA_DATA_DISK_SIZE_GB, self.GPU,
             extra_scopes=self.EXTRA_SCOPES,
             tags=self.TAGS)

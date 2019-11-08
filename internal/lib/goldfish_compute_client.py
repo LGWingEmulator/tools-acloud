@@ -122,6 +122,17 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                 raise errors.DeviceBootError(
                     "Emulator timed out while booting.")
 
+    @staticmethod
+    def GetKernelBuildArtifact(target):
+        if target == "kernel":
+            return "bzImage"
+        if target == "kernel_x86_64":
+            return "bzImage"
+        if target == "kernel_aarch64":
+            return "Image.gz"
+        raise errors.DeviceBootError(
+            "Don't know the artifact name for '%s' target" % target)
+
     # pylint: disable=too-many-locals,arguments-differ
     # TODO: Refactor CreateInstance to pass in an object instead of all these args.
     def CreateInstance(self,
@@ -133,6 +144,7 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
                        build_id,
                        kernel_branch=None,
                        kernel_build_id=None,
+                       kernel_build_target=None,
                        emulator_branch=None,
                        emulator_build_id=None,
                        blank_data_disk_size_gb=None,
@@ -152,6 +164,7 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
             build_id: String, build id, a string, e.g. "2263051", "P2804227"
             kernel_branch: String, kernel branch name.
             kernel_build_id: String, kernel build id.
+            kernel_build_target: kernel target, e.g. "kernel_x86_64"
             emulator_branch: String, emulator branch name, e.g."aosp-emu-master-dev"
             emulator_build_id: String, emulator build id, a string, e.g. "2263051", "P2804227"
             blank_data_disk_size_gb: Integer, size of the blank data disk in GB.
@@ -181,9 +194,12 @@ class GoldfishComputeClient(android_compute_client.AndroidComputeClient):
         metadata["cvd_01_fetch_android_build_target"] = build_target
         metadata["cvd_01_fetch_android_bid"] = "{branch}/{build_id}".format(
             branch=branch, build_id=build_id)
-        if kernel_branch and kernel_build_id:
+        if kernel_branch and kernel_build_id and kernel_build_target:
             metadata["cvd_01_fetch_kernel_bid"] = "{branch}/{build_id}".format(
                 branch=kernel_branch, build_id=kernel_build_id)
+            metadata["cvd_01_fetch_kernel_build_target"] = kernel_build_target
+            metadata["cvd_01_fetch_kernel_build_artifact"] = (
+                self.GetKernelBuildArtifact(kernel_build_target))
             metadata["cvd_01_use_custom_kernel"] = "true"
         if emulator_branch and emulator_build_id:
             metadata[
