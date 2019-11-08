@@ -403,6 +403,7 @@ def main(argv=None):
             emulator_branch=args.emulator_branch,
             kernel_build_id=args.kernel_build_id,
             kernel_branch=args.kernel_branch,
+            kernel_build_target=args.kernel_build_target,
             gpu=args.gpu,
             num=args.num,
             serial_log_file=args.serial_log_file,
