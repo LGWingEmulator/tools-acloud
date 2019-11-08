@@ -123,7 +123,10 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
         report = create_goldfish_action.CreateDevices(
             none_avd_spec, cfg, build_target=self.BUILD_TARGET,
             build_id=self.BUILD_ID, emulator_build_id=self.EMULATOR_BUILD_ID,
-            gpu=self.GPU, kernel_build_id=self.KERNEL_BUILD_ID)
+            gpu=self.GPU,
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -138,6 +141,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -193,6 +197,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -239,7 +244,9 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_branch=None,
             gpu=self.GPU,
             branch=None,
-            kernel_build_id=self.KERNEL_BUILD_ID)
+            kernel_branch=self.KERNEL_BRANCH,
+            kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET)
 
         # Verify
         self.compute_client.CreateInstance.assert_called_with(
@@ -254,6 +261,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -307,6 +315,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -363,6 +372,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=none_avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
@@ -416,6 +426,7 @@ class CreateGoldfishActionTest(driver_test_lib.BaseDriverTest):
             emulator_build_id=self.EMULATOR_BUILD_ID,
             kernel_branch=self.KERNEL_BRANCH,
             kernel_build_id=self.KERNEL_BUILD_ID,
+            kernel_build_target=self.KERNEL_BUILD_TARGET,
             gpu=self.GPU,
             avd_spec=self.avd_spec,
             extra_scopes=self.EXTRA_SCOPES,
