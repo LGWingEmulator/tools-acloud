@@ -250,3 +250,26 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             and the value is an errors.DeviceBootError object.
         """
         return self._compute_client.all_failures
+
+    def GetBuildInfoDict(self):
+        """Get build info dictionary.
+
+        Returns:
+          A build info dictionary.
+        """
+        build_info_dict = {
+            key: val for key, val in self._avd_spec.remote_image.items() if val}
+
+        # kernel_target have default value "kernel". If user provide kernel_build_id
+        # or kernel_branch, then start to process kernel image.
+        if (self._avd_spec.kernel_build_info[constants.BUILD_ID]
+                or self._avd_spec.kernel_build_info[constants.BUILD_BRANCH]):
+            build_info_dict.update(
+                {"kernel_%s" % key: val
+                 for key, val in self._avd_spec.kernel_build_info.items() if val}
+            )
+        build_info_dict.update(
+            {"system_%s" % key: val
+             for key, val in self._avd_spec.system_build_info.items() if val}
+        )
+        return build_info_dict
