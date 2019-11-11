@@ -144,6 +144,18 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
         instance = self._compute_client.GenerateInstanceName(
             build_id=self.build_info.build_id, build_target=self._build_target)
 
+        if self._cfg.enable_multi_stage:
+            remote_build_id = self.build_info.build_id
+        else:
+            remote_build_id = self._GetGcsBucketBuildId(
+                self.build_info.build_id, self.build_info.release_build_id)
+
+        if self._cfg.enable_multi_stage:
+            remote_system_build_id = self.system_build_info.build_id
+        else:
+            remote_system_build_id = self._GetGcsBucketBuildId(
+                self.system_build_info.build_id, self.system_build_info.release_build_id)
+
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
@@ -151,8 +163,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             image_project=self._cfg.stable_host_image_project,
             build_target=self.build_info.build_target,
             branch=self.build_info.branch,
-            build_id=self._GetGcsBucketBuildId(
-                self.build_info.build_id, self.build_info.release_build_id),
+            build_id=remote_build_id,
             kernel_branch=self.kernel_build_info.branch,
             kernel_build_id=self.kernel_build_info.build_id,
             kernel_build_target=self.kernel_build_info.build_target,
@@ -160,9 +171,7 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             extra_scopes=self._extra_scopes,
             system_build_target=self.system_build_info.build_target,
             system_branch=self.system_build_info.branch,
-            system_build_id=self._GetGcsBucketBuildId(
-                self.system_build_info.build_id,
-                self.system_build_info.release_build_id))
+            system_build_id=remote_system_build_id)
 
         return instance
 
