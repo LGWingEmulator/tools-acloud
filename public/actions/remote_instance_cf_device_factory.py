@@ -255,8 +255,10 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         """Get build info dictionary.
 
         Returns:
-          A build info dictionary.
+            A build info dictionary. None for local image case.
         """
+        if self._avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
+            return None
         build_info_dict = {
             key: val for key, val in self._avd_spec.remote_image.items() if val}
 
