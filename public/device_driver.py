@@ -28,13 +28,8 @@ TODO: The following APIs have not been implemented
 """
 
 from __future__ import print_function
-import datetime
 import logging
 import os
-
-# pylint: disable=import-error
-import dateutil.parser
-import dateutil.tz
 
 from acloud import errors
 from acloud.public import avd
@@ -471,116 +466,6 @@ def DeleteAndroidVirtualDevices(cfg, instance_names, default_report=None):
             r, deleted,
             failed, error_msgs,
             resource_name="instance")
-        if r.status == report.Status.UNKNOWN:
-            r.SetStatus(report.Status.SUCCESS)
-    except errors.DriverError as e:
-        r.AddError(str(e))
-        r.SetStatus(report.Status.FAIL)
-    return r
-
-
-def _FindOldItems(items, cut_time, time_key):
-    """Finds items from |items| whose timestamp is earlier than |cut_time|.
-
-    Args:
-        items: A list of items. Each item is a dictionary represent
-               the properties of the item. It should has a key as noted
-               by time_key.
-        cut_time: A datetime.datatime object.
-        time_key: String, key for the timestamp.
-
-    Returns:
-        A list of those from |items| whose timestamp is earlier than cut_time.
-    """
-    cleanup_list = []
-    for item in items:
-        t = dateutil.parser.parse(item[time_key])
-        if t < cut_time:
-            cleanup_list.append(item)
-    return cleanup_list
-
-
-def Cleanup(cfg, expiration_mins):
-    """Cleans up stale gce images, gce instances, and disk images in storage.
-
-    Args:
-        cfg: An AcloudConfig instance.
-        expiration_mins: Integer, resources older than |expiration_mins| will
-                         be cleaned up.
-
-    Returns:
-        A Report instance.
-    """
-    r = report.Report(command="cleanup")
-    try:
-        cut_time = (datetime.datetime.now(dateutil.tz.tzlocal()) -
-                    datetime.timedelta(minutes=expiration_mins))
-        logger.info(
-            "Cleaning up any gce images/instances and cached build artifacts."
-            "in google storage that are older than %s", cut_time)
-        credentials = auth.CreateCredentials(cfg)
-        compute_client = android_compute_client.AndroidComputeClient(
-            cfg, credentials)
-        storage_client = gstorage_client.StorageClient(credentials)
-
-        # Cleanup expired instances
-        items = compute_client.ListInstances()
-        cleanup_list = [
-            item["name"]
-            for item in _FindOldItems(items, cut_time, "creationTimestamp")
-        ]
-        logger.info("Found expired instances: %s", cleanup_list)
-        for i in range(0, len(cleanup_list), MAX_BATCH_CLEANUP_COUNT):
-            result = compute_client.DeleteInstances(
-                instances=cleanup_list[i:i + MAX_BATCH_CLEANUP_COUNT],
-                zone=cfg.zone)
-            AddDeletionResultToReport(r, *result, resource_name="instance")
-
-        # Cleanup expired images
-        items = compute_client.ListImages()
-        skip_list = cfg.precreated_data_image_map.viewvalues()
-        cleanup_list = [
-            item["name"]
-            for item in _FindOldItems(items, cut_time, "creationTimestamp")
-            if item["name"] not in skip_list
-        ]
-        logger.info("Found expired images: %s", cleanup_list)
-        for i in range(0, len(cleanup_list), MAX_BATCH_CLEANUP_COUNT):
-            result = compute_client.DeleteImages(
-                image_names=cleanup_list[i:i + MAX_BATCH_CLEANUP_COUNT])
-            AddDeletionResultToReport(r, *result, resource_name="image")
-
-        # Cleanup expired disks
-        # Disks should have been attached to instances with autoDelete=True.
-        # However, sometimes disks may not be auto deleted successfully.
-        items = compute_client.ListDisks(zone=cfg.zone)
-        cleanup_list = [
-            item["name"]
-            for item in _FindOldItems(items, cut_time, "creationTimestamp")
-            if not item.get("users")
-        ]
-        logger.info("Found expired disks: %s", cleanup_list)
-        for i in range(0, len(cleanup_list), MAX_BATCH_CLEANUP_COUNT):
-            result = compute_client.DeleteDisks(
-                disk_names=cleanup_list[i:i + MAX_BATCH_CLEANUP_COUNT],
-                zone=cfg.zone)
-            AddDeletionResultToReport(r, *result, resource_name="disk")
-
-        # Cleanup expired google storage
-        items = storage_client.List(bucket_name=cfg.storage_bucket_name)
-        cleanup_list = [
-            item["name"]
-            for item in _FindOldItems(items, cut_time, "timeCreated")
-        ]
-        logger.info("Found expired cached artifacts: %s", cleanup_list)
-        for i in range(0, len(cleanup_list), MAX_BATCH_CLEANUP_COUNT):
-            result = storage_client.DeleteFiles(
-                bucket_name=cfg.storage_bucket_name,
-                object_names=cleanup_list[i:i + MAX_BATCH_CLEANUP_COUNT])
-            AddDeletionResultToReport(
-                r, *result, resource_name="cached_build_artifact")
-
-        # Everything succeeded, write status to report.
         if r.status == report.Status.UNKNOWN:
             r.SetStatus(report.Status.SUCCESS)
     except errors.DriverError as e:
