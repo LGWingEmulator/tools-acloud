@@ -16,14 +16,10 @@
 
 """Tests for acloud.public.device_driver."""
 
-import datetime
 import uuid
 
 import unittest
 import mock
-
-# pylint: disable=import-error
-import dateutil.parser
 
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_build_client
@@ -185,107 +181,6 @@ class DeviceDriverTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEqual(report.command, "delete")
         self.assertEqual(report.status, "SUCCESS")
-
-    def testCleanup(self):
-        """Test Cleanup."""
-        expiration_mins = 30
-        before_deadline = "2015-10-29T12:00:30.018-07:00"
-        after_deadline = "2015-10-29T12:45:30.018-07:00"
-        now = "2015-10-29T13:00:30.018-07:00"
-        self.Patch(device_driver, "datetime")
-        device_driver.datetime.datetime.now.return_value = dateutil.parser.parse(
-            now)
-        device_driver.datetime.timedelta.return_value = datetime.timedelta(
-            minutes=expiration_mins)
-        fake_instances = [
-            {
-                "name": "fake_instance_1",
-                "creationTimestamp": before_deadline,
-            }, {
-                "name": "fake_instance_2",
-                "creationTimestamp": after_deadline,
-            }
-        ]
-        fake_images = [
-            {
-                "name": "extradisk-image-4gb",
-                "creationTimestamp": before_deadline,
-            }, {
-                "name": "fake_image_1",
-                "creationTimestamp": before_deadline,
-            }, {
-                "name": "fake_image_2",
-                "creationTimestamp": after_deadline,
-            }
-        ]
-        fake_disks = [
-            {
-                "name": "fake_disk_1",
-                "creationTimestamp": before_deadline,
-            }, {
-                "name": "fake_disk_2",
-                "creationTimestamp": before_deadline,
-                "users": ["some-instance-using-the-disk"]
-            }, {
-                "name": "fake_disk_3",
-                "creationTimestamp": after_deadline,
-            }
-        ]
-        fake_objects = [
-            {
-                "name": "fake_object_1",
-                "timeCreated": before_deadline,
-            }, {
-                "name": "fake_object_2",
-                "timeCreated": after_deadline,
-            }
-        ]
-        self.compute_client.ListInstances.return_value = fake_instances
-        self.compute_client.ListImages.return_value = fake_images
-        self.compute_client.ListDisks.return_value = fake_disks
-        self.storage_client.List.return_value = fake_objects
-        self.compute_client.DeleteInstances.return_value = (
-            ["fake_instance_1"], [], [])
-        self.compute_client.DeleteImages.return_value = (["fake_image_1"], [],
-                                                         [])
-        self.compute_client.DeleteDisks.return_value = (["fake_disk_1"], [],
-                                                        [])
-        self.storage_client.DeleteFiles.return_value = (["fake_object_1"], [],
-                                                        [])
-        cfg = _CreateCfg()
-        report = device_driver.Cleanup(cfg, expiration_mins)
-        self.assertEqual(report.errors, [])
-        expected_report_data = {
-            "deleted": [
-                {"name": "fake_instance_1",
-                 "type": "instance"},
-                {"name": "fake_image_1",
-                 "type": "image"},
-                {"name": "fake_disk_1",
-                 "type": "disk"},
-                {"name": "fake_object_1",
-                 "type": "cached_build_artifact"},
-            ]
-        }
-        self.assertEqual(report.data, expected_report_data)
-
-        self.compute_client.ListInstances.assert_called_once_with()
-        self.compute_client.DeleteInstances.assert_called_once_with(
-            instances=["fake_instance_1"], zone=cfg.zone)
-
-        self.compute_client.ListImages.assert_called_once_with()
-        self.compute_client.DeleteImages.assert_called_once_with(
-            image_names=["fake_image_1"])
-
-        self.compute_client.ListDisks.assert_called_once_with(zone=cfg.zone)
-        self.compute_client.DeleteDisks.assert_called_once_with(
-            disk_names=["fake_disk_1"], zone=cfg.zone)
-
-        self.storage_client.List.assert_called_once_with(
-            bucket_name=cfg.storage_bucket_name)
-        self.storage_client.DeleteFiles.assert_called_once_with(
-            bucket_name=cfg.storage_bucket_name,
-            object_names=["fake_object_1"])
 
 
 if __name__ == "__main__":
