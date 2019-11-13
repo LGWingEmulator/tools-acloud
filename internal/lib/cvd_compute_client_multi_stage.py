@@ -354,11 +354,11 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             avd_spec: An AVDSpec instance.
 
         Returns:
-            Namedtuple of (internal, external) IP of the instance.
+            ssh.IP object, that stores internal and external ip of the instance.
         """
         gcompute_client.ComputeClient.AddSshRsaInstanceMetadata(
-            self, self._zone, constants.GCE_USER,
-            avd_spec.cfg.ssh_public_key_path, avd_spec.instance_name_to_reuse)
+            self, constants.GCE_USER, avd_spec.cfg.ssh_public_key_path,
+            avd_spec.instance_name_to_reuse)
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=avd_spec.instance_name_to_reuse, zone=self._zone)
 
