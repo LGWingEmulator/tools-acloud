@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""setup.py to generate pb2.py from proto files."""
+
+from __future__ import print_function
 
 from distutils.spawn import find_executable
 import os
@@ -36,7 +39,7 @@ else:
     PROTOC = find_executable("protoc")
 
 
-def generate_proto(source):
+def GenerateProto(source):
     """Generate a _pb2.py from a .proto file.
 
     Invokes the Protocol Compiler to generate a _pb2.py from the given
@@ -51,7 +54,7 @@ def generate_proto(source):
 
     if (not os.path.exists(output) or (os.path.exists(source) and
                                        os.path.getmtime(source) > os.path.getmtime(output))):
-        print "Generating %s..." % output
+        print("Generating %s..." % output)
 
         if not os.path.exists(source):
             sys.stderr.write("Can't find required file: %s\n" % source)
@@ -63,14 +66,14 @@ def generate_proto(source):
                 "or install the binary package.\n")
             sys.exit(-1)
 
-        protoc_command = [PROTOC,  "-I%s" % ACLOUD_DIR, "--python_out=.", source]
+        protoc_command = [PROTOC, "-I%s" % ACLOUD_DIR, "--python_out=.", source]
         if subprocess.call(protoc_command) != 0:
             sys.exit(-1)
 
 
 # Generate the protobuf files that we depend on.
-generate_proto(os.path.join(ACLOUD_DIR, "internal/proto/user_config.proto"))
-generate_proto(os.path.join(ACLOUD_DIR, "internal/proto/internal_config.proto"))
+GenerateProto(os.path.join(ACLOUD_DIR, "internal/proto/user_config.proto"))
+GenerateProto(os.path.join(ACLOUD_DIR, "internal/proto/internal_config.proto"))
 open(os.path.join(ACLOUD_DIR, "internal/proto/__init__.py"), "a").close()
 
 setuptools.setup(
