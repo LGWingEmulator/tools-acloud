@@ -80,7 +80,6 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
 
         class ExpectedException(Exception):
             """Expected exception."""
-            pass
 
         def _Call():
             with utils.TempDir():
@@ -135,7 +134,6 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
 
         class ExpectedException(Exception):
             """Expected exception."""
-            pass
 
         def _Call():
             with utils.TempDir():
