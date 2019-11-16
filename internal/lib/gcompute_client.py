@@ -846,15 +846,24 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         Returns:
             A list of instances.
         """
-        api = self.service.instances().aggregatedList(
-            project=self._project,
-            filter=instance_filter)
-        response = self.Execute(api)
+        # aggregatedList will only return 500 results max, so if there are more,
+        # we need to send in the next page token to get the next 500 (and so on
+        # and so forth.
+        get_more_instances = True
+        page_token = None
         instances_list = []
-        for instances_data in response["items"].values():
-            if "instances" in instances_data:
-                for instance in instances_data.get("instances"):
-                    instances_list.append(instance)
+        while get_more_instances:
+            api = self.service.instances().aggregatedList(
+                project=self._project,
+                filter=instance_filter,
+                pageToken=page_token)
+            response = self.Execute(api)
+            page_token = response.get("nextPageToken")
+            get_more_instances = page_token is not None
+            for instances_data in response["items"].values():
+                if "instances" in instances_data:
+                    for instance in instances_data.get("instances"):
+                        instances_list.append(instance)
 
         return instances_list
 
