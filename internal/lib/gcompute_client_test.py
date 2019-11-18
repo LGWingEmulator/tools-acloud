@@ -497,7 +497,8 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         calls = [
             mock.call(
                 project=PROJECT,
-                filter=None),
+                filter=None,
+                pageToken=None),
         ]
         resource_mock.aggregatedList.assert_has_calls(calls)
         self.assertEqual(instances, [instance_1, instance_2])
