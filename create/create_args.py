@@ -289,6 +289,16 @@ def GetCreateArgParser(subparser):
         "e.g --local-image or --local-image /path/to/dir or --local-image "
         "/path/to/file")
     create_parser.add_argument(
+        "--local-system-image",
+        type=str,
+        dest="local_system_image",
+        nargs="?",
+        default="",
+        required=False,
+        help="Use the locally built system images for the AVD. Look for the "
+        "images in $ANDROID_PRODUCT_OUT if no args value is provided. "
+        "e.g., --local-system-image or --local-system-image /path/to/dir")
+    create_parser.add_argument(
         "--image-download-dir",
         type=str,
         dest="image_download_dir",
@@ -368,6 +378,39 @@ def GetCreateArgParser(subparser):
     return create_parser
 
 
+def _VerifyLocalArgs(args):
+    """Verify args starting with --local.
+
+    Args:
+        args: Namespace object from argparse.parse_args.
+
+    Raises:
+        errors.CheckPathError: Image path doesn't exist.
+        errors.UnsupportedCreateArgs: The specified avd type does not support
+                                      --local-system-image.
+        errors.UnsupportedLocalInstanceId: Local instance ID is invalid.
+    """
+    if args.local_image and not os.path.exists(args.local_image):
+        raise errors.CheckPathError(
+            "Specified path doesn't exist: %s" % args.local_image)
+
+    # TODO(b/133211308): Support TYPE_CF.
+    if args.local_system_image != "" and args.avd_type != constants.TYPE_GF:
+        raise errors.UnsupportedCreateArgs("%s instance does not support "
+                                           "--local-system-image" %
+                                           args.avd_type)
+
+    if (args.local_system_image and
+            not os.path.exists(args.local_system_image)):
+        raise errors.CheckPathError(
+            "Specified path doesn't exist: %s" % args.local_system_image)
+
+    if args.local_instance is not None and args.local_instance < 1:
+        raise errors.UnsupportedLocalInstanceId("Local instance id can not be "
+                                                "less than 1. Actually passed:%d"
+                                                % args.local_instance)
+
+
 def VerifyArgs(args):
     """Verify args.
 
@@ -375,7 +418,6 @@ def VerifyArgs(args):
         args: Namespace object from argparse.parse_args.
 
     Raises:
-        errors.CheckPathError: Zipped image path doesn't exist.
         errors.UnsupportedFlavor: Flavor doesn't support.
         errors.UnsupportedMultiAdbPort: multi adb port doesn't support.
         errors.UnsupportedCreateArgs: When a create arg is specified but
@@ -402,10 +444,6 @@ def VerifyArgs(args):
     if args.adb_port:
         utils.CheckPortFree(args.adb_port)
 
-    if args.local_image and not os.path.exists(args.local_image):
-        raise errors.CheckPathError(
-            "Specified path doesn't exist: %s" % args.local_image)
-
     hw_properties = create_common.ParseHWPropertyArgs(args.hw_property)
     for key in hw_properties:
         if key not in constants.HW_PROPERTIES:
@@ -422,7 +460,4 @@ def VerifyArgs(args):
         raise ValueError("--no-autoconnect and --unlock couldn't be "
                          "passed in together.")
 
-    if args.local_instance is not None and args.local_instance < 1:
-        raise errors.UnsupportedLocalInstanceId("Local instance id can not be "
-                                                "less than 1. Actually passed:%d"
-                                                % args.local_instance)
+    _VerifyLocalArgs(args)
