@@ -207,8 +207,8 @@ class LaunchCVDFail(CreateError):
     """Cuttlefish AVD launch failed."""
 
 
-class EmulatorFail(CreateError):
-    """Goldfish AVD launch failed."""
+class SubprocessFail(CreateError):
+    """Subprocess failed."""
 
 
 class NoExecuteCmd(CreateError):

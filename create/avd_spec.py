@@ -109,6 +109,7 @@ class AVDSpec(object):
         self._instance_type = None
         self._local_image_dir = None
         self._local_image_artifact = None
+        self._local_system_image_dir = None
         self._image_download_dir = None
         self._num_of_instances = None
         self._remote_image = None
@@ -335,6 +336,9 @@ class AVDSpec(object):
         elif self._avd_type == constants.TYPE_GF:
             self._local_image_dir = self._ProcessGFLocalImageArgs(
                 args.local_image)
+            if args.local_system_image != "":
+                self._local_system_image_dir = self._ProcessGFLocalImageArgs(
+                    args.local_system_image)
         elif self._avd_type == constants.TYPE_GCE:
             self._local_image_artifact = self._GetGceLocalImagePath(
                 args.local_image)
@@ -383,10 +387,11 @@ class AVDSpec(object):
         """Get local built image path for goldfish.
 
         Args:
-            local_image_arg: The path to the unzipped SDK repository,
-                             i.e., sdk-repo-<os>-system-images-<build>.zip.
-                             If the value is None, this method finds the
-                             directory in build environment.
+            local_image_arg: The path to the unzipped update package or SDK
+                             repository, i.e., <target>-img-<build>.zip or
+                             sdk-repo-<os>-system-images-<build>.zip.
+                             If the value is empty, this method returns
+                             ANDROID_PRODUCT_OUT in build environment.
 
         Returns:
             String, the path to the image directory.
@@ -606,6 +611,11 @@ class AVDSpec(object):
     def local_image_artifact(self):
         """Return local image artifact."""
         return self._local_image_artifact
+
+    @property
+    def local_system_image_dir(self):
+        """Return local system image dir."""
+        return self._local_system_image_dir
 
     @property
     def avd_type(self):
