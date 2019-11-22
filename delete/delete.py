@@ -22,10 +22,12 @@ from distutils.spawn import find_executable
 import logging
 import os
 import re
+import shutil
 import subprocess
 
 from acloud import errors
 from acloud.internal import constants
+from acloud.internal.lib import adb_tools
 from acloud.internal.lib import utils
 from acloud.list import list as list_instances
 from acloud.public import config
@@ -98,11 +100,18 @@ def DeleteInstances(cfg, instances_to_delete):
         print("No instances to delete")
         return None
 
-    delete_report = None
+    delete_report = report.Report(command="delete")
     remote_instance_list = []
     for instance in instances_to_delete:
         if instance.islocal:
-            delete_report = DeleteLocalInstance(instance, delete_report)
+            if instance.avd_type == constants.TYPE_GF:
+                DeleteLocalGoldfishInstance(instance, delete_report)
+            elif instance.avd_type == constants.TYPE_CF:
+                DeleteLocalCuttlefishInstance(instance, delete_report)
+            else:
+                delete_report.AddError("Deleting %s is not supported." %
+                                       instance.avd_type)
+                delete_report.SetStatus(report.Status.FAIL)
         else:
             remote_instance_list.append(instance.name)
         # Delete ssvnc viewer
@@ -147,10 +156,10 @@ def DeleteRemoteInstances(cfg, instances_to_delete, delete_report=None):
     return delete_report
 
 
-@utils.TimeExecute(function_description="Deleting local instances",
+@utils.TimeExecute(function_description="Deleting local cuttlefish instances",
                    result_evaluator=utils.ReportEvaluator)
-def DeleteLocalInstance(instance, delete_report=None):
-    """Delete local instance.
+def DeleteLocalCuttlefishInstance(instance, delete_report):
+    """Delete a local cuttlefish instance.
 
     Delete local instance with stop_cvd command and write delete instance
     information to report.
@@ -160,11 +169,8 @@ def DeleteLocalInstance(instance, delete_report=None):
         delete_report: Report object.
 
     Returns:
-        A Report instance.
+        delete_report.
     """
-    if not delete_report:
-        delete_report = report.Report(command="delete")
-
     try:
         with open(os.devnull, "w") as dev_null:
             cvd_env = os.environ.copy()
@@ -188,6 +194,34 @@ def DeleteLocalInstance(instance, delete_report=None):
     return delete_report
 
 
+@utils.TimeExecute(function_description="Deleting local goldfish instances",
+                   result_evaluator=utils.ReportEvaluator)
+def DeleteLocalGoldfishInstance(instance, delete_report):
+    """Delete a local goldfish instance.
+
+    Args:
+        instance: LocalGoldfishInstance object.
+        delete_report: Report object.
+
+    Returns:
+        delete_report.
+    """
+    adb = adb_tools.AdbTools(adb_port=instance.adb_port,
+                             device_serial=instance.device_serial)
+    if adb.EmuCommand("kill") == 0:
+        delete_report.SetStatus(report.Status.SUCCESS)
+        device_driver.AddDeletionResultToReport(
+            delete_report, [instance.name], failed=[],
+            error_msgs=[],
+            resource_name="instance")
+    else:
+        delete_report.AddError("Cannot kill %s." % instance.device_serial)
+        delete_report.SetStatus(report.Status.FAIL)
+
+    shutil.rmtree(instance.instance_dir, ignore_errors=True)
+    return delete_report
+
+
 def Run(args):
     """Run delete.
 
@@ -200,18 +234,22 @@ def Run(args):
     Returns:
         A Report instance.
     """
-    cfg = config.GetAcloudConfig(args)
-    instances_to_delete = args.instance_names
+    instances = list_instances.GetLocalInstances()
+    if args.local_only:
+        cfg = None
+    else:
+        cfg = config.GetAcloudConfig(args)
+        instances.extend(list_instances.GetRemoteInstances(cfg))
 
-    if instances_to_delete:
-        return DeleteInstances(cfg,
-                               list_instances.GetInstancesFromInstanceNames(
-                                   cfg, instances_to_delete))
+    if args.instance_names:
+        instances = list_instances.FilterInstancesByNames(instances,
+                                                          args.instance_names)
+    elif args.adb_port:
+        instances = list_instances.FilterInstancesByAdbPort(instances,
+                                                            args.adb_port)
+    elif not args.all:
+        # Provide instances list to user and let user choose what to delete if
+        # user didn't specify instances in args.
+        instances = list_instances.ChooseInstancesFromList(instances)
 
-    if args.adb_port:
-        return DeleteInstances(
-            cfg, list_instances.GetInstanceFromAdbPort(cfg, args.adb_port))
-
-    # Provide instances list to user and let user choose what to delete if user
-    # didn't specific instance name in args.
-    return DeleteInstances(cfg, list_instances.ChooseInstances(cfg, args.all))
+    return DeleteInstances(cfg, instances)

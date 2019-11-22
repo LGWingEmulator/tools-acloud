@@ -54,6 +54,12 @@ def GetDeleteArgParser(subparser):
         dest="adb_port",
         required=False,
         help="Delete instance with specified adb-port.")
+    delete_parser.add_argument(
+        "--local-only",
+        action="store_true",
+        dest="local_only",
+        required=False,
+        help="Do not authenticate and query remote instances.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
