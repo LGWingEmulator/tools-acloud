@@ -83,6 +83,50 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(6521, local_instance.forwarding_adb_port)
         self.assertEqual(6445, local_instance.forwarding_vnc_port)
 
+    @mock.patch("acloud.list.instance.tempfile")
+    @mock.patch("acloud.list.instance.AdbTools")
+    def testCreateLocalGoldfishInstance(self, mock_adb_tools, mock_tempfile):
+        """"Test the attributes of LocalGoldfishInstance."""
+        mock_tempfile.gettempdir.return_value = "/unit/test"
+        mock_adb_tools.return_value = mock.Mock(device_information={})
+
+        inst = instance.LocalGoldfishInstance(1)
+
+        self.assertEqual(inst.name, "local-goldfish-instance-1")
+        self.assertEqual(inst.avd_type, constants.TYPE_GF)
+        self.assertEqual(inst.adb_port, 5555)
+        self.assertTrue(inst.islocal)
+        self.assertEqual(inst.console_port, 5554)
+        self.assertEqual(inst.device_serial, "emulator-5554")
+        self.assertEqual(inst.instance_dir,
+                         "/unit/test/acloud_gf_temp/instance-1")
+
+    @mock.patch("acloud.list.instance.os.listdir")
+    @mock.patch("acloud.list.instance.os.path.isdir")
+    @mock.patch("acloud.list.instance.tempfile")
+    @mock.patch("acloud.list.instance.AdbTools")
+    def testGetLocalGoldfishInstances(self, mock_adb_tools, mock_tempfile,
+                                      mock_isdir, mock_listdir):
+        """Test LocalGoldfishInstance.GetExistingInstances."""
+        mock_tempfile.gettempdir.return_value = "/unit/test"
+        mock_adb_tools.return_value = mock.Mock(device_information={})
+        mock_listdir.side_effect = lambda path: (
+            ["instance-1", "instance-3"] if
+            path == "/unit/test/acloud_gf_temp" else [])
+        mock_isdir.side_effect = lambda path: (
+            path in ("/unit/test/acloud_gf_temp",
+                     "/unit/test/acloud_gf_temp/instance-1",
+                     "/unit/test/acloud_gf_temp/instance-3"))
+
+        instances = instance.LocalGoldfishInstance.GetExistingInstances()
+
+        mock_listdir.assert_called_with("/unit/test/acloud_gf_temp")
+        mock_isdir.assert_any_call("/unit/test/acloud_gf_temp/instance-1")
+        mock_isdir.assert_any_call("/unit/test/acloud_gf_temp/instance-3")
+        self.assertEqual(len(instances), 2)
+        self.assertEqual(instances[0].console_port, 5554)
+        self.assertEqual(instances[1].console_port, 5558)
+
     def testGetElapsedTime(self):
         """Test _GetElapsedTime"""
         # Instance time can't parse

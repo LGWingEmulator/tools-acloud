@@ -42,7 +42,6 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 
 from acloud import errors
 from acloud.create import base_avd_create
@@ -50,18 +49,15 @@ from acloud.internal import constants
 from acloud.internal.lib import adb_tools
 from acloud.internal.lib import ota_tools
 from acloud.internal.lib import utils
+from acloud.list import instance
 from acloud.public import report
 
 
 logger = logging.getLogger(__name__)
 
-# Emulator parameters
+# Input and output file names
 _EMULATOR_BIN_NAME = "emulator"
 _SDK_REPO_EMULATOR_DIR_NAME = "emulator"
-_GF_ADB_DEVICE_SERIAL = "emulator-%(console_port)s"
-_EMULATOR_DEFAULT_CONSOLE_PORT = 5554
-
-# Input and output file names
 _SYSTEM_IMAGE_NAME = "system.img"
 _SYSTEM_QEMU_IMAGE_NAME = "system-qemu.img"
 _NON_MIXED_BACKUP_IMAGE_EXT = ".bak-non-mixed"
@@ -167,7 +163,7 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             errors.SubprocessFail if any command fails.
         """
         if not utils.IsSupportedPlatform(print_warning=True):
-            result_report = report.Report(constants.LOCAL_INS_NAME)
+            result_report = report.Report(command="create")
             result_report.SetStatus(report.Status.FAIL)
             return result_report
 
@@ -192,19 +188,14 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         self._CopyBuildProp(image_dir)
 
         instance_id = avd_spec.local_instance_id
-        # Emulator requires the console port to be an even number.
-        # By convention, adb port is console port + 1.
-        console_port = _EMULATOR_DEFAULT_CONSOLE_PORT + (instance_id - 1) * 2
-        adb_port = console_port + 1
-        adb = adb_tools.AdbTools(
-            adb_port=adb_port,
-            device_serial=_GF_ADB_DEVICE_SERIAL % {
-                "console_port": console_port})
+        inst = instance.LocalGoldfishInstance(instance_id,
+                                              avd_flavor=avd_spec.flavor)
+        adb = adb_tools.AdbTools(adb_port=inst.adb_port,
+                                 device_serial=inst.device_serial)
 
         self._CheckRunningEmulator(adb, no_prompts)
 
-        instance_dir = os.path.join(tempfile.gettempdir(), "acloud_gf_temp",
-                                    "instance-" + str(instance_id))
+        instance_dir = inst.instance_dir
         shutil.rmtree(instance_dir, ignore_errors=True)
         os.makedirs(instance_dir)
 
@@ -227,8 +218,8 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         logger.info("Instance directory: %s", instance_dir)
         proc = self._StartEmulatorProcess(emulator_path, instance_dir,
-                                          image_dir, console_port, adb_port,
-                                          extra_args)
+                                          image_dir, inst.console_port,
+                                          inst.adb_port, extra_args)
 
         self._WaitForEmulatorToStart(adb, proc)
 
@@ -237,7 +228,7 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # Emulator has no VNC port.
         result_report.AddData(
             key="devices",
-            value={constants.ADB_PORT: adb_port})
+            value={constants.ADB_PORT: inst.adb_port})
         return result_report
 
     @staticmethod
