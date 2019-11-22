@@ -37,6 +37,7 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
     METADATA = {"metadata_key": "metadata_value"}
     BOOT_DISK_SIZE_GB = 10
     ANDROID_BUILD_ID = 123
+    ANDROID_BUILD_TARGET = 'cheese-userdebug'
     DPI = 320
     X_RES = 720
     Y_RES = 1280
@@ -82,6 +83,7 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
 
         expected_metadata = {
             'android_build_id': self.ANDROID_BUILD_ID,
+            'android_build_target': self.ANDROID_BUILD_TARGET,
             'avd_type': "cheeps",
             'cvd_01_dpi': str(self.DPI),
             'cvd_01_x_res': str(self.X_RES),
@@ -101,12 +103,15 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
                                 constants.HW_ALIAS_DPI: str(self.DPI)}
         avd_spec.username = self.USER
         avd_spec.password = self.PASSWORD
+        avd_spec.remote_image = {
+            constants.BUILD_ID: self.ANDROID_BUILD_ID,
+            constants.BUILD_TARGET: self.ANDROID_BUILD_TARGET,
+        }
 
         self.cheeps_compute_client.CreateInstance(
             self.INSTANCE,
             self.IMAGE,
             self.IMAGE_PROJECT,
-            self.ANDROID_BUILD_ID,
             avd_spec)
         # pylint: disable=no-member
         gcompute_client.ComputeClient.CreateInstance.assert_called_with(
