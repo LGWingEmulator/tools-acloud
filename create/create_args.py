@@ -441,6 +441,10 @@ def VerifyArgs(args):
         raise errors.UnsupportedMultiAdbPort(
             "--adb-port is not supported for multi-devices.")
 
+    if args.num > 1 and args.local_instance is not None:
+        raise errors.UnsupportedCreateArgs(
+            "--num is not supported for local instance.")
+
     if args.adb_port:
         utils.CheckPortFree(args.adb_port)
 
