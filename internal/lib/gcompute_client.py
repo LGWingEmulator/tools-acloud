@@ -313,7 +313,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             error_msgs: A list of failure messages.
         """
         if not disk_names:
-            logger.warn("Nothing to delete. Arg disk_names is not provided.")
+            logger.warning("Nothing to delete. Arg disk_names is not provided.")
             return [], [], []
         # Batch send deletion requests.
         logger.info("Deleting disks: %s", disk_names)

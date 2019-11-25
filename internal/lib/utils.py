@@ -1103,6 +1103,8 @@ def IsSupportedPlatform(print_warning=False):
         Boolean, True if user is using supported platform.
     """
     system = platform.system()
+    # TODO(b/143197659): linux_distribution() deprecated in python 3. To fix it
+    # try to use another package "import distro".
     dist = platform.linux_distribution()[0]
     platform_supported = (system in _SUPPORTED_SYSTEMS_AND_DISTS and
                           dist in _SUPPORTED_SYSTEMS_AND_DISTS[system])
