@@ -52,8 +52,9 @@ def GenerateProto(source):
 
     output = source.replace(".proto", "_pb2.py")
 
-    if (not os.path.exists(output) or (os.path.exists(source) and
-                                       os.path.getmtime(source) > os.path.getmtime(output))):
+    if not os.path.exists(output) or (
+        os.path.exists(source) and os.path.getmtime(source) > os.path.getmtime(output)
+    ):
         print("Generating %s..." % output)
 
         if not os.path.exists(source):
@@ -63,7 +64,8 @@ def GenerateProto(source):
         if PROTOC is None:
             sys.stderr.write(
                 "protoc is not found.  Please compile it "
-                "or install the binary package.\n")
+                "or install the binary package.\n"
+            )
             sys.exit(-1)
 
         protoc_command = [PROTOC, "-I%s" % ACLOUD_DIR, "--python_out=.", source]
@@ -85,28 +87,36 @@ setuptools.setup(
     author="Kevin Cheng, Keun Soo Yim",
     author_email="kevcheng@google.com, yim@google.com",
     description="Acloud is a command line tool that assists users to "
-                "create an Android Virtual Device (AVD).",
+    "create an Android Virtual Device (AVD).",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=[
-        "acloud", "acloud.internal", "acloud.public", "acloud.delete",
-        "acloud.create", "acloud.setup", "acloud.metrics",
-        "acloud.internal.lib", "acloud.internal.proto", "acloud.public.data",
-        "acloud.public.acloud_kernel", "acloud.public.actions", "acloud.reconnect",
+        "acloud",
+        "acloud.internal",
+        "acloud.public",
+        "acloud.delete",
+        "acloud.create",
+        "acloud.setup",
+        "acloud.metrics",
+        "acloud.internal.lib",
+        "acloud.internal.proto",
+        "acloud.public.data",
+        "acloud.public.acloud_kernel",
+        "acloud.public.actions",
+        "acloud.pull",
+        "acloud.reconnect",
         "acloud.list",
     ],
-    package_dir={
-        "acloud": ".",
-    },
+    package_dir={"acloud": ".",},
     package_data={"acloud.public.data": ["default.config"]},
     include_package_data=True,
     platforms="POSIX",
-    entry_points={
-        "console_scripts": ["acloud=acloud.public.acloud_main:main"],
-    },
+    entry_points={"console_scripts": ["acloud=acloud.public.acloud_main:main"],},
     install_requires=[
-        "google-api-python-client", "oauth2client==3.0.0", "protobuf",
-        "python-dateutil"
+        "google-api-python-client",
+        "oauth2client==3.0.0",
+        "protobuf",
+        "python-dateutil",
     ],
     license="Apache License, Version 2.0",
     classifiers=[
@@ -117,4 +127,5 @@ setuptools.setup(
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Topic :: Utilities",
-    ])
+    ],
+)
