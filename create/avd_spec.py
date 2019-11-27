@@ -116,6 +116,9 @@ class AVDSpec(object):
         self._system_build_info = None
         self._kernel_build_info = None
         self._hw_property = None
+        self._remote_host = None
+        self._host_user = None
+        self._host_ssh_private_key_path = None
         # Create config instance for android_build_client to query build api.
         self._cfg = config.GetAcloudConfig(args)
         # Reporting args.
@@ -276,9 +279,15 @@ class AVDSpec(object):
         self._report_internal_ip = args.report_internal_ip
         self._avd_type = args.avd_type
         self._flavor = args.flavor or constants.FLAVOR_PHONE
-        self._instance_type = (constants.INSTANCE_TYPE_LOCAL
-                               if args.local_instance else
-                               constants.INSTANCE_TYPE_REMOTE)
+        if args.remote_host:
+            self._instance_type = constants.INSTANCE_TYPE_HOST
+        else:
+            self._instance_type = (constants.INSTANCE_TYPE_LOCAL
+                                   if args.local_instance else
+                                   constants.INSTANCE_TYPE_REMOTE)
+        self._remote_host = args.remote_host
+        self._host_user = args.host_user
+        self._host_ssh_private_key_path = args.host_ssh_private_key_path
         self._local_instance_id = args.local_instance
         self._num_of_instances = args.num
         self._serial_log_file = args.serial_log_file
@@ -721,3 +730,18 @@ class AVDSpec(object):
     def instance_name_to_reuse(self):
         """Return instance_name_to_reuse."""
         return self._instance_name_to_reuse
+
+    @property
+    def remote_host(self):
+        """Return host."""
+        return self._remote_host
+
+    @property
+    def host_user(self):
+        """Return host_user."""
+        return self._host_user
+
+    @property
+    def host_ssh_private_key_path(self):
+        """Return host_ssh_private_key_path."""
+        return self._host_ssh_private_key_path

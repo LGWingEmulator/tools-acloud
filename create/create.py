@@ -36,8 +36,10 @@ from acloud.create import goldfish_local_image_local_instance
 from acloud.create import goldfish_remote_image_remote_instance
 from acloud.create import local_image_local_instance
 from acloud.create import local_image_remote_instance
+from acloud.create import local_image_remote_host
 from acloud.create import remote_image_remote_instance
 from acloud.create import remote_image_local_instance
+from acloud.create import remote_image_remote_host
 from acloud.internal import constants
 from acloud.internal.lib import utils
 from acloud.setup import setup
@@ -59,10 +61,14 @@ _CREATOR_CLASS_DICT = {
         local_image_local_instance.LocalImageLocalInstance,
     (constants.TYPE_CF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_REMOTE):
         local_image_remote_instance.LocalImageRemoteInstance,
+    (constants.TYPE_CF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_HOST):
+        local_image_remote_host.LocalImageRemoteHost,
     (constants.TYPE_CF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
         remote_image_remote_instance.RemoteImageRemoteInstance,
     (constants.TYPE_CF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_LOCAL):
         remote_image_local_instance.RemoteImageLocalInstance,
+    (constants.TYPE_CF, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_HOST):
+        remote_image_remote_host.RemoteImageRemoteHost,
     # Cheeps types
     (constants.TYPE_CHEEPS, constants.IMAGE_SRC_REMOTE, constants.INSTANCE_TYPE_REMOTE):
         cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance,

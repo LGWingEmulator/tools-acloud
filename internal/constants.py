@@ -55,6 +55,7 @@ AVD_TYPES_MAPPING = {
 # Instance types
 INSTANCE_TYPE_REMOTE = "remote"
 INSTANCE_TYPE_LOCAL = "local"
+INSTANCE_TYPE_HOST = "host"
 
 # Flavor types
 FLAVOR_PHONE = "phone"
