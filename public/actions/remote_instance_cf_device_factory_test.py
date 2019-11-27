@@ -131,6 +131,40 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             fake_host_package_name)
         self.assertEqual(factory._CreateGceInstance(), "ins-1234-userbuild-fake-target")
 
+    @mock.patch.dict(os.environ, {constants.ENV_BUILD_TARGET:'fake-target'})
+    def testRemoteHostInstanceName(self):
+        """Test Remote host instance name."""
+        args = mock.MagicMock()
+        args.config_file = ""
+        args.avd_type = constants.TYPE_CF
+        args.flavor = "phone"
+        args.remote_host = "1.1.1.1"
+        args.local_image = None
+        args.adb_port = None
+        fake_avd_spec = avd_spec.AVDSpec(args)
+        fake_avd_spec.cfg.enable_multi_stage = True
+        fake_avd_spec._instance_name_to_reuse = None
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "CreateInstance")
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitRemoteHost")
+        fake_host_package_name = "/fake/host_package.tar.gz"
+
+        fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._InitRemotehost(), "host-1.1.1.1-userbuild-aosp_cf_x86_phone")
+
+        # No image zip path, it uses local build images.
+        fake_image_name = ""
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory._InitRemotehost(), "host-1.1.1.1-userbuild-fake-target")
+
     def testReuseInstanceNameMultiStage(self):
         """Test reuse instance name."""
         args = mock.MagicMock()
@@ -223,12 +257,9 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         factory._ssh = ssh.Ssh(ip=fake_ip,
                                gce_user=constants.GCE_USER,
                                ssh_private_key_path="/fake/acloud_rea")
-        factory._UploadArtifacts(constants.GCE_USER, fake_image,
-                                 fake_host_package, fake_local_image_dir)
-        expected_cmd1 = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s"
-                         % (constants.GCE_USER, fake_image))
-        expected_cmd2 = ("\"sudo su -c 'tar -x -z -f -' - '%s'\" < %s"
-                         % (constants.GCE_USER, fake_host_package))
+        factory._UploadArtifacts(fake_image, fake_host_package, fake_local_image_dir)
+        expected_cmd1 = ("/usr/bin/install_zip.sh . < %s" % fake_image)
+        expected_cmd2 = ("tar -x -z -f - < %s" % fake_host_package)
         mock_ssh_run.assert_has_calls([
             mock.call(expected_cmd1),
             mock.call(expected_cmd2)])
@@ -236,13 +267,66 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         # Test local image get from local folder case.
         fake_image = None
         self.Patch(glob, "glob", return_value=["fake.img"])
-        factory._UploadArtifacts(constants.GCE_USER, fake_image,
-                                 fake_host_package, fake_local_image_dir)
+        factory._UploadArtifacts(fake_image, fake_host_package, fake_local_image_dir)
         expected_cmd = (
             "tar -cf - --lzop -S -C %s fake.img | "
             "%s -- tar -xf - --lzop -S" %
             (fake_local_image_dir, factory._ssh.GetBaseCmd(constants.SSH_BIN)))
         mock_shell.assert_called_once_with(expected_cmd)
+
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_InitRemotehost")
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_UploadArtifacts")
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_LaunchCvd")
+    def testLocalImageRemoteHost(self, mock_launchcvd, mock_upload, mock_init_remote_host):
+        """Test local image with remote host."""
+        self.Patch(
+            cvd_compute_client_multi_stage,
+            "CvdComputeClient",
+            return_value=mock.MagicMock())
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.instance_type = constants.INSTANCE_TYPE_HOST
+        fake_avd_spec.image_source = constants.IMAGE_SRC_LOCAL
+        fake_avd_spec._instance_name_to_reuse = None
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = ""
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        factory.CreateInstance()
+        self.assertEqual(mock_init_remote_host.call_count, 1)
+        self.assertEqual(mock_upload.call_count, 1)
+        self.assertEqual(mock_launchcvd.call_count, 1)
+
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_CreateGceInstance")
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_UploadArtifacts")
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_LaunchCvd")
+    def testLocalImageCreateInstance(self, mock_launchcvd, mock_upload, mock_create_gce_instance):
+        """Test local image with create instance."""
+        self.Patch(
+            cvd_compute_client_multi_stage,
+            "CvdComputeClient",
+            return_value=mock.MagicMock())
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.instance_type = constants.INSTANCE_TYPE_REMOTE
+        fake_avd_spec.image_source = constants.IMAGE_SRC_LOCAL
+        fake_avd_spec._instance_name_to_reuse = None
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = ""
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        factory.CreateInstance()
+        self.assertEqual(mock_create_gce_instance.call_count, 1)
+        self.assertEqual(mock_upload.call_count, 1)
+        self.assertEqual(mock_launchcvd.call_count, 1)
 
 
 if __name__ == "__main__":
