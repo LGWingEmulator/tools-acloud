@@ -326,6 +326,28 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertRaises(errors.ImgDoesNotExist,
                           self.AvdSpec._GetGceLocalImagePath, fake_image_path)
 
+    def testProcessMiscArgs(self):
+        """Test process misc args."""
+        self.args.remote_host = None
+        self.args.local_instance = None
+        self.AvdSpec._ProcessMiscArgs(self.args)
+        self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_REMOTE)
+
+        self.args.remote_host = None
+        self.args.local_instance = True
+        self.AvdSpec._ProcessMiscArgs(self.args)
+        self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_LOCAL)
+
+        self.args.remote_host = "1.1.1.1"
+        self.args.local_instance = None
+        self.AvdSpec._ProcessMiscArgs(self.args)
+        self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_HOST)
+
+        self.args.remote_host = "1.1.1.1"
+        self.args.local_instance = True
+        self.AvdSpec._ProcessMiscArgs(self.args)
+        self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_HOST)
+
 
 if __name__ == "__main__":
     unittest.main()
