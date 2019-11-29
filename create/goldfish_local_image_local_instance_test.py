@@ -122,6 +122,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                         os.path.join(self._host_out_dir, "emulator")}
 
         mock_avd_spec = mock.Mock(flavor="phone",
+                                  boot_timeout_secs=100,
                                   gpu=None,
                                   autoconnect=True,
                                   local_instance_id=1,
@@ -164,6 +165,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         mock_environ = {"ANDROID_HOST_OUT": self._host_out_dir}
 
         mock_avd_spec = mock.Mock(flavor="phone",
+                                  boot_timeout_secs=None,
                                   gpu=None,
                                   autoconnect=True,
                                   local_instance_id=2,
@@ -221,6 +223,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
             lambda key: mock_environ[key])
 
         mock_avd_spec = mock.Mock(flavor="phone",
+                                  boot_timeout_secs=None,
                                   gpu="auto",
                                   autoconnect=False,
                                   local_instance_id=3,
