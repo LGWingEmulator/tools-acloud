@@ -1443,6 +1443,24 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(1, sentinel.hitFingerPrintConflict.call_count)
         self.assertEqual("Passed", result)
 
+    def testCheckAccess(self):
+        """Test CheckAccess."""
+        # Checking non-403 should raise error
+        error = errors.HttpError(503, "fake retriable error.")
+        self.Patch(
+            gcompute_client.ComputeClient, "Execute",
+            side_effect=error)
+
+        with self.assertRaises(errors.HttpError):
+            self.compute_client.CheckAccess()
+
+        # Checking 403 should return False
+        error = errors.HttpError(403, "fake retriable error.")
+        self.Patch(
+            gcompute_client.ComputeClient, "Execute",
+            side_effect=error)
+        self.assertFalse(self.compute_client.CheckAccess())
+
 
 if __name__ == "__main__":
     unittest.main()
