@@ -201,6 +201,9 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         extra_args = []
 
+        if avd_spec.gpu:
+            extra_args.extend(("-gpu", avd_spec.gpu))
+
         if not avd_spec.autoconnect:
             extra_args.append("-no-window")
 
