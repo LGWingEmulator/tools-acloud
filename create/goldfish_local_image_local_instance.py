@@ -71,12 +71,10 @@ _SUPER_PARTITION_NAME = "super"
 _VBMETA_PARTITION_NAME = "vbmeta"
 
 # Timeout
-_EMULATOR_TIMEOUT_SECS = 150
-_EMULATOR_TIMEOUT_ERROR = ("Emulator did not boot within %d secs." %
-                           _EMULATOR_TIMEOUT_SECS)
+_DEFAULT_EMULATOR_TIMEOUT_SECS = 150
+_EMULATOR_TIMEOUT_ERROR = "Emulator did not boot within %(timeout)d secs."
 _EMU_KILL_TIMEOUT_SECS = 20
-_EMU_KILL_TIMEOUT_ERROR = ("Emulator did not stop within %d secs." %
-                           _EMU_KILL_TIMEOUT_SECS)
+_EMU_KILL_TIMEOUT_ERROR = "Emulator did not stop within %(timeout)d secs."
 
 _CONFIRM_RELAUNCH = ("\nGoldfish AVD is already running. \n"
                      "Enter 'y' to terminate current instance and launch a "
@@ -227,7 +225,9 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                           image_dir, inst.console_port,
                                           inst.adb_port, extra_args)
 
-        self._WaitForEmulatorToStart(adb, proc)
+        boot_timeout_secs = (avd_spec.boot_timeout_secs or
+                             _DEFAULT_EMULATOR_TIMEOUT_SECS)
+        self._WaitForEmulatorToStart(adb, proc, boot_timeout_secs)
 
         result_report = report.Report(command="create")
         result_report.SetStatus(report.Status.SUCCESS)
@@ -445,31 +445,34 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         Raises:
             errors.CreateError if the emulator does not stop within timeout.
         """
-        create_error = errors.CreateError(_EMU_KILL_TIMEOUT_ERROR)
+        create_error = errors.CreateError(_EMU_KILL_TIMEOUT_ERROR %
+                                          {"timeout": _EMU_KILL_TIMEOUT_SECS})
         utils.PollAndWait(func=lambda: self._IsEmulatorRunning(adb),
                           expected_return=False,
                           timeout_exception=create_error,
                           timeout_secs=_EMU_KILL_TIMEOUT_SECS,
                           sleep_interval_secs=1)
 
-    def _WaitForEmulatorToStart(self, adb, proc):
+    def _WaitForEmulatorToStart(self, adb, proc, timeout):
         """Wait for an emulator to be available on the console port.
 
         Args:
             adb: adb_tools.AdbTools initialized with the emulator's serial.
             proc: Popen object, the running emulator process.
+            timeout: Integer, timeout in seconds.
 
         Raises:
             errors.DeviceBootTimeoutError if the emulator does not boot within
             timeout.
             errors.SubprocessFail if the process terminates.
         """
-        timeout_error = errors.DeviceBootTimeoutError(_EMULATOR_TIMEOUT_ERROR)
+        timeout_error = errors.DeviceBootTimeoutError(_EMULATOR_TIMEOUT_ERROR %
+                                                      {"timeout": timeout})
         utils.PollAndWait(func=lambda: (proc.poll() is None and
                                         self._IsEmulatorRunning(adb)),
                           expected_return=True,
                           timeout_exception=timeout_error,
-                          timeout_secs=_EMULATOR_TIMEOUT_SECS,
+                          timeout_secs=timeout,
                           sleep_interval_secs=5)
         if proc.poll() is not None:
             raise errors.SubprocessFail("Emulator process returned %d." %
