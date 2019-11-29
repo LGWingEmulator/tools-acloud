@@ -54,9 +54,10 @@ def AddCommonCreateArgs(parser):
         action="store_true",
         dest="autoconnect",
         required=False,
-        help="For each instance created, we will automatically create both 2 "
-             "ssh tunnels forwarding both adb & vnc. Then add the device to "
-             "adb.")
+        help="For each remote instance, automatically create 2 ssh tunnels "
+             "forwarding both adb & vnc, and then add the device to adb. "
+             "For local cuttlefish instance, create a vnc connection. "
+             "For local goldfish instance, create a window.")
     parser.add_argument(
         "--no-autoconnect",
         action="store_false",

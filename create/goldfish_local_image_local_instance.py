@@ -201,6 +201,9 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         extra_args = []
 
+        if not avd_spec.autoconnect:
+            extra_args.append("-no-window")
+
         if avd_spec.local_system_image_dir:
             mixed_image_dir = os.path.join(instance_dir, "mixed_images")
             os.mkdir(mixed_image_dir)
