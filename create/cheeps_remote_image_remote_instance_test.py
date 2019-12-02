@@ -83,7 +83,6 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
             instance=self.INSTANCE,
             image_name=self.CHEEPS_HOST_IMAGE_NAME,
             image_project=self.CHEEPS_HOST_IMAGE_PROJECT,
-            build_id=self.ANDROID_BUILD_ID,
             avd_spec=avd_spec)
 
         self.assertEqual(report.data, {
