@@ -131,10 +131,6 @@ class NotSupportedPlatformError(SetupError):
     """Error related to user using a not supported os."""
 
 
-class ParseBucketRegionError(SetupError):
-    """Raised when parsing bucket information without region information."""
-
-
 class CreateError(Exception):
     """Base Create cmd exception."""
 
