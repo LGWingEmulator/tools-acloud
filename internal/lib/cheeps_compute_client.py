@@ -63,23 +63,17 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
             raise errors.DeviceBootError("Betty failed to start")
 
     # pylint: disable=too-many-locals,arguments-differ
-    def CreateInstance(self, instance, image_name, image_project,
-                       build_id=None, avd_spec=None):
+    def CreateInstance(self, instance, image_name, image_project, avd_spec):
         """ Creates a cheeps instance in GCE.
 
         Args:
             instance: name of the VM
             image_name: the GCE image to use
             image_project: project the GCE image is in
-            build_id: (optional) the Android build id to use. To specify a
-                different betty image you should use a different image_name
             avd_spec: An AVDSpec instance.
         """
         metadata = self._metadata.copy()
         metadata[constants.INS_KEY_AVD_TYPE] = constants.TYPE_CHEEPS
-        if build_id:
-            metadata['android_build_id'] = build_id
-
         # Update metadata by avd_spec
         if avd_spec:
             metadata["cvd_01_x_res"] = avd_spec.hw_property[constants.HW_X_RES]
@@ -93,6 +87,12 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
             if avd_spec.username:
                 metadata["user"] = avd_spec.username
                 metadata["password"] = avd_spec.password
+
+            if avd_spec.remote_image[constants.BUILD_ID]:
+                metadata['android_build_id'] = avd_spec.remote_image[constants.BUILD_ID]
+
+            if avd_spec.remote_image[constants.BUILD_TARGET]:
+                metadata['android_build_target'] = avd_spec.remote_image[constants.BUILD_TARGET]
 
         gcompute_client.ComputeClient.CreateInstance(
             self,
