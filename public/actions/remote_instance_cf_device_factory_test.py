@@ -26,6 +26,7 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import ssh
 from acloud.internal.lib import utils
 from acloud.list import list as list_instances
 from acloud.public.actions import remote_instance_cf_device_factory
@@ -151,6 +152,97 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             fake_image_name,
             fake_host_package_name)
         self.assertEqual(factory._CreateGceInstance(), "fake-1234-userbuild-fake-target")
+
+    def testGetBuildInfoDict(self):
+        """Test GetBuildInfoDict."""
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+        args = mock.MagicMock()
+        # Test image source type is local.
+        args.config_file = ""
+        args.avd_type = constants.TYPE_CF
+        args.flavor = "phone"
+        args.local_image = "fake_local_image"
+        args.adb_port = None
+        avd_spec_local_image = avd_spec.AVDSpec(args)
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            avd_spec_local_image,
+            fake_image_name,
+            fake_host_package_name)
+        self.assertEqual(factory.GetBuildInfoDict(), None)
+
+        # Test image source type is remote.
+        args.local_image = ""
+        args.build_id = "123"
+        args.branch = "fake_branch"
+        args.build_target = "fake_target"
+        args.system_build_id = "234"
+        args.system_branch = "sys_branch"
+        args.system_build_target = "sys_target"
+        args.kernel_build_id = "345"
+        args.kernel_branch = "kernel_branch"
+        args.kernel_build_target = "kernel_target"
+        avd_spec_remote_image = avd_spec.AVDSpec(args)
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            avd_spec_remote_image,
+            fake_image_name,
+            fake_host_package_name)
+        expected_build_info = {
+            "build_id": "123",
+            "build_branch": "fake_branch",
+            "build_target": "fake_target",
+            "system_build_id": "234",
+            "system_build_branch": "sys_branch",
+            "system_build_target": "sys_target",
+            "kernel_build_id": "345",
+            "kernel_build_branch": "kernel_branch",
+            "kernel_build_target": "kernel_target"
+        }
+        self.assertEqual(factory.GetBuildInfoDict(), expected_build_info)
+
+    @mock.patch.object(ssh, "ShellCmdWithRetry")
+    @mock.patch.object(ssh.Ssh, "Run")
+    def testUploadArtifacts(self, mock_ssh_run, mock_shell):
+        """Test UploadArtifacts."""
+        fake_host_package = "/fake/host_package.tar.gz"
+        fake_image = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
+        fake_local_image_dir = "/fake_image"
+        fake_ip = ssh.IP(external="1.1.1.1", internal="10.1.1.1")
+        args = mock.MagicMock()
+        # Test local image extract from image zip case.
+        args.config_file = ""
+        args.avd_type = constants.TYPE_CF
+        args.flavor = "phone"
+        args.local_image = "fake_local_image"
+        args.adb_port = None
+        avd_spec_local_image = avd_spec.AVDSpec(args)
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            avd_spec_local_image,
+            fake_image,
+            fake_host_package)
+        factory._ssh = ssh.Ssh(ip=fake_ip,
+                               gce_user=constants.GCE_USER,
+                               ssh_private_key_path="/fake/acloud_rea")
+        factory._UploadArtifacts(constants.GCE_USER, fake_image,
+                                 fake_host_package, fake_local_image_dir)
+        expected_cmd1 = ("\"sudo su -c '/usr/bin/install_zip.sh .' - '%s'\" < %s"
+                         % (constants.GCE_USER, fake_image))
+        expected_cmd2 = ("\"sudo su -c 'tar -x -z -f -' - '%s'\" < %s"
+                         % (constants.GCE_USER, fake_host_package))
+        mock_ssh_run.assert_has_calls([
+            mock.call(expected_cmd1),
+            mock.call(expected_cmd2)])
+
+        # Test local image get from local folder case.
+        fake_image = None
+        self.Patch(glob, "glob", return_value=["fake.img"])
+        factory._UploadArtifacts(constants.GCE_USER, fake_image,
+                                 fake_host_package, fake_local_image_dir)
+        expected_cmd = (
+            "tar -cf - --lzop -S -C %s fake.img | "
+            "%s -- tar -xf - --lzop -S" %
+            (fake_local_image_dir, factory._ssh.GetBaseCmd(constants.SSH_BIN)))
+        mock_shell.assert_called_once_with(expected_cmd)
 
 
 if __name__ == "__main__":
