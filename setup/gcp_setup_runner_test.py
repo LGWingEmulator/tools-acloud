@@ -92,33 +92,6 @@ class AcloudGCPSetupTest(unittest.TestCase):
                 open(self.cfg_path, "r"), user_config_pb2.UserConfig)
             self.assertEqual(cfg.project, "test_project")
 
-    @mock.patch("subprocess.check_output")
-    @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_BucketExists")
-    @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_BucketInDefaultRegion")
-    def testCreateDefaultBucket(self, mock_valid, mock_exist, mock_out):
-        """Test default bucket name.
-
-        Default bucket name is "acloud-{project}".
-        If default bucket exist but region is not in default region,
-        bucket name changes to "acloud-{project}-us".
-        """
-        self.gcp_env_runner.project = "fake_project"
-        mock_exist.return_value = False
-        mock_valid.return_value = False
-        self.assertEqual(
-            "acloud-fake_project",
-            self.gcp_env_runner._CreateDefaultBucket(self.gcloud_runner))
-        self.gcloud_runner.gsutil_command_path = "gsutil"
-        mock_out.assert_called_once_with(
-            ["gsutil", "mb", "gs://acloud-fake_project"])
-
-        mock_exist.return_value = True
-        mock_valid.return_value = False
-        self.assertEqual(
-            "acloud-fake_project-%s" %
-            gcp_setup_runner._DEFAULT_BUCKET_REGION.lower(),
-            self.gcp_env_runner._CreateDefaultBucket(self.gcloud_runner))
-
     @mock.patch("os.path.dirname", return_value="")
     @mock.patch("subprocess.check_output")
     def testSeupProjectZone(self, mock_runner, mock_path):
@@ -140,57 +113,6 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.gcp_env_runner._SetupClientIDSecret()
         self.assertEqual(self.gcp_env_runner.client_id, "new_id")
         self.assertEqual(self.gcp_env_runner.client_secret, "new_secret")
-
-    def testGenerateBucketName(self):
-        """Test generate default bucket name."""
-        # Filter out organization name for project name.
-        bucket_name = self.gcp_env_runner._GenerateBucketName(
-            "AOSP.com:fake_project")
-        self.assertEqual(bucket_name, "acloud-fake_project")
-
-        # A bucket name can contain lowercase alphanumeric characters,
-        # hyphens and underscores.
-        bucket_name = self.gcp_env_runner._GenerateBucketName(
-            "@.fake_*Project.#")
-        self.assertEqual(bucket_name, "acloud-fake_project")
-
-        # Bucket names must limit to 63 characters.
-        bucket_name = self.gcp_env_runner._GenerateBucketName(
-            "fake_project-fake_project-fake_project-fake_project-fake_project")
-        self.assertEqual(bucket_name,
-                         "acloud-fake_project-fake_project-fake_project-fake_project-fake")
-
-        # Rule 3: Bucket names must end with a number or letter.
-        bucket_name = self.gcp_env_runner._GenerateBucketName("fake_project__--")
-        self.assertEqual(bucket_name, "acloud-fake_project")
-
-    @mock.patch.object(gcp_setup_runner.GoogleSDKBins, "RunGsutil")
-    def testBucketExists(self, mock_bucket_name):
-        """Test bucket name exist or not."""
-        mock_bucket_name.return_value = "gs://acloud-fake_project/"
-        self.assertTrue(
-            self.gcp_env_runner._BucketExists("acloud-fake_project",
-                                              self.gcloud_runner))
-        self.assertFalse(
-            self.gcp_env_runner._BucketExists("wrong_project",
-                                              self.gcloud_runner))
-
-    @mock.patch.object(gcp_setup_runner.GoogleSDKBins, "RunGsutil")
-    def testBucketNotInDefaultRegion(self, mock_region):
-        """Test bucket region is in default region or not."""
-        mock_region.return_value = "Location constraint:ASIA"
-        self.assertFalse(
-            self.gcp_env_runner._BucketInDefaultRegion("test-bucket",
-                                                       self.gcloud_runner))
-        mock_region.return_value = "Location constraint:US"
-        self.assertTrue(
-            self.gcp_env_runner._BucketInDefaultRegion("test-bucket",
-                                                       self.gcloud_runner))
-        # Test parsing error.
-        mock_region.return_value = "Wrong Lable:ASIA"
-        self.assertRaises(errors.ParseBucketRegionError,
-                          self.gcp_env_runner._BucketInDefaultRegion,
-                          "test-bucket", self.gcloud_runner)
 
     @mock.patch.object(gcp_setup_runner, "UpdateConfigFile")
     @mock.patch.object(utils, "CreateSshKeyPairIfNotExist")
@@ -244,12 +166,10 @@ class AcloudGCPSetupTest(unittest.TestCase):
 
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_CheckBillingEnable")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_NeedProjectSetup")
-    @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_SetupStorageBucket")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_SetupClientIDSecret")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_UpdateProject")
     def testSetupProjectNoChange(self, mock_setproj, mock_setid,
-                                 mock_setstorage, mock_chkproj,
-                                 mock_check_billing):
+                                 mock_chkproj, mock_check_billing):
         """test setup project and project not be changed."""
         # Test project didn't change, and no need to setup client id/secret
         mock_chkproj.return_value = False
@@ -257,7 +177,6 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.gcp_env_runner._SetupProject(self.gcloud_runner)
         self.assertEqual(mock_setproj.call_count, 0)
         self.assertEqual(mock_setid.call_count, 0)
-        mock_setstorage.assert_called_once()
         mock_check_billing.assert_called_once()
         # Test project didn't change, but client_id is empty
         self.gcp_env_runner.client_id = ""
@@ -268,19 +187,16 @@ class AcloudGCPSetupTest(unittest.TestCase):
 
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_CheckBillingEnable")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_NeedProjectSetup")
-    @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_SetupStorageBucket")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_SetupClientIDSecret")
     @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_UpdateProject")
     def testSetupProjectChanged(self, mock_setproj, mock_setid,
-                                mock_setstorage, mock_chkproj,
-                                mock_check_billing):
+                                mock_chkproj, mock_check_billing):
         """test setup project when project changed."""
         mock_chkproj.return_value = True
         mock_setproj.return_value = True
         self.gcp_env_runner._SetupProject(self.gcloud_runner)
         mock_setproj.assert_called_once()
         mock_setid.assert_called_once()
-        mock_setstorage.assert_called_once()
         mock_check_billing.assert_called_once()
 
     @mock.patch.object(utils, "GetUserAnswerYes")
@@ -310,27 +226,11 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.assertFalse(self.gcp_env_runner._NeedClientIDSetup(False))
 
     @mock.patch("subprocess.check_output")
-    @mock.patch.object(gcp_setup_runner.GcpTaskRunner, "_CreateDefaultBucket")
-    @mock.patch.object(gcp_setup_runner, "UpdateConfigFile")
-    def testSetupStorageBucket(self, mock_update, mock_create, mock_check):
-        """test setup storage bucket."""
-        self.gcp_env_runner.storage_bucket_name = ""
-        mock_create.return_value = "fake_create_default_bucket"
-        self.gcp_env_runner._SetupStorageBucket(self.gcloud_runner)
-        mock_check.assert_has_calls([
-            mock.call(["gsutil", "acl", "ch", "-u",
-                       "android-build-prod@system.gserviceaccount.com:W",
-                       "gs://fake_create_default_bucket"], stderr=-2)])
-        mock_update.assert_called_once()
-
-    @mock.patch("subprocess.check_output")
     def testEnableGcloudServices(self, mock_run):
         """test enable Gcloud services."""
         mock_run.return_value = ""
         self.gcp_env_runner._EnableGcloudServices(self.gcloud_runner)
         mock_run.assert_has_calls([
-            mock.call(["gcloud", "services", "enable",
-                       gcp_setup_runner._GOOGLE_CLOUD_STORAGE_SERVICE], stderr=-2),
             mock.call(["gcloud", "services", "enable",
                        gcp_setup_runner._ANDROID_BUILD_SERVICE], stderr=-2),
             mock.call(["gcloud", "services", "enable",
