@@ -18,7 +18,6 @@ import logging
 import subprocess
 import threading
 
-from distutils.spawn import find_executable
 from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import utils
@@ -204,7 +203,7 @@ class Ssh(object):
         Raises:
             errors.UnknownType: Don't support the execute bin.
         """
-        base_cmd = [find_executable(execute_bin)]
+        base_cmd = [utils.FindExecutable(execute_bin)]
         base_cmd.append(_SSH_CMD % {"rsa_key_file": self._ssh_private_key_path})
         if self._extra_args_ssh_tunnel:
             base_cmd.append(self._extra_args_ssh_tunnel)

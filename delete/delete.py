@@ -18,7 +18,7 @@ of an Android Virtual Device.
 """
 
 from __future__ import print_function
-from distutils.spawn import find_executable
+
 import logging
 import os
 import re
@@ -69,7 +69,7 @@ def _GetStopCvd():
                 logger.debug("stop_cvd command: %s", stop_cvd_cmd)
                 return stop_cvd_cmd
 
-    default_stop_cvd = find_executable(constants.CMD_STOP_CVD)
+    default_stop_cvd = utils.FindExecutable(constants.CMD_STOP_CVD)
     if default_stop_cvd:
         return default_stop_cvd
 
