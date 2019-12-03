@@ -17,7 +17,10 @@
 
 from __future__ import print_function
 
-from distutils.spawn import find_executable
+try:
+    from distutils.spawn import find_executable
+except ImportError:
+    from shutil import which as find_executable
 import os
 import subprocess
 import sys
@@ -53,8 +56,8 @@ def GenerateProto(source):
     output = source.replace(".proto", "_pb2.py")
 
     if not os.path.exists(output) or (
-        os.path.exists(source) and os.path.getmtime(source) > os.path.getmtime(output)
-    ):
+            os.path.exists(source) and
+            os.path.getmtime(source) > os.path.getmtime(output)):
         print("Generating %s..." % output)
 
         if not os.path.exists(source):
