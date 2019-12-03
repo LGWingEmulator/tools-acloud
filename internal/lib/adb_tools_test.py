@@ -20,6 +20,7 @@ import mock
 from acloud import errors
 from acloud.internal.lib import adb_tools
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import utils
 
 
 class AdbToolsTest(driver_test_lib.BaseDriverTest):
@@ -151,7 +152,7 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         """Test emu command."""
         fake_adb_port = "48451"
         fake_device_serial = "fake_device_serial"
-        self.Patch(adb_tools, "find_executable", return_value="path/adb")
+        self.Patch(utils, "FindExecutable", return_value="path/adb")
         self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
 
         mock_popen_obj = mock.Mock(returncode=1)

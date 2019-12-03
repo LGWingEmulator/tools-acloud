@@ -22,7 +22,6 @@ image artifacts.
 
 from __future__ import print_function
 
-from distutils.spawn import find_executable
 import os
 import subprocess
 import sys
@@ -116,7 +115,7 @@ def _CheckForAutoconnect(args):
     Args:
         args: Namespace object from argparse.parse_args.
     """
-    if not args.autoconnect or find_executable(constants.ADB_BIN):
+    if not args.autoconnect or utils.FindExecutable(constants.ADB_BIN):
         return
 
     disable_autoconnect = False

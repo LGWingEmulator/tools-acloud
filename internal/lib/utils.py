@@ -787,7 +787,7 @@ def _ExecuteCommand(cmd, args):
     Raises:
         errors.NoExecuteBin: Can't find the execute bin file.
     """
-    bin_path = find_executable(cmd)
+    bin_path = FindExecutable(cmd)
     if not bin_path:
         raise errors.NoExecuteCmd("unable to locate %s" % cmd)
     command = [bin_path] + args
@@ -922,7 +922,7 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
                          "Skipping VNC startup.", TextColors.FAIL)
         return
 
-    if not find_executable(_VNC_BIN):
+    if not FindExecutable(_VNC_BIN):
         if no_prompts or GetUserAnswerYes(_CONFIRM_CONTINUE):
             try:
                 PrintColorString("Installing ssvnc vnc client... ", end="")
@@ -943,7 +943,7 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
         ssvnc_env["SSVNC_SCALE"] = str(scale_ratio)
         logger.debug("SSVNC_SCALE:%s", scale_ratio)
 
-    ssvnc_args = _CMD_START_VNC % {"bin": find_executable(_VNC_BIN),
+    ssvnc_args = _CMD_START_VNC % {"bin": FindExecutable(_VNC_BIN),
                                    "port": port}
     subprocess.Popen(ssvnc_args.split(), env=ssvnc_env)
 

@@ -27,7 +27,6 @@ google_sdk_bin_path = google_sdk.GetSDKBinPath()
 google_sdk.CleanUp()
 """
 
-from distutils.spawn import find_executable
 import logging
 import os
 import platform
@@ -100,7 +99,7 @@ def SDKInstalled():
     Return:
         Boolean, return True if gcloud is installed, False otherwise.
     """
-    if find_executable(GCLOUD_BIN):
+    if utils.FindExecutable(GCLOUD_BIN):
         return True
     return False
 
@@ -146,7 +145,7 @@ class GoogleSDK(object):
         Raise:
             NoGoogleSDKDetected if we can't find the sdk path.
         """
-        builtin_gcloud = find_executable(GCLOUD_BIN)
+        builtin_gcloud = utils.FindExecutable(GCLOUD_BIN)
         if builtin_gcloud:
             return os.path.dirname(builtin_gcloud)
         elif os.path.exists(self._tmp_sdk_path):
