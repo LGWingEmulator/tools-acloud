@@ -1,4 +1,4 @@
-# Copyright 2018 - The Android Open Source Project
+# Copyright 2019 - The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ class CreateTest(driver_test_lib.BaseDriverTest):
         args.autoconnect = True
 
         self.Patch(utils, "InteractWithQuestion", return_value="Y")
-        self.Patch(create, "find_executable", return_value=None)
+        self.Patch(utils, "FindExecutable", return_value=None)
 
         # Checking autoconnect should be false if ANDROID_BUILD_TOP is not set.
         self.Patch(os.environ, "get", return_value=None)
