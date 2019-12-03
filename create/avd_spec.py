@@ -54,7 +54,8 @@ _LOCAL_ZIP_WARNING_MSG = "'adb sync' will take a long time if using images " \
                          "enable a faster 'adb sync' process."
 _RE_ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
 _RE_FLAVOR = re.compile(r"^.+_(?P<flavor>.+)-img.+")
-_RE_GBSIZE = re.compile(r"^(?P<gb_size>\d+)g$", re.IGNORECASE)
+_RE_MEMORY = re.compile(r"(?P<gb_size>\d+)g$|(?P<mb_size>\d+)m$",
+                        re.IGNORECASE)
 _RE_INT = re.compile(r"^\d+$")
 _RE_RES = re.compile(r"^(?P<x_res>\d+)x(?P<y_res>\d+)$")
 _X_RES = "x_res"
@@ -231,10 +232,12 @@ class AVDSpec(object):
                     raise errors.InvalidHWPropertyError(
                         "[%s] is an invalid resolution. Example:1280x800" % value)
             elif key in [constants.HW_ALIAS_MEMORY, constants.HW_ALIAS_DISK]:
-                match = _RE_GBSIZE.match(value)
-                if match:
+                match = _RE_MEMORY.match(value)
+                if match and match.group("gb_size"):
                     arg_hw_properties[key] = str(
                         int(match.group("gb_size")) * 1024)
+                elif match and match.group("mb_size"):
+                    arg_hw_properties[key] = match.group("mb_size")
                 else:
                     raise errors.InvalidHWPropertyError(
                         "Expected gb size.[%s] is not allowed. Example:4g" % value)

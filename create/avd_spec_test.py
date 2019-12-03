@@ -228,6 +228,12 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         result_dict = self.AvdSpec._ParseHWPropertyStr(args_str)
         self.assertTrue(expected_dict == result_dict)
 
+        expected_dict = {"cpu": "2", "x_res": "1080", "y_res": "1920",
+                         "dpi": "240", "memory": "512", "disk": "4096"}
+        args_str = "cpu:2,resolution:1080x1920,dpi:240,memory:512m,disk:4g"
+        result_dict = self.AvdSpec._ParseHWPropertyStr(args_str)
+        self.assertTrue(expected_dict == result_dict)
+
     def testGetFlavorFromBuildTargetString(self):
         """Test _GetFlavorFromLocalImage."""
         img_path = "/fack_path/cf_x86_tv-img-eng.user.zip"
