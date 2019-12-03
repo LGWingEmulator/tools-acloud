@@ -124,16 +124,16 @@ class GoldfishDeviceFactory(base_device_factory.BaseDeviceFactory):
           A build info dictionary
         """
         build_info_dict = {
-            key: val for key, val in self.build_info.__dict__.items() if val}
+            key: val for key, val in utils.GetDictItems(self.build_info) if val}
 
         build_info_dict.update(
             {"emulator_%s" % key: val
-             for key, val in self.emulator_build_info.__dict__.items() if val}
+             for key, val in utils.GetDictItems(self.emulator_build_info) if val}
             )
 
         build_info_dict.update(
             {"kernel_%s" % key: val
-             for key, val in self.kernel_build_info.__dict__.items() if val}
+             for key, val in utils.GetDictItems(self.kernel_build_info) if val}
             )
 
         return build_info_dict

@@ -29,6 +29,7 @@ from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client
 from acloud.internal.lib import cvd_compute_client_multi_stage
+from acloud.internal.lib import utils
 
 
 logger = logging.getLogger(__name__)
@@ -93,15 +94,15 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
           A build info dictionary.
         """
         build_info_dict = {
-            key: val for key, val in self.build_info.__dict__.items() if val}
+            key: val for key, val in utils.GetDictItems(self.build_info) if val}
 
         build_info_dict.update(
             {"kernel_%s" % key: val
-             for key, val in self.kernel_build_info.__dict__.items() if val}
+             for key, val in utils.GetDictItems(self.kernel_build_info) if val}
         )
         build_info_dict.update(
             {"system_%s" % key: val
-             for key, val in self.system_build_info.__dict__.items() if val}
+             for key, val in utils.GetDictItems(self.system_build_info) if val}
         )
         return build_info_dict
 
