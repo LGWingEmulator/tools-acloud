@@ -488,7 +488,7 @@ def InteractWithQuestion(question, colors=TextColors.WARNING):
     Returns:
         String, input from user.
     """
-    return str(raw_input(colors + question + TextColors.ENDC).strip())
+    return str(six.moves.input(colors + question + TextColors.ENDC).strip())
 
 
 def GetUserAnswerYes(question):
@@ -871,7 +871,7 @@ def GetAnswerFromList(answer_list, enable_choose_all=False):
 
     while True:
         try:
-            choice = raw_input("Enter your choice[0-%d]: " % max_choice)
+            choice = six.moves.input("Enter your choice[0-%d]: " % max_choice)
             choice = int(choice)
         except ValueError:
             print("'%s' is not a valid integer.", choice)
