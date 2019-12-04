@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for list."""
+import subprocess
 import unittest
 
 import mock
@@ -20,6 +21,7 @@ from acloud import errors
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 from acloud.list import list as list_instance
+from acloud.list import instance
 
 
 class InstanceObject(object):
@@ -99,6 +101,47 @@ class ListTest(driver_test_lib.BaseDriverTest):
         # Test for instance can't be found by adb port number.
         with self.assertRaises(errors.NoInstancesFound):
             list_instance.FilterInstancesByAdbPort(expected_instance, 2222)
+
+    # pylint: disable=protected-access
+    def testGetLocalCuttlefishInstances(self):
+        """test _GetLocalCuttlefishInstances."""
+        cf_config = mock.MagicMock()
+
+        # Test getting two instance case
+        self.Patch(list_instance, "GetActiveCVDIds", return_value=[1, 2])
+        self.Patch(instance, "GetCuttlefishRuntimeConfig", return_value=cf_config)
+        self.Patch(instance, "GetLocalInstanceRuntimeDir")
+        self.Patch(instance, "LocalInstance")
+
+        ins_list = list_instance._GetLocalCuttlefishInstances()
+        self.assertEqual(2, len(ins_list))
+
+    # pylint: disable=no-member
+    def testPrintInstancesDetails(self):
+        """test PrintInstancesDetails."""
+        # Test instance Summary should be called if verbose
+        self.Patch(instance.Instance, "Summary")
+        ins = instance.LocalInstance(1, 728, 728, 240, None, "fake_dir")
+        list_instance.PrintInstancesDetails([ins], verbose=True)
+        instance.Instance.Summary.assert_called_once()
+
+        # Test Summary shouldn't be called if not verbose
+        self.Patch(instance.Instance, "Summary")
+        list_instance.PrintInstancesDetails([ins], verbose=False)
+        instance.Instance.Summary.assert_not_called()
+
+        # Test Summary shouldn't be called if no instance found.
+        list_instance.PrintInstancesDetails([], verbose=True)
+        instance.Instance.Summary.assert_not_called()
+
+    # pylint: disable=no-member
+    def testGetActiveCVDIds(self):
+        """test GetActiveCVDIds."""
+        # Test getting two local devices
+        adb_output = "127.0.0.1:6520  device\n127.0.0.1:6521  device"
+        expected_result = [1, 2]
+        self.Patch(subprocess, "check_output", return_value=adb_output)
+        self.assertEqual(list_instance.GetActiveCVDIds(), expected_result)
 
 
 if __name__ == "__main__":
