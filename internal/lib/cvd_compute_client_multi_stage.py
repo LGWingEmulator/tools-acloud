@@ -113,7 +113,25 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._all_failures = dict()
         self._extra_args_ssh_tunnel = acloud_config.extra_args_ssh_tunnel
         self._ssh = None
+        self._ip = None
         self._execution_time = {_FETCH_ARTIFACT: 0, _GCE_CREATE: 0, _LAUNCH_CVD: 0}
+
+    def InitRemoteHost(self, ssh_object, ip, host_user):
+        """Init remote host.
+
+        Check ssh to remote host is connection, then initialize it.
+
+        Args:
+            ssh_object: Ssh object.
+            ip: namedtuple (internal, external) that holds IP address of the
+                remote host, e.g. "external:140.110.20.1, internal:10.0.0.1"
+            host_user: String of user login into the instance.
+        """
+        self._ssh = ssh_object
+        self._ip = ip
+        self._ssh.WaitForSsh()
+        self.StopCvd()
+        self.CleanUp(host_user)
 
     # pylint: disable=arguments-differ,too-many-locals
     def CreateInstance(self, instance, image_name, image_project,
@@ -160,12 +178,12 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             blank_data_disk_size_gb)
 
         if avd_spec and avd_spec.instance_name_to_reuse:
-            ip = self._ReusingGceInstance(avd_spec)
+            self._ip = self._ReusingGceInstance(avd_spec)
         else:
-            ip = self._CreateGceInstance(instance, image_name, image_project,
-                                         extra_scopes, boot_disk_size_gb,
-                                         avd_spec)
-        self._ssh = Ssh(ip=ip,
+            self._ip = self._CreateGceInstance(instance, image_name, image_project,
+                                               extra_scopes, boot_disk_size_gb,
+                                               avd_spec)
+        self._ssh = Ssh(ip=self._ip,
                         gce_user=constants.GCE_USER,
                         ssh_private_key_path=self._ssh_private_key_path,
                         extra_args_ssh_tunnel=self._extra_args_ssh_tunnel,
@@ -277,14 +295,19 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         except subprocess.CalledProcessError as e:
             logger.debug("Failed to stop_cvd (possibly no running device): %s", e)
 
-    def CleanUp(self):
+    def CleanUp(self, host_user=None):
         """Clean up the files/folders on the existing instance.
 
         If previous AVD have these files/folders, reusing the instance may have
         side effects if not cleaned. The path in the instance is /home/vsoc-01/*
         if the GCE user is vsoc-01.
+
+        Args:
+            host_user: String of user login into the instance.
         """
-        ssh_command = "'/bin/rm -rf /home/%s/*'" % constants.GCE_USER
+
+        ssh_command = "'/bin/rm -rf /home/%s/*'" % (
+            host_user or constants.GCE_USER)
         try:
             self._ssh.Run(ssh_command)
         except subprocess.CalledProcessError as e:
@@ -294,6 +317,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                        result_evaluator=utils.BootEvaluator)
     def LaunchCvd(self, instance, avd_spec=None,
                   blank_data_disk_size_gb=None, kernel_build=None,
+                  decompress_kernel=None,
                   boot_timeout_secs=None):
         """Launch CVD.
 
@@ -305,6 +329,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             avd_spec: An AVDSpec instance.
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             kernel_build: String, kernel build info.
+            decompress_kernel: Boolean, if true decompress the kernel.
             boot_timeout_secs: Integer, the maximum time to wait for the
                                command to respond.
 
@@ -319,6 +344,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                                                  kernel_build)
         boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
         ssh_command = "./bin/launch_cvd -daemon " + " ".join(launch_cvd_args)
+        if decompress_kernel:
+            ssh_command = ssh_command + " " + "-decompress_kernel=true"
         try:
             self._ssh.Run(ssh_command, boot_timeout_secs)
         except (subprocess.CalledProcessError, errors.DeviceConnectionError) as e:
@@ -461,6 +488,23 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         self._ssh.Run("./fetch_cvd " + " ".join(fetch_cvd_args))
         self._execution_time[_FETCH_ARTIFACT] = round(time.time() - timestart, 2)
+
+    def GetInstanceIP(self, instance=None):
+        """Override method from parent class.
+
+        It need to get the IP address in the common_operation. If the class
+        already defind the ip address, return the ip address.
+
+        Args:
+            instance: String, representing instance name.
+
+        Returns:
+            ssh.IP object, that stores internal and external ip of the instance.
+        """
+        if self._ip:
+            return self._ip
+        return gcompute_client.ComputeClient.GetInstanceIP(
+            self, instance=instance, zone=self._zone)
 
     @property
     def all_failures(self):
