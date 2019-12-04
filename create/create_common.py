@@ -15,9 +15,15 @@
 # limitations under the License.
 """Common code used by acloud create methods/classes."""
 
-from __future__ import print_function
+import logging
+import os
 
 from acloud import errors
+from acloud.internal import constants
+from acloud.internal.lib import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
@@ -53,3 +59,43 @@ def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
         hw_dict[key.strip()] = value.strip()
 
     return hw_dict
+
+
+def VerifyHostPackageArtifactsExist():
+    """Verify the host package exists and return its path.
+
+    Look for the host package in $ANDROID_HOST_OUT and dist dir.
+
+    Return:
+        A string, the path to the host package.
+    """
+    dirs_to_check = list(filter(None, [os.environ.get(constants.ENV_ANDROID_HOST_OUT)]))
+    dist_dir = utils.GetDistDir()
+    if dist_dir:
+        dirs_to_check.append(dist_dir)
+
+    cvd_host_package_artifact = GetCvdHostPackage(dirs_to_check)
+    logger.debug("cvd host package: %s", cvd_host_package_artifact)
+    return cvd_host_package_artifact
+
+
+def GetCvdHostPackage(paths):
+    """Get cvd host package path.
+
+    Args:
+        paths: A list, holds the paths to check for the host package.
+
+    Returns:
+        String, full path of cvd host package.
+
+    Raises:
+        errors.GetCvdLocalHostPackageError: Can't find cvd host package.
+    """
+    for path in paths:
+        cvd_host_package = os.path.join(path, constants.CVD_HOST_PACKAGE)
+        if os.path.exists(cvd_host_package):
+            return cvd_host_package
+    raise errors.GetCvdLocalHostPackageError, (
+        "Can't find the cvd host package (Try lunching a cuttlefish target"
+        " like aosp_cf_x86_phone-userdebug and running 'm'): \n%s" %
+        '\n'.join(paths))

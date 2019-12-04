@@ -13,11 +13,15 @@
 # limitations under the License.
 """Tests for create_common."""
 
+import os
 import unittest
+
+import mock
 
 from acloud import errors
 from acloud.create import create_common
 from acloud.internal.lib import driver_test_lib
+from acloud.internal.lib import utils
 
 
 class FakeZipFile(object):
@@ -58,6 +62,35 @@ class CreateCommonTest(driver_test_lib.BaseDriverTest):
         args_str = "cpu:2,resolution:1080x1920,dpi:240,memory:4g,disk:4g"
         result_dict = create_common.ParseHWPropertyArgs(args_str)
         self.assertTrue(expected_dict == result_dict)
+
+    def testVerifyHostPackageArtifactsExist(self):
+        """test verify host package artifacts exist."""
+        # Can't find the cvd host package
+        with mock.patch("os.path.exists") as exists:
+            exists.return_value = False
+            self.assertRaises(
+                errors.GetCvdLocalHostPackageError,
+                create_common.VerifyHostPackageArtifactsExist)
+
+        self.Patch(os.environ, "get", return_value="/fake_dir2")
+        self.Patch(utils, "GetDistDir", return_value="/fake_dir1")
+        # First path is host out dir, 2nd path is dist dir.
+        self.Patch(os.path, "exists",
+                   side_effect=[False, True])
+
+        # Find cvd host in dist dir.
+        self.assertEqual(
+            create_common.VerifyHostPackageArtifactsExist(),
+            "/fake_dir1/cvd-host_package.tar.gz")
+
+        # Find cvd host in host out dir.
+        self.Patch(os.environ, "get", return_value="/fake_dir2")
+        self.Patch(utils, "GetDistDir", return_value=None)
+        with mock.patch("os.path.exists") as exists:
+            exists.return_value = True
+            self.assertEqual(
+                create_common.VerifyHostPackageArtifactsExist(),
+                "/fake_dir2/cvd-host_package.tar.gz")
 
 
 if __name__ == "__main__":
