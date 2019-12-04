@@ -61,6 +61,8 @@ _RE_TIMEZONE = re.compile(r"^(?P<time>[0-9\-\.:T]*)(?P<timezone>[+-]\d+:\d+)$")
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
 _RE_RUN_CVD = re.compile(r"(?P<date_str>^[^/]+)(.*run_cvd)")
 _DISPLAY_STRING = "%(x_res)sx%(y_res)s (%(dpi)s)"
+_RE_ZONE = re.compile(r".+/zones/(?P<zone>.+)$")
+_LOCAL_ZONE = "local"
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
 LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
@@ -157,10 +159,11 @@ def _GetElapsedTime(start_time):
 class Instance(object):
     """Class to store data of instance."""
 
+    # pylint: disable=too-many-locals
     def __init__(self, name, fullname, display, ip, status=None, adb_port=None,
                  vnc_port=None, ssh_tunnel_is_connected=None, createtime=None,
                  elapsed_time=None, avd_type=None, avd_flavor=None,
-                 is_local=False, device_information=None):
+                 is_local=False, device_information=None, zone=None):
         self._name = name
         self._fullname = fullname
         self._status = status
@@ -176,6 +179,7 @@ class Instance(object):
         self._avd_flavor = avd_flavor
         self._is_local = is_local  # True if this is a local instance
         self._device_information = device_information
+        self._zone = zone
 
     def __repr__(self):
         """Return full name property for print."""
@@ -193,6 +197,7 @@ class Instance(object):
         representation.append("%s avd type: %s" % (indent, self._avd_type))
         representation.append("%s display: %s" % (indent, self._display))
         representation.append("%s vnc: 127.0.0.1:%s" % (indent, self._vnc_port))
+        representation.append("%s zone: %s" % (indent, self._zone))
 
         if self._adb_port:
             representation.append("%s adb serial: 127.0.0.1:%s" %
@@ -280,6 +285,11 @@ class Instance(object):
         """Return vnc_port."""
         return self._vnc_port
 
+    @property
+    def zone(self):
+        """Return zone."""
+        return self._zone
+
 
 class LocalInstance(Instance):
     """Class to store data of local cuttlefish instance."""
@@ -315,7 +325,8 @@ class LocalInstance(Instance):
             status=constants.INS_STATUS_RUNNING, adb_port=local_ports.adb_port,
             vnc_port=local_ports.vnc_port, createtime=create_time,
             elapsed_time=elapsed_time, avd_type=constants.TYPE_CF,
-            is_local=True, device_information=device_information)
+            is_local=True, device_information=device_information,
+            zone=_LOCAL_ZONE)
 
         # LocalInstance class properties
         self._instance_dir = ins_dir
@@ -440,6 +451,7 @@ class RemoteInstance(Instance):
         create_time = gce_instance.get(constants.INS_KEY_CREATETIME)
         elapsed_time = _GetElapsedTime(create_time)
         status = gce_instance.get(constants.INS_KEY_STATUS)
+        zone = self._GetZoneName(gce_instance.get(constants.INS_KEY_ZONE))
 
         ip = None
         for network_interface in gce_instance.get("networkInterfaces"):
@@ -496,7 +508,29 @@ class RemoteInstance(Instance):
             ssh_tunnel_is_connected=ssh_tunnel_is_connected,
             createtime=create_time, elapsed_time=elapsed_time, avd_type=avd_type,
             avd_flavor=avd_flavor, is_local=False,
-            device_information=device_information)
+            device_information=device_information,
+            zone=zone)
+
+    @staticmethod
+    def _GetZoneName(zone_info):
+        """Get the zone name from the zone information of gce instance.
+
+        Zone information is like:
+        "https://www.googleapis.com/compute/v1/projects/project/zones/us-central1-c"
+        We want to get "us-central1-c" as zone name.
+
+        Args:
+            zone_info: String, zone information of gce instance.
+
+        Returns:
+            Zone name of gce instance. None if zone name can't find.
+        """
+        zone_match = _RE_ZONE.match(zone_info)
+        if zone_match:
+            return zone_match.group("zone")
+
+        logger.debug("Can't get zone name from %s.", zone_info)
+        return None
 
     @staticmethod
     def GetAdbVncPortFromSSHTunnel(ip, avd_type):
