@@ -32,6 +32,7 @@ import getpass
 import logging
 import os
 import re
+
 import six
 
 from acloud import errors

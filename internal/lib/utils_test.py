@@ -26,6 +26,7 @@ import time
 
 import unittest
 import mock
+import six
 
 from acloud import errors
 from acloud.internal.lib import driver_test_lib
@@ -181,7 +182,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         mock_open = mock.mock_open(read_data=public_key)
         self.Patch(subprocess, "check_output")
         self.Patch(os, "rename")
-        with mock.patch("__builtin__.open", mock_open):
+        with mock.patch.object(six.moves.builtins, "open", mock_open):
             utils.CreateSshKeyPairIfNotExist(private_key, public_key)
         self.assertEqual(subprocess.check_output.call_count, 1)  #pylint: disable=no-member
         subprocess.check_output.assert_called_with(  #pylint: disable=no-member
@@ -252,7 +253,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                 mock.call(16)
             ])
 
-    @mock.patch("__builtin__.raw_input")
+    @mock.patch.object(six.moves, "input")
     def testGetAnswerFromList(self, mock_raw_input):
         """Test GetAnswerFromList."""
         answer_list = ["image1.zip", "image2.zip", "image3.zip"]
