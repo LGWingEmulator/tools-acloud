@@ -151,6 +151,7 @@ ENV_CUTTLEFISH_CONFIG_FILE = "CUTTLEFISH_CONFIG_FILE"
 CUTTLEFISH_CONFIG_FILE = "cuttlefish_config.json"
 
 TEMP_ARTIFACTS_FOLDER = "acloud_image_artifacts"
+CVD_HOST_PACKAGE = "cvd-host_package.tar.gz"
 TOOL_NAME = "acloud"
 EXIT_BY_USER = 1
 EXIT_BY_ERROR = -99

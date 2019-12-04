@@ -20,8 +20,11 @@ local image.
 """
 
 from acloud.create import base_avd_create
+from acloud.create import create_common
+from acloud.internal import constants
 from acloud.internal.lib import utils
-from acloud.public import report
+from acloud.public.actions import common_operations
+from acloud.public.actions import remote_instance_cf_device_factory
 
 
 class LocalImageRemoteHost(base_avd_create.BaseAVDCreate):
@@ -34,10 +37,24 @@ class LocalImageRemoteHost(base_avd_create.BaseAVDCreate):
 
         Args:
             avd_spec: AVDSpec object that tells us what we're going to create.
+            no_prompts: Boolean, True to skip all prompts.
 
         Returns:
             A Report instance.
         """
-        print("We will create a remote host AVD with a local image: %s" %
-              avd_spec)
-        return report.Report(command="create")
+        device_factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            avd_spec,
+            avd_spec.local_image_artifact,
+            create_common.VerifyHostPackageArtifactsExist())
+        report = common_operations.CreateDevices(
+            "create_cf", avd_spec.cfg, device_factory, num=1,
+            report_internal_ip=avd_spec.report_internal_ip,
+            autoconnect=avd_spec.autoconnect,
+            avd_type=constants.TYPE_CF,
+            boot_timeout_secs=avd_spec.boot_timeout_secs,
+            unlock_screen=avd_spec.unlock_screen,
+            wait_for_boot=False)
+        # Launch vnc client if we're auto-connecting.
+        if avd_spec.autoconnect:
+            utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
+        return report
