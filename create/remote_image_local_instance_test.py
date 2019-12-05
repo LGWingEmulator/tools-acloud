@@ -19,7 +19,8 @@ import os
 import mock
 
 from acloud import errors
-from acloud.create.remote_image_local_instance import RemoteImageLocalInstance
+from acloud.create import create_common
+from acloud.create import remote_image_local_instance
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import driver_test_lib
@@ -40,12 +41,12 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
             "AndroidBuildClient",
             return_value=self.build_client)
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
-        self.RemoteImageLocalInstance = RemoteImageLocalInstance()
+        self.RemoteImageLocalInstance = remote_image_local_instance.RemoteImageLocalInstance()
         self._fake_remote_image = {"build_target" : "aosp_cf_x86_phone-userdebug",
                                    "build_id": "1234"}
         self._extract_path = "/tmp/acloud_image_artifacts/1234"
 
-    @mock.patch.object(RemoteImageLocalInstance, "_DownloadAndProcessImageFiles")
+    @mock.patch.object(remote_image_local_instance, "DownloadAndProcessImageFiles")
     def testGetImageArtifactsPath(self, mock_proc):
         """Test get image artifacts path."""
         avd_spec = mock.MagicMock()
@@ -57,13 +58,13 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
 
         # Valid _DownloadAndProcessImageFiles run.
         self.Patch(setup_common, "PackageInstalled", return_value=True)
-        self.Patch(self.RemoteImageLocalInstance,
-                   "_ConfirmDownloadRemoteImageDir", return_value="/tmp")
+        self.Patch(remote_image_local_instance,
+                   "ConfirmDownloadRemoteImageDir", return_value="/tmp")
         self.Patch(os.path, "exists", return_value=True)
         self.RemoteImageLocalInstance.GetImageArtifactsPath(avd_spec)
         mock_proc.assert_called_once_with(avd_spec)
 
-    @mock.patch.object(RemoteImageLocalInstance, "_DownloadRemoteImage")
+    @mock.patch.object(create_common, "DownloadRemoteArtifact")
     def testDownloadAndProcessImageFiles(self, mock_download):
         """Test process remote cuttlefish image."""
         avd_spec = mock.MagicMock()
@@ -72,43 +73,21 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         avd_spec.image_download_dir = "/tmp"
         self.Patch(os.path, "exists", return_value=False)
         self.Patch(os, "makedirs")
-        self.RemoteImageLocalInstance._DownloadAndProcessImageFiles(avd_spec)
-
-        # To make sure each function execute once.
-        mock_download.assert_called_once_with(
-            avd_spec.cfg,
-            avd_spec.remote_image["build_target"],
-            avd_spec.remote_image["build_id"],
-            self._extract_path)
-
-    @mock.patch.object(utils, "Decompress")
-    def testDownloadRemoteImage(self, mock_decompress):
-        """Test Download cuttlefish package."""
-        avd_spec = mock.MagicMock()
-        avd_spec.cfg = mock.MagicMock()
-        avd_spec.remote_image = self._fake_remote_image
+        remote_image_local_instance.DownloadAndProcessImageFiles(avd_spec)
         build_id = "1234"
         build_target = "aosp_cf_x86_phone-userdebug"
         checkfile1 = "aosp_cf_x86_phone-img-1234.zip"
         checkfile2 = "cvd-host_package.tar.gz"
 
-        self.RemoteImageLocalInstance._DownloadRemoteImage(
-            avd_spec.cfg,
-            avd_spec.remote_image["build_target"],
-            avd_spec.remote_image["build_id"],
-            self._extract_path)
-
         # To validate DownloadArtifact runs twice.
-        self.assertEqual(self.build_client.DownloadArtifact.call_count, 2)
+        self.assertEqual(mock_download.call_count, 2)
+
         # To validate DownloadArtifact arguments correct.
-        self.build_client.DownloadArtifact.assert_has_calls([
-            mock.call(build_target, build_id, checkfile1,
-                      "%s/%s" % (self._extract_path, checkfile1)),
-            mock.call(build_target, build_id, checkfile2,
-                      "%s/%s" % (self._extract_path, checkfile2))],
-                                                            any_order=True)
-        # To validate Decompress runs twice.
-        self.assertEqual(mock_decompress.call_count, 2)
+        mock_download.assert_has_calls([
+            mock.call(avd_spec.cfg, build_target, build_id, checkfile1,
+                      self._extract_path, decompress=True),
+            mock.call(avd_spec.cfg, build_target, build_id, checkfile2,
+                      self._extract_path, decompress=True)], any_order=True)
 
     def testConfirmDownloadRemoteImageDir(self):
         """Test confirm download remote image dir"""
@@ -120,7 +99,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
             "statvfs", "f_bavail, f_bsize")(11, 1073741824))
         download_dir = "/tmp"
         self.assertEqual(
-            self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir(
+            remote_image_local_instance.ConfirmDownloadRemoteImageDir(
                 download_dir), "/tmp")
 
         # Test when insuficient disk space and input 'q' to exit.
@@ -128,7 +107,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
             "statvfs", "f_bavail, f_bsize")(9, 1073741824))
         self.Patch(utils, "InteractWithQuestion", return_value="q")
         self.assertRaises(SystemExit,
-                          self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir,
+                          remote_image_local_instance.ConfirmDownloadRemoteImageDir,
                           download_dir)
 
         # If avail space detect as 9GB, and 2nd input 7GB both less than 10GB
@@ -140,7 +119,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(utils, "InteractWithQuestion", side_effect=["/tmp2",
                                                                "/tmp3"])
         self.assertEqual(
-            self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir(
+            remote_image_local_instance.ConfirmDownloadRemoteImageDir(
                 download_dir), "/tmp3")
 
         # Test when path not exist, define --image-download-dir
@@ -149,7 +128,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(os.path, "exists", return_value=False)
         self.Patch(utils, "InteractWithQuestion", return_value="")
         self.assertRaises(SystemExit,
-                          self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir,
+                          remote_image_local_instance.ConfirmDownloadRemoteImageDir,
                           download_dir)
 
         # Test using --image-dowload-dir and makedirs.
@@ -158,7 +137,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(os, "statvfs", return_value=namedtuple(
             "statvfs", "f_bavail, f_bsize")(10, 1073741824))
         self.assertEqual(
-            self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir(
+            remote_image_local_instance.ConfirmDownloadRemoteImageDir(
                 download_dir), "/image_download_dir1")
 
         # Test when 1st check fails for insufficient disk space, user inputs an
@@ -171,7 +150,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
                    side_effect=["~/nopath", "not_y"])
         self.assertRaises(
             SystemExit,
-            self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir,
+            remote_image_local_instance.ConfirmDownloadRemoteImageDir,
             download_dir)
 
         # Test when 1st check fails for insufficient disk space, user inputs an
@@ -182,7 +161,7 @@ class RemoteImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
         self.Patch(os.path, "exists", side_effect=[True, False])
         self.Patch(utils, "InteractWithQuestion", side_effect=["~/nopath", "y"])
         self.assertEqual(
-            self.RemoteImageLocalInstance._ConfirmDownloadRemoteImageDir(
+            remote_image_local_instance.ConfirmDownloadRemoteImageDir(
                 download_dir), os.path.expanduser("~/nopath"))
 
 
