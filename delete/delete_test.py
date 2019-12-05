@@ -20,6 +20,7 @@ import mock
 from acloud.delete import delete
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
+from acloud.list import list as list_instances
 from acloud.public import report
 
 
@@ -121,6 +122,24 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         subprocess.check_call.call_count = 0
         self.Patch(utils, "IsCommandRunning", return_value=False)
         subprocess.check_call.assert_not_called()
+
+    @mock.patch.object(delete, "DeleteInstances", return_value="")
+    @mock.patch.object(delete, "DeleteRemoteInstances", return_value="")
+    def testDeleteInstanceByNames(self, mock_delete_remote_ins,
+                                  mock_delete_local_ins):
+        """test DeleteInstanceByNames."""
+        cfg = mock.Mock()
+        # Test delete local instances.
+        instances = ["local-instance-1", "local-instance-2"]
+        self.Patch(list_instances, "FilterInstancesByNames", return_value="")
+        delete.DeleteInstanceByNames(cfg, instances)
+        mock_delete_local_ins.assert_called()
+
+        # Test delete remote instances.
+        instances = ["ins-id1-cf-x86-phone-userdebug",
+                     "ins-id2-cf-x86-phone-userdebug"]
+        delete.DeleteInstanceByNames(cfg, instances)
+        mock_delete_remote_ins.assert_called()
 
 
 if __name__ == "__main__":
