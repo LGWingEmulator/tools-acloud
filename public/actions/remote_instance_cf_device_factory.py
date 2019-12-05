@@ -48,12 +48,13 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         ssh: An Ssh object.
     """
     def __init__(self, avd_spec, local_image_artifact=None,
-                 cvd_host_package_artifact=None):
+                 cvd_host_package_artifact=None, local_image_dir=None):
         """Constructs a new remote instance device factory."""
         self._avd_spec = avd_spec
         self._cfg = avd_spec.cfg
         self._local_image_artifact = local_image_artifact
         self._cvd_host_package_artifact = cvd_host_package_artifact
+        self._local_image_dir = local_image_dir
         self._report_internal_ip = avd_spec.report_internal_ip
         self.credentials = auth.CreateCredentials(avd_spec.cfg)
         # Control compute_client with enable_multi_stage
@@ -83,7 +84,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         """
         if self._avd_spec.instance_type == constants.INSTANCE_TYPE_HOST:
             instance = self._InitRemotehost()
-            self._ProcessRemoteHostArtifacts(self._avd_spec.image_source)
+            self._ProcessRemoteHostArtifacts()
             self._LaunchCvd(instance=instance,
                             decompress_kernel=True,
                             boot_timeout_secs=self._avd_spec.boot_timeout_secs)
@@ -121,7 +122,8 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                                     self._avd_spec.remote_host,
                                     build_id, build_target)
         ip = ssh.IP(ip=self._avd_spec.remote_host)
-        self._ssh = ssh.Ssh(ip=ip,
+        self._ssh = ssh.Ssh(
+            ip=ip,
             gce_user=self._avd_spec.host_user or constants.GCE_USER,
             ssh_private_key_path=(self._avd_spec.host_ssh_private_key_path or
                                   self._cfg.ssh_private_key_path),
@@ -131,7 +133,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             self._ssh, ip, self._avd_spec.host_user)
         return instance
 
-    def _ProcessRemoteHostArtifacts(self, image_source):
+    def _ProcessRemoteHostArtifacts(self):
         """Process remote host artifacts.
 
         - If images source is local, tool will upload images from local site to
@@ -139,17 +141,10 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         - If images source is remote, tool will download images from android
           build to local and unzip it then upload to remote host, because there
           is no permission to fetch build rom on the remote host.
-
-        Args:
-            image_source: String, the type of image source is remote or local.
         """
-        if image_source == constants.IMAGE_SRC_LOCAL:
-            self._UploadArtifacts(self._local_image_artifact,
-                                  self._cvd_host_package_artifact,
-                                  self._avd_spec.local_image_dir)
-        elif image_source == constants.IMAGE_SRC_REMOTE:
-            # TODO: provide remote host with a remote image.
-            print("We will process the remote image." % image_source)
+        self._UploadArtifacts(
+            self._local_image_artifact, self._cvd_host_package_artifact,
+            self._local_image_dir or self._avd_spec.local_image_dir)
 
     def _ProcessArtifacts(self, image_source):
         """Process artifacts.
