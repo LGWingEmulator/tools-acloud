@@ -188,29 +188,32 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                         ssh_private_key_path=self._ssh_private_key_path,
                         extra_args_ssh_tunnel=self._extra_args_ssh_tunnel,
                         report_internal_ip=self._report_internal_ip)
-        self._ssh.WaitForSsh()
+        try:
+            self._ssh.WaitForSsh()
+            if avd_spec:
+                if avd_spec.instance_name_to_reuse:
+                    self.StopCvd()
+                    self.CleanUp()
+                return instance
 
-        if avd_spec:
-            if avd_spec.instance_name_to_reuse:
-                self.StopCvd()
-                self.CleanUp()
+            # TODO: Remove following code after create_cf deprecated.
+            self.UpdateFetchCvd()
+
+            self.FetchBuild(build_id, branch, build_target, system_build_id,
+                            system_branch, system_build_target, kernel_build_id,
+                            kernel_branch, kernel_build_target)
+            kernel_build = self.GetKernelBuild(kernel_build_id,
+                                               kernel_branch,
+                                               kernel_build_target)
+            self.LaunchCvd(instance,
+                           blank_data_disk_size_gb=blank_data_disk_size_gb,
+                           kernel_build=kernel_build,
+                           boot_timeout_secs=self._boot_timeout_secs)
+
             return instance
-
-        # TODO: Remove following code after create_cf deprecated.
-        self.UpdateFetchCvd()
-
-        self.FetchBuild(build_id, branch, build_target, system_build_id,
-                        system_branch, system_build_target, kernel_build_id,
-                        kernel_branch, kernel_build_target)
-        kernel_build = self.GetKernelBuild(kernel_build_id,
-                                           kernel_branch,
-                                           kernel_build_target)
-        self.LaunchCvd(instance,
-                       blank_data_disk_size_gb=blank_data_disk_size_gb,
-                       kernel_build=kernel_build,
-                       boot_timeout_secs=self._boot_timeout_secs)
-
-        return instance
+        except errors.DriverError as e:
+            self._all_failures[instance] = e
+            return instance
 
     def _GetLaunchCvdArgs(self, avd_spec=None, blank_data_disk_size_gb=None,
                           kernel_build=None):
