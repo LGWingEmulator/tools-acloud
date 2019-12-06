@@ -20,6 +20,7 @@ import glob
 import logging
 import os
 
+from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
@@ -90,9 +91,16 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                             boot_timeout_secs=self._avd_spec.boot_timeout_secs)
         else:
             instance = self._CreateGceInstance()
-            self._ProcessArtifacts(self._avd_spec.image_source)
-            self._LaunchCvd(instance=instance,
-                            boot_timeout_secs=self._avd_spec.boot_timeout_secs)
+            # If instance is failed, no need to go next step.
+            if instance in self.GetFailures():
+                return instance
+            try:
+                self._ProcessArtifacts(self._avd_spec.image_source)
+                self._LaunchCvd(instance=instance,
+                                boot_timeout_secs=self._avd_spec.boot_timeout_secs)
+            except errors.DeviceConnectionError as e:
+                self._SetFailures(instance, e)
+
         return instance
 
     def _InitRemotehost(self):
@@ -315,6 +323,17 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             and the value is an errors.DeviceBootError object.
         """
         return self._compute_client.all_failures
+
+    def _SetFailures(self, instance, error_msg):
+        """Set failures from this device.
+
+        Record the failures for any steps in AVD creation.
+
+        Args:
+            instance: String of instance name.
+            error_msg: String of error message.
+        """
+        self._compute_client.all_failures[instance] = error_msg
 
     def GetBuildInfoDict(self):
         """Get build info dictionary.
