@@ -23,6 +23,7 @@ from __future__ import print_function
 
 import getpass
 import logging
+import sys
 
 from acloud.internal import constants
 from acloud.internal.lib import utils
@@ -70,9 +71,16 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
 
     def _Run(self):
         """Install specified packages."""
+        cmd = "\n".join(
+            [setup_common.PKG_INSTALL_CMD % pkg
+             for pkg in self.PACKAGES
+             if not setup_common.PackageInstalled(pkg)])
 
-        logger.info("Start to install package(s): %s ",
-                    self.PACKAGES)
+        if not utils.GetUserAnswerYes("\nStart to install package(s):\n%s"
+                                      "\nPress 'y' to continue or anything "
+                                      "else to do it myself and run acloud "
+                                      "again[y/N]: " % cmd):
+            sys.exit(constants.EXIT_BY_USER)
 
         setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
         for pkg in self.PACKAGES:
