@@ -51,13 +51,17 @@ def AddCommonCreateArgs(parser):
              "when a device fails on boot.")
     parser.add_argument(
         "--autoconnect",
-        action="store_true",
+        type=str,
+        nargs="?",
+        const=True,
         dest="autoconnect",
         required=False,
+        choices=[True, "adb"],
         help="For each remote instance, automatically create 2 ssh tunnels "
              "forwarding both adb & vnc, and then add the device to adb. "
              "For local cuttlefish instance, create a vnc connection. "
-             "For local goldfish instance, create a window.")
+             "For local goldfish instance, create a window."
+             "If need adb only, you can pass in 'adb' here.")
     parser.add_argument(
         "--no-autoconnect",
         action="store_false",

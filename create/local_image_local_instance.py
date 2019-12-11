@@ -121,7 +121,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             value={constants.ADB_PORT: local_ports.adb_port,
                    constants.VNC_PORT: local_ports.vnc_port})
         # Launch vnc client if we're auto-connecting.
-        if avd_spec.autoconnect:
+        if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
         if avd_spec.unlock_screen:
             AdbTools(local_ports.adb_port).AutoUnlockScreen()
