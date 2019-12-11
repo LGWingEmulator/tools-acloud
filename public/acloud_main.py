@@ -407,15 +407,15 @@ def main(argv=None):
         setup.Run(args)
     else:
         sys.stderr.write("Invalid command %s" % args.which)
-        return 2
+        return constants.EXIT_BY_WRONG_CMD
 
     if report and args.report_file:
         report.Dump(args.report_file)
-        if report.errors:
-            msg = "\n".join(report.errors)
-            sys.stderr.write("Encountered the following errors:\n%s\n" % msg)
-            return 1
-    return 0
+    if report and report.errors:
+        msg = "\n".join(report.errors)
+        sys.stderr.write("Encountered the following errors:\n%s\n" % msg)
+        return constants.EXIT_BY_FAIL_REPORT
+    return constants.EXIT_SUCCESS
 
 
 if __name__ == "__main__":
