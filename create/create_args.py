@@ -100,6 +100,13 @@ def AddCommonCreateArgs(parser):
         required=False,
         help="The maximum time in seconds used to wait for the AVD to boot.")
     parser.add_argument(
+        "--wait-for-ins-stable",
+        dest="ins_timeout_secs",
+        type=int,
+        required=False,
+        help="The maximum time in seconds used to wait for the instance boot "
+             "up. The default value to wait for instance up time is 300 secs.")
+    parser.add_argument(
         "--build-target",
         type=str,
         dest="build_target",

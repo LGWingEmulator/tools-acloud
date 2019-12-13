@@ -53,13 +53,15 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
                  kernel_build_id=None, kernel_branch=None,
                  kernel_build_target=None, system_branch=None,
                  system_build_id=None, system_build_target=None,
-                 boot_timeout_secs=None, report_internal_ip=None):
+                 boot_timeout_secs=None, ins_timeout_secs=None,
+                 report_internal_ip=None):
 
         self.credentials = auth.CreateCredentials(cfg)
 
         if cfg.enable_multi_stage:
             compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
-                cfg, self.credentials, boot_timeout_secs, report_internal_ip)
+                cfg, self.credentials, boot_timeout_secs, ins_timeout_secs,
+                report_internal_ip)
         else:
             compute_client = cvd_compute_client.CvdComputeClient(
                 cfg, self.credentials)
@@ -192,7 +194,8 @@ def CreateDevices(cfg,
                   serial_log_file=None,
                   autoconnect=False,
                   report_internal_ip=False,
-                  boot_timeout_secs=None):
+                  boot_timeout_secs=None,
+                  ins_timeout_secs=None):
     """Create one or multiple Cuttlefish devices.
 
     Args:
@@ -209,11 +212,14 @@ def CreateDevices(cfg,
         num: Integer, Number of devices to create.
         serial_log_file: String, A path to a tar file where serial output should
                          be saved to.
-        autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device creation.
+        autoconnect: Boolean, Create ssh tunnel(s) and adb connect after device
+                     creation.
         report_internal_ip: Boolean to report the internal ip instead of
                             external ip.
-        boot_timeout_secs: Integer, the maximum time in seconds used to
-                               wait for the AVD to boot.
+        boot_timeout_secs: Integer, the maximum time in seconds used to wait
+                           for the AVD to boot.
+        ins_timeout_secs: Integer, the maximum time in seconds used to wait for
+                          the instance ready.
 
     Returns:
         A Report instance.
@@ -250,6 +256,7 @@ def CreateDevices(cfg,
         system_build_id=system_build_id,
         system_build_target=system_build_target,
         boot_timeout_secs=boot_timeout_secs,
+        ins_timeout_secs=ins_timeout_secs,
         report_internal_ip=report_internal_ip)
     return common_operations.CreateDevices("create_cf", cfg, device_factory,
                                            num, constants.TYPE_CF,

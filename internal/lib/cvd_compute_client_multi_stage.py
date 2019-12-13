@@ -90,14 +90,17 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                  acloud_config,
                  oauth2_credentials,
                  boot_timeout_secs=None,
+                 ins_timeout_secs=None,
                  report_internal_ip=None):
         """Initialize.
 
         Args:
             acloud_config: An AcloudConfig object.
             oauth2_credentials: An oauth2client.OAuth2Credentials instance.
-            boot_timeout_secs: Integer, the maximum time to wait for the
-                               command to respond.
+            boot_timeout_secs: Integer, the maximum time to wait for the AVD
+                               to boot up.
+            ins_timeout_secs: Integer, the maximum time to wait for the
+                              instance ready.
             report_internal_ip: Boolean to report the internal ip instead of
                                 external ip.
         """
@@ -108,6 +111,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             android_build_client.AndroidBuildClient(oauth2_credentials))
         self._ssh_private_key_path = acloud_config.ssh_private_key_path
         self._boot_timeout_secs = boot_timeout_secs
+        self._ins_timeout_secs = ins_timeout_secs
         self._report_internal_ip = report_internal_ip
         # Store all failures result when creating one or multiple instances.
         self._all_failures = dict()
@@ -129,7 +133,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         """
         self._ssh = ssh_object
         self._ip = ip
-        self._ssh.WaitForSsh()
+        self._ssh.WaitForSsh(timeout=self._ins_timeout_secs)
         self.StopCvd()
         self.CleanUp(host_user)
 
@@ -189,7 +193,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                         extra_args_ssh_tunnel=self._extra_args_ssh_tunnel,
                         report_internal_ip=self._report_internal_ip)
         try:
-            self._ssh.WaitForSsh()
+            self._ssh.WaitForSsh(timeout=self._ins_timeout_secs)
             if avd_spec:
                 if avd_spec.instance_name_to_reuse:
                     self.StopCvd()

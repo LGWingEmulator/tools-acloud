@@ -62,6 +62,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
             acloud_config=avd_spec.cfg,
             oauth2_credentials=self.credentials,
+            ins_timeout_secs=avd_spec.ins_timeout_secs,
             report_internal_ip=avd_spec.report_internal_ip)
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
         self._ssh = None

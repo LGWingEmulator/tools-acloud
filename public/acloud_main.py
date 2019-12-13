@@ -377,7 +377,8 @@ def main(argv=None):
             serial_log_file=args.serial_log_file,
             autoconnect=args.autoconnect,
             report_internal_ip=args.report_internal_ip,
-            boot_timeout_secs=args.boot_timeout_secs)
+            boot_timeout_secs=args.boot_timeout_secs,
+            ins_timeout_secs=args.ins_timeout_secs)
     elif args.which == CMD_CREATE_GOLDFISH:
         report = create_goldfish_action.CreateDevices(
             cfg=cfg,
