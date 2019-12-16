@@ -163,12 +163,14 @@ def AddCommonCreateArgs(parser):
         help="'cuttlefish only' System image build target, specify if different "
         "from --build-target",
         required=False)
+    # TODO(146314062): Remove --multi-stage-launch after infra don't use this
+    # args.
     parser.add_argument(
         "--multi-stage-launch",
         dest="multi_stage_launch",
         action='store_true',
         required=False,
-        default=None,
+        default=True,
         help="Enable the multi-stage cuttlefish launch.")
     parser.add_argument(
         "--no-multi-stage-launch",
