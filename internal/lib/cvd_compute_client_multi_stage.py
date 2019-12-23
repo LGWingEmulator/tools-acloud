@@ -118,24 +118,27 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._extra_args_ssh_tunnel = acloud_config.extra_args_ssh_tunnel
         self._ssh = None
         self._ip = None
+        self._user = constants.GCE_USER
         self._execution_time = {_FETCH_ARTIFACT: 0, _GCE_CREATE: 0, _LAUNCH_CVD: 0}
 
-    def InitRemoteHost(self, ssh_object, ip, host_user):
+    def InitRemoteHost(self, ssh, ip, user):
         """Init remote host.
 
-        Check ssh to remote host is connection, then initialize it.
+        Check if we can ssh to the remote host, stop any cf instances running
+        on it, and remove existing files.
 
         Args:
-            ssh_object: Ssh object.
+            ssh: Ssh object.
             ip: namedtuple (internal, external) that holds IP address of the
                 remote host, e.g. "external:140.110.20.1, internal:10.0.0.1"
-            host_user: String of user login into the instance.
+            user: String of user log in to the instance.
         """
-        self._ssh = ssh_object
+        self._ssh = ssh
         self._ip = ip
+        self._user = user
         self._ssh.WaitForSsh(timeout=self._ins_timeout_secs)
         self.StopCvd()
-        self.CleanUp(host_user)
+        self.CleanUp()
 
     # pylint: disable=arguments-differ,too-many-locals
     def CreateInstance(self, instance, image_name, image_project,
@@ -302,19 +305,15 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         except subprocess.CalledProcessError as e:
             logger.debug("Failed to stop_cvd (possibly no running device): %s", e)
 
-    def CleanUp(self, host_user=None):
+    def CleanUp(self):
         """Clean up the files/folders on the existing instance.
 
         If previous AVD have these files/folders, reusing the instance may have
         side effects if not cleaned. The path in the instance is /home/vsoc-01/*
         if the GCE user is vsoc-01.
-
-        Args:
-            host_user: String of user login into the instance.
         """
 
-        ssh_command = "'/bin/rm -rf /home/%s/*'" % (
-            host_user or constants.GCE_USER)
+        ssh_command = "'/bin/rm -rf /home/%s/*'" % self._user
         try:
             self._ssh.Run(ssh_command)
         except subprocess.CalledProcessError as e:
