@@ -134,6 +134,8 @@ class AVDSpec(object):
 
         # The maximum time in seconds used to wait for the AVD to boot.
         self._boot_timeout_secs = None
+        # The maximum time in seconds used to wait for the instance ready.
+        self._ins_timeout_secs = None
 
         # The local instance id
         self._local_instance_id = None
@@ -301,6 +303,7 @@ class AVDSpec(object):
         self._password = args.password
 
         self._boot_timeout_secs = args.boot_timeout_secs
+        self._ins_timeout_secs = args.ins_timeout_secs
 
         if args.reuse_gce:
             if args.reuse_gce != constants.SELECT_ONE_GCE_INSTANCE:
@@ -718,6 +721,11 @@ class AVDSpec(object):
     def boot_timeout_secs(self):
         """Return boot_timeout_secs."""
         return self._boot_timeout_secs
+
+    @property
+    def ins_timeout_secs(self):
+        """Return ins_timeout_secs."""
+        return self._ins_timeout_secs
 
     @property
     def system_build_info(self):
