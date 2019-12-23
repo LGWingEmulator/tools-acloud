@@ -106,7 +106,8 @@ EOF"""
                                                        host_bins_path,
                                                        local_instance_id,
                                                        local_image_path)
-        mock_launch_cvd.assert_called_once_with("fake_launch_cvd", 3)
+        mock_launch_cvd.assert_called_once_with(
+            "fake_launch_cvd", 3, timeout=local_image_local_instance._LAUNCH_CVD_TIMEOUT_SECS)
 
 if __name__ == "__main__":
     unittest.main()
