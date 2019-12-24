@@ -154,14 +154,14 @@ class Ssh(object):
 
     Attributes:
         _ip: an IP object.
-        _gce_user: String of user login into the instance.
+        _user: String of user login into the instance.
         _ssh_private_key_path: Path to the private key file.
         _extra_args_ssh_tunnel: String, extra args for ssh or scp.
     """
-    def __init__(self, ip, gce_user, ssh_private_key_path,
+    def __init__(self, ip, user, ssh_private_key_path,
                  extra_args_ssh_tunnel=None, report_internal_ip=False):
         self._ip = ip.internal if report_internal_ip else ip.external
-        self._gce_user = gce_user
+        self._user = user
         self._ssh_private_key_path = ssh_private_key_path
         self._extra_args_ssh_tunnel = extra_args_ssh_tunnel
 
@@ -210,7 +210,7 @@ class Ssh(object):
 
         if execute_bin == constants.SSH_BIN:
             base_cmd.append(_SSH_IDENTITY %
-                            {"login_user":self._gce_user, "ip_addr":self._ip})
+                            {"login_user":self._user, "ip_addr":self._ip})
             return " ".join(base_cmd)
         if execute_bin == constants.SCP_BIN:
             return " ".join(base_cmd)
@@ -266,7 +266,7 @@ class Ssh(object):
         """
         scp_command = [self.GetBaseCmd(constants.SCP_BIN)]
         scp_command.append(src_file)
-        scp_command.append("%s@%s:%s" %(self._gce_user, self._ip, dst_file))
+        scp_command.append("%s@%s:%s" %(self._user, self._ip, dst_file))
         ShellCmdWithRetry(" ".join(scp_command))
 
     def ScpPullFile(self, src_file, dst_file):
@@ -277,6 +277,6 @@ class Ssh(object):
             dst_file: The destination file path the file is pulled to.
         """
         scp_command = [self.GetBaseCmd(constants.SCP_BIN)]
-        scp_command.append("%s@%s:%s" %(self._gce_user, self._ip, src_file))
+        scp_command.append("%s@%s:%s" %(self._user, self._ip, src_file))
         scp_command.append(dst_file)
         ShellCmdWithRetry(" ".join(scp_command))

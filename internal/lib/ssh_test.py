@@ -56,7 +56,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
     def testGetBaseCmdWithInternalIP(self):
         """Test get base command with internal ip."""
         ssh_object = ssh.Ssh(ip=self.FAKE_IP,
-                             gce_user=self.FAKE_SSH_USER,
+                             user=self.FAKE_SSH_USER,
                              ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH,
                              report_internal_ip=self.FAKE_REPORT_INTERNAL_IP)
         expected_ssh_cmd = ("/usr/bin/ssh -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
@@ -173,7 +173,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
         """Test IP class to get ip address."""
         # Internal ip case.
         ssh_object = ssh.Ssh(ip=ssh.IP(external="1.1.1.1", internal="10.1.1.1"),
-                             gce_user=self.FAKE_SSH_USER,
+                             user=self.FAKE_SSH_USER,
                              ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH,
                              report_internal_ip=True)
         expected_ip = "10.1.1.1"
@@ -181,14 +181,14 @@ class SshTest(driver_test_lib.BaseDriverTest):
 
         # External ip case.
         ssh_object = ssh.Ssh(ip=ssh.IP(external="1.1.1.1", internal="10.1.1.1"),
-                             gce_user=self.FAKE_SSH_USER,
+                             user=self.FAKE_SSH_USER,
                              ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH)
         expected_ip = "1.1.1.1"
         self.assertEqual(ssh_object._ip, expected_ip)
 
         # Only one ip case.
         ssh_object = ssh.Ssh(ip=ssh.IP(ip="1.1.1.1"),
-                             gce_user=self.FAKE_SSH_USER,
+                             user=self.FAKE_SSH_USER,
                              ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH)
         expected_ip = "1.1.1.1"
         self.assertEqual(ssh_object._ip, expected_ip)
@@ -196,7 +196,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
     def testWaitForSsh(self):
         """Test WaitForSsh."""
         ssh_object = ssh.Ssh(ip=self.FAKE_IP,
-                             gce_user=self.FAKE_SSH_USER,
+                             user=self.FAKE_SSH_USER,
                              ssh_private_key_path=self.FAKE_SSH_PRIVATE_KEY_PATH,
                              report_internal_ip=self.FAKE_REPORT_INTERNAL_IP)
         self.Patch(ssh, "_SshCall", return_value=-1)
