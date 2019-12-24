@@ -54,8 +54,8 @@ from acloud.public import report
 logger = logging.getLogger(__name__)
 
 _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
-                        "-memory_mb %s -system_image_dir %s "
-                        "-instance_dir %s")
+                        "-memory_mb %s -run_adb_connector=%s "
+                        "-system_image_dir %s -instance_dir %s")
 _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
                              "-data_policy always_create")
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD[id:%d] is already running. \n"
@@ -98,6 +98,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        constants.CMD_LAUNCH_CVD)
         cmd = self.PrepareLaunchCVDCmd(launch_cvd_path,
                                        avd_spec.hw_property,
+                                       avd_spec.connect_adb,
                                        local_image_path,
                                        avd_spec.local_instance_id)
 
@@ -170,8 +171,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                 self._FindCvdHostBinaries(avd_spec.local_tool_dirs))
 
     @staticmethod
-    def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, system_image_dir,
-                            local_instance_id):
+    def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, connect_adb,
+                            system_image_dir, local_instance_id):
         """Prepare launch_cvd command.
 
         Create the launch_cvd commands with all the required args and add
@@ -181,6 +182,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             launch_cvd_path: String of launch_cvd path.
             hw_property: dict object of hw property.
             system_image_dir: String of local images path.
+            connect_adb: Boolean flag that enables adb_connector.
             local_instance_id: Integer of instance id.
 
         Returns:
@@ -189,7 +191,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         instance_dir = instance.GetLocalInstanceRuntimeDir(local_instance_id)
         launch_cvd_w_args = launch_cvd_path + _CMD_LAUNCH_CVD_ARGS % (
             hw_property["cpu"], hw_property["x_res"], hw_property["y_res"],
-            hw_property["dpi"], hw_property["memory"], system_image_dir,
+            hw_property["dpi"], hw_property["memory"],
+            ("true" if connect_adb else "false"), system_image_dir,
             instance_dir)
         if constants.HW_ALIAS_DISK in hw_property:
             launch_cvd_w_args = (launch_cvd_w_args + _CMD_LAUNCH_CVD_DISK_ARGS %
