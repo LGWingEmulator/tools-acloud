@@ -19,6 +19,9 @@ python_defaults {
         py2: {
             enabled: true,
             embedded_launcher: false,
+            libs: [
+                "py-pyopenssl",
+            ]
         },
         py3: {
             enabled: false,
@@ -56,7 +59,6 @@ python_binary_host {
         "py-dateutil",
         "py-google-api-python-client",
         "py-oauth2client",
-        "py-pyopenssl",
         "py-six",
     ],
     dist: {

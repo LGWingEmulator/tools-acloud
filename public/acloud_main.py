@@ -70,8 +70,10 @@ Try $acloud [cmd] --help for further details.
 from __future__ import print_function
 import argparse
 import logging
+import os
 import platform
 import sys
+import sysconfig
 import traceback
 
 # TODO: Remove this once we switch over to embedded launcher.
@@ -93,6 +95,12 @@ if (sys.version_info.major == 2
         print("  - or -")
         print("  POSIXLY_CORRECT=1 port -N install python27")
     sys.exit(1)
+# This is a workaround to put '/usr/lib/python3.X' ahead of googleapiclient of
+# build system path list to fix python3 issue of http.client(b/144743252)
+# that googleapiclient existed http.py conflict with python3 build-in lib.
+# Using embedded_launcher(b/135639220) perhaps work whereas it didn't solve yet.
+if sys.version_info.major == 3:
+    sys.path.insert(0, os.path.dirname(sysconfig.get_paths()['purelib']))
 
 # By Default silence root logger's stream handler since 3p lib may initial
 # root logger no matter what level we're using. The acloud logger behavior will
