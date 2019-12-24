@@ -282,7 +282,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         cvd_env[_ENV_CUTTLEFISH_INSTANCE] = str(local_instance_id)
         # Check the result of launch_cvd command.
         # An exit code of 0 is equivalent to VIRTUAL_DEVICE_BOOT_COMPLETED
-        process = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT,
+                                   env=cvd_env)
         if timeout:
             timer = threading.Timer(timeout, process.kill)
             timer.start()
