@@ -68,6 +68,18 @@ LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
                                                    constants.ADB_PORT])
 
 
+def GetLocalInstanceName(local_instance_id):
+    """Get local cuttlefish instance name by instance id.
+
+    Args:
+        local_instance_id: Integer of instance id.
+
+    Return:
+        String, the instance name.
+    """
+    return "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
+
+
 def GetLocalInstanceHomeDir(local_instance_id):
     """Get local instance home dir accroding to instance id.
 
@@ -301,7 +313,7 @@ class LocalInstance(Instance):
                                      "dpi": cf_runtime_cfg.dpi}
         # TODO(143063678), there's no createtime info in
         # cuttlefish_config.json so far.
-        name = "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
+        name = GetLocalInstanceName(local_instance_id)
         fullname = (_FULL_NAME_STRING %
                     {"device_serial": "127.0.0.1:%d" % cf_runtime_cfg.adb_port,
                      "instance_name": name,
