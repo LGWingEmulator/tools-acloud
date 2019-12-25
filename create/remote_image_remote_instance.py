@@ -52,7 +52,7 @@ class RemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             unlock_screen=avd_spec.unlock_screen,
             wait_for_boot=False)
         # Launch vnc client if we're auto-connecting.
-        if avd_spec.autoconnect:
+        if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
 
         return report

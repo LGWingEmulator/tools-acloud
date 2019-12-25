@@ -63,7 +63,7 @@ class CheepsRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             boot_timeout_secs=avd_spec.boot_timeout_secs)
 
         # Launch vnc client if we're auto-connecting.
-        if avd_spec.autoconnect:
+        if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
 
         return report

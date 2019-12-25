@@ -639,8 +639,24 @@ class AVDSpec(object):
 
     @property
     def autoconnect(self):
-        """Return autoconnect."""
-        return self._autoconnect
+        """autoconnect.
+
+        args.autoconnect could pass in type of Boolean or String.
+
+        Return: Boolean, True only if self._autoconnect is not False.
+        """
+        return self._autoconnect is not False
+
+    @property
+    def connect_vnc(self):
+        """launch vnc.
+
+        args.autoconnect could pass in type of Boolean or String.
+        if args.autoconnect is "adb" or False, no need to launch vnc.
+
+        Return: Boolean, True only if self._autoconnect is True.
+        """
+        return self._autoconnect is True
 
     @property
     def unlock_screen(self):

@@ -85,7 +85,8 @@ def AddPublicSshRsaToInstance(cfg, user, instance_name):
 def ReconnectInstance(ssh_private_key_path,
                       instance,
                       reconnect_report,
-                      extra_args_ssh_tunnel=None):
+                      extra_args_ssh_tunnel=None,
+                      connect_vnc=True):
     """Reconnect to the specified instance.
 
     It will:
@@ -100,6 +101,7 @@ def ReconnectInstance(ssh_private_key_path,
         instance: list.Instance() object.
         reconnect_report: Report object.
         extra_args_ssh_tunnel: String, extra args for ssh tunnel connection.
+        connect_vnc: Boolean, True will launch vnc.
 
     Raises:
         errors.UnknownAvdType: Unable to reconnect to instance of unknown avd
@@ -130,7 +132,7 @@ def ReconnectInstance(ssh_private_key_path,
         vnc_port = forwarded_ports.vnc_port
         adb_port = forwarded_ports.adb_port
 
-    if vnc_port:
+    if vnc_port and connect_vnc:
         StartVnc(vnc_port, instance.display)
 
     device_dict = {
@@ -178,6 +180,7 @@ def Run(args):
         ReconnectInstance(cfg.ssh_private_key_path,
                           instance,
                           reconnect_report,
-                          cfg.extra_args_ssh_tunnel)
+                          cfg.extra_args_ssh_tunnel,
+                          connect_vnc=(args.autoconnect is True))
 
     utils.PrintDeviceSummary(reconnect_report)
