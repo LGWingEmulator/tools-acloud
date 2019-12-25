@@ -53,7 +53,7 @@ class GceRemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
             avd_spec=avd_spec)
 
         # Launch vnc client if we're auto-connecting.
-        if avd_spec.autoconnect:
+        if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
 
         return report
