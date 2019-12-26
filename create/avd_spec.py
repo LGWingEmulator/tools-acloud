@@ -456,7 +456,7 @@ class AVDSpec():
         if not local_image_arg:
             self._CheckCFBuildTarget(self._instance_type)
             local_image_path = utils.GetBuildEnvironmentVariable(
-            _ENV_ANDROID_PRODUCT_OUT)
+                _ENV_ANDROID_PRODUCT_OUT)
         else:
             local_image_path = local_image_arg
 
@@ -615,6 +615,7 @@ class AVDSpec():
         env = os.environ.copy()
         env.pop("PYTHONPATH", None)
         logger.info("Running command \"%s\"", _COMMAND_REPO_INFO)
+        # TODO(154173071): Migrate acloud to py3, then apply Popen to append with encoding
         process = subprocess.Popen(_COMMAND_REPO_INFO, shell=True, stdin=None,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, env=env)
@@ -623,7 +624,7 @@ class AVDSpec():
         stdout, _ = process.communicate()
         if stdout:
             for line in stdout.splitlines():
-                match = _BRANCH_RE.match(EscapeAnsi(line))
+                match = _BRANCH_RE.match(EscapeAnsi(line.decode()))
                 if match:
                     branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
                                                        _DEFAULT_BRANCH_PREFIX)

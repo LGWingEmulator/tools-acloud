@@ -15,7 +15,6 @@
 # pylint: disable=too-many-lines
 from __future__ import print_function
 
-from distutils.spawn import find_executable
 import base64
 import binascii
 import collections
@@ -1317,7 +1316,11 @@ def FindExecutable(filename):
     Returns:
         String: execution file path.
     """
-    return find_executable(filename) if six.PY2 else shutil.which(filename)
+    try:
+        from distutils.spawn import find_executable
+        return find_executable(filename)
+    except ImportError:
+        return shutil.which(filename)
 
 
 def GetDictItems(namedtuple_object):

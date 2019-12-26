@@ -26,7 +26,7 @@ def _CreateArgs():
     """set default pass in arguments."""
     mock_args = mock.MagicMock(
         flavor=None,
-        num=None,
+        num=1,
         adb_port=None,
         hw_property=None,
         stable_cheeps_host_image_name=None,
