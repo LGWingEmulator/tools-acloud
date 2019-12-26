@@ -15,16 +15,20 @@
 # limitations under the License.
 """Tests for LocalImageLocalInstance."""
 
+import os
+import shutil
+import subprocess
 import unittest
 import mock
 
 from acloud.create import local_image_local_instance
 from acloud.list import instance
 from acloud.internal import constants
+from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 
 
-class LocalImageLocalInstanceTest(unittest.TestCase):
+class LocalImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
     """Test LocalImageLocalInstance method."""
 
     LAUNCH_CVD_CMD_WITH_DISK = """sg group1 <<EOF
@@ -39,6 +43,7 @@ EOF"""
 
     def setUp(self):
         """Initialize new LocalImageLocalInstance."""
+        super(LocalImageLocalInstanceTest, self).setUp()
         self.local_image_local_instance = local_image_local_instance.LocalImageLocalInstance()
 
     # pylint: disable=protected-access
@@ -108,6 +113,34 @@ EOF"""
                                                        local_image_path)
         mock_launch_cvd.assert_called_once_with(
             "fake_launch_cvd", 3, timeout=local_image_local_instance._LAUNCH_CVD_TIMEOUT_SECS)
+
+    # pylint: disable=protected-access
+    @mock.patch.dict("os.environ", clear=True)
+    def testLaunchCVD(self):
+        """test _LaunchCvd should call subprocess.Popen with the specific env"""
+        local_instance_id = 3
+        launch_cvd_cmd = "launch_cvd"
+        cvd_env = {}
+        cvd_env[local_image_local_instance._ENV_CVD_HOME] = "fake_home"
+        cvd_env[local_image_local_instance._ENV_CUTTLEFISH_INSTANCE] = str(
+            local_instance_id)
+        process = mock.MagicMock()
+        process.wait.return_value = True
+        process.returncode = 0
+        self.Patch(subprocess, "Popen", return_value=process)
+        self.Patch(instance, "GetLocalInstanceHomeDir",
+                   return_value="fake_home")
+        self.Patch(os, "makedirs")
+        self.Patch(shutil, "rmtree")
+
+        self.local_image_local_instance._LaunchCvd(launch_cvd_cmd,
+                                                   local_instance_id)
+        # pylint: disable=no-member
+        subprocess.Popen.assert_called_once_with(launch_cvd_cmd,
+                                                 shell=True,
+                                                 stderr=subprocess.STDOUT,
+                                                 env=cvd_env)
+
 
 if __name__ == "__main__":
     unittest.main()
