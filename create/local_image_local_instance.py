@@ -67,7 +67,7 @@ _CONFIRM_RELAUNCH = ("\nCuttlefish AVD[id:%d] is already running. \n"
 _ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 _ENV_CVD_HOME = "HOME"
 _ENV_CUTTLEFISH_INSTANCE = "CUTTLEFISH_INSTANCE"
-_LAUNCH_CVD_TIMEOUT_SECS = 60  # default timeout as 60 seconds
+_LAUNCH_CVD_TIMEOUT_SECS = 120  # default timeout as 120 seconds
 _LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
                              "within %d secs.")
 _VIRTUAL_DISK_PATHS = "virtual_disk_paths"
