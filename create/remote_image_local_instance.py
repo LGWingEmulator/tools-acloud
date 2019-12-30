@@ -18,7 +18,6 @@ r"""RemoteImageLocalInstance class.
 Create class that is responsible for creating a local instance AVD with a
 remote image.
 """
-from __future__ import print_function
 import logging
 import os
 import sys

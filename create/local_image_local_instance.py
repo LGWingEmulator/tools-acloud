@@ -34,7 +34,6 @@ To delete the local instance, we will call stop_cvd with the environment variabl
 [CUTTLEFISH_CONFIG_FILE] which is pointing to the runtime cuttlefish json.
 """
 
-from __future__ import print_function
 import json
 import logging
 import os
