@@ -18,8 +18,11 @@ device factory."""
 import glob
 import logging
 import os
+import shutil
+import tempfile
 
 from acloud import errors
+from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
@@ -48,13 +51,12 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         ssh: An Ssh object.
     """
     def __init__(self, avd_spec, local_image_artifact=None,
-                 cvd_host_package_artifact=None, local_image_dir=None):
+                 cvd_host_package_artifact=None):
         """Constructs a new remote instance device factory."""
         self._avd_spec = avd_spec
         self._cfg = avd_spec.cfg
         self._local_image_artifact = local_image_artifact
         self._cvd_host_package_artifact = cvd_host_package_artifact
-        self._local_image_dir = local_image_dir
         self._report_internal_ip = avd_spec.report_internal_ip
         self.credentials = auth.CreateCredentials(avd_spec.cfg)
         # Control compute_client with enable_multi_stage
@@ -142,6 +144,30 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             self._ssh, ip, self._avd_spec.host_user)
         return instance
 
+    @utils.TimeExecute(function_description="Downloading Android Build artifact")
+    def _DownloadArtifacts(self, extract_path):
+        """Download the CF image artifacts and process them.
+
+        - Download image from the Android Build system, then decompress it.
+        - Download cvd host package from the Android Build system.
+
+        Args:
+            extract_path: String, a path include extracted files.
+        """
+        cfg = self._avd_spec.cfg
+        build_id = self._avd_spec.remote_image[constants.BUILD_ID]
+        build_target = self._avd_spec.remote_image[constants.BUILD_TARGET]
+
+        # Image zip
+        remote_image = "%s-img-%s.zip" % (build_target.split('-')[0], build_id)
+        create_common.DownloadRemoteArtifact(
+            cfg, build_target, build_id, remote_image, extract_path, decompress=True)
+
+        # Cvd host package
+        create_common.DownloadRemoteArtifact(
+            cfg, build_target, build_id, constants.CVD_HOST_PACKAGE,
+            extract_path)
+
     def _ProcessRemoteHostArtifacts(self):
         """Process remote host artifacts.
 
@@ -151,9 +177,21 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
           build to local and unzip it then upload to remote host, because there
           is no permission to fetch build rom on the remote host.
         """
-        self._UploadArtifacts(
-            self._local_image_artifact, self._cvd_host_package_artifact,
-            self._local_image_dir or self._avd_spec.local_image_dir)
+        if self._avd_spec.image_source == constants.IMAGE_SRC_LOCAL:
+            self._UploadArtifacts(
+                self._local_image_artifact, self._cvd_host_package_artifact,
+                self._avd_spec.local_image_dir)
+        else:
+            try:
+                artifacts_path = tempfile.mkdtemp()
+                logger.debug("Extracted path of artifacts: %s", artifacts_path)
+                self._DownloadArtifacts(artifacts_path)
+                self._UploadArtifacts(
+                    None,
+                    os.path.join(artifacts_path, constants.CVD_HOST_PACKAGE),
+                    artifacts_path)
+            finally:
+                shutil.rmtree(artifacts_path)
 
     def _ProcessArtifacts(self, image_source):
         """Process artifacts.
