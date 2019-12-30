@@ -130,6 +130,11 @@ def GetLocalPortsbyInsId(local_instance_id):
                       adb_port=constants.CF_ADB_PORT + local_instance_id - 1)
 
 
+def _GetCurrentLocalTime():
+    """Return a datetime object for current time in local time zone."""
+    return datetime.datetime.now(dateutil.tz.tzlocal())
+
+
 def _GetElapsedTime(start_time):
     """Calculate the elapsed time from start_time till now.
 
@@ -145,12 +150,10 @@ def _GetElapsedTime(start_time):
         # Check start_time has timezone or not. If timezone can't be found,
         # use local timezone to get elapsed time.
         if match:
-            return datetime.datetime.now(
-                dateutil.tz.tzlocal()) - dateutil.parser.parse(start_time)
+            return _GetCurrentLocalTime() - dateutil.parser.parse(start_time)
 
-        return datetime.datetime.now(
-            dateutil.tz.tzlocal()) - dateutil.parser.parse(
-                start_time).replace(tzinfo=dateutil.tz.tzlocal())
+        return _GetCurrentLocalTime() - dateutil.parser.parse(
+            start_time).replace(tzinfo=dateutil.tz.tzlocal())
     except ValueError:
         logger.debug(("Can't parse datetime string(%s)."), start_time)
         return _MSG_UNABLE_TO_CALCULATE
@@ -342,17 +345,19 @@ class LocalGoldfishInstance(Instance):
 
     _INSTANCE_DIR_PATTERN = re.compile(r"^instance-(?P<id>\d+)$")
     _INSTANCE_DIR_FORMAT = "instance-%(id)s"
+    _CREATION_TIMESTAMP_FILE_NAME = "creation_timestamp.txt"
     _INSTANCE_NAME_FORMAT = "local-goldfish-instance-%(id)s"
     _EMULATOR_DEFAULT_CONSOLE_PORT = 5554
     _GF_ADB_DEVICE_SERIAL = "emulator-%(console_port)s"
 
-    def __init__(self, local_instance_id, avd_flavor=None, x_res=None,
-                 y_res=None, dpi=None):
+    def __init__(self, local_instance_id, avd_flavor=None, create_time=None,
+                 x_res=None, y_res=None, dpi=None):
         """Initialize a LocalGoldfishInstance object.
 
         Args:
             local_instance_id: Integer of instance id.
             avd_flavor: String, the flavor of the virtual device.
+            create_time: String, the creation date and time.
             x_res: Integer of x dimension.
             y_res: Integer of y dimension.
             dpi: Integer of dpi.
@@ -363,10 +368,11 @@ class LocalGoldfishInstance(Instance):
 
         name = self._INSTANCE_NAME_FORMAT % {"id": local_instance_id}
 
-        fullname = (_FULL_NAME_STRING %
-                    {"device_serial": self.device_serial,
-                     "instance_name": name,
-                     "elapsed_time": None})
+        elapsed_time = _GetElapsedTime(create_time) if create_time else None
+
+        fullname = _FULL_NAME_STRING % {"device_serial": self.device_serial,
+                                        "instance_name": name,
+                                        "elapsed_time": elapsed_time}
 
         if x_res and y_res and dpi:
             display = _DISPLAY_STRING % {"x_res": x_res, "y_res": y_res,
@@ -381,6 +387,7 @@ class LocalGoldfishInstance(Instance):
         super(LocalGoldfishInstance, self).__init__(
             name=name, fullname=fullname, display=display, ip="127.0.0.1",
             status=None, adb_port=adb_port, avd_type=constants.TYPE_GF,
+            createtime=create_time, elapsed_time=elapsed_time,
             avd_flavor=avd_flavor, is_local=True,
             device_information=device_information)
 
@@ -406,18 +413,51 @@ class LocalGoldfishInstance(Instance):
         return os.path.join(self._GetInstanceDirRoot(),
                             self._INSTANCE_DIR_FORMAT % {"id": self._id})
 
+    @property
+    def creation_timestamp_path(self):
+        """Return the file path containing the creation timestamp."""
+        return os.path.join(self.instance_dir,
+                            self._CREATION_TIMESTAMP_FILE_NAME)
+
+    def WriteCreationTimestamp(self):
+        """Write creation timestamp to file."""
+        with open(self.creation_timestamp_path, "w") as timestamp_file:
+            timestamp_file.write(str(_GetCurrentLocalTime()))
+
+    def DeleteCreationTimestamp(self, ignore_errors):
+        """Delete the creation timestamp file.
+
+        Args:
+            ignore_errors: Boolean, whether to ignore the errors.
+
+        Raises:
+            OSError if fails to delete the file.
+        """
+        try:
+            os.remove(self.creation_timestamp_path)
+        except OSError as e:
+            if not ignore_errors:
+                raise
+            logger.warning("Can't delete creation timestamp: %s", e)
+
     @classmethod
     def GetExistingInstances(cls):
-        """Get a list of instances from existing instance directories."""
+        """Get a list of instances that have creation timestamp files."""
         instance_root = cls._GetInstanceDirRoot()
         if not os.path.isdir(instance_root):
             return []
+
         instances = []
         for name in os.listdir(instance_root):
             match = cls._INSTANCE_DIR_PATTERN.match(name)
-            if match and os.path.isdir(os.path.join(instance_root, name)):
+            timestamp_path = os.path.join(instance_root, name,
+                                          cls._CREATION_TIMESTAMP_FILE_NAME)
+            if match and os.path.isfile(timestamp_path):
                 instance_id = int(match.group("id"))
-                instances.append(LocalGoldfishInstance(instance_id))
+                with open(timestamp_path, "r") as timestamp_file:
+                    timestamp = timestamp_file.read().strip()
+                instances.append(LocalGoldfishInstance(instance_id,
+                                                       create_time=timestamp))
         return instances
 
 

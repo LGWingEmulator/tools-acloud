@@ -58,10 +58,8 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEqual(delete_report.status, "SUCCESS")
 
-    @mock.patch("acloud.delete.delete.shutil")
     @mock.patch("acloud.delete.delete.adb_tools.AdbTools")
-    def testDeleteLocalGoldfishInstanceSuccess(self, mock_adb_tools,
-                                               mock_shutil):
+    def testDeleteLocalGoldfishInstanceSuccess(self, mock_adb_tools):
         """Test DeleteLocalGoldfishInstance."""
         mock_instance = mock.Mock(adb_port=5555,
                                   device_serial="serial",
@@ -77,7 +75,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
         mock_adb_tools_obj.EmuCommand.assert_called_with("kill")
-        mock_shutil.rmtree.assert_called_with("/unit/test", ignore_errors=True)
+        mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertEqual(delete_report.data, {
             "deleted": [
                 {
@@ -88,10 +86,8 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEqual(delete_report.status, "SUCCESS")
 
-    @mock.patch("acloud.delete.delete.shutil")
     @mock.patch("acloud.delete.delete.adb_tools.AdbTools")
-    def testDeleteLocalGoldfishInstanceFailure(self, mock_adb_tools,
-                                               mock_shutil):
+    def testDeleteLocalGoldfishInstanceFailure(self, mock_adb_tools):
         """Test DeleteLocalGoldfishInstance with adb command failure."""
         mock_instance = mock.Mock(adb_port=5555,
                                   device_serial="serial",
@@ -107,7 +103,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
         mock_adb_tools_obj.EmuCommand.assert_called_with("kill")
-        mock_shutil.rmtree.assert_called_with("/unit/test", ignore_errors=True)
+        mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertTrue(len(delete_report.errors) > 0)
         self.assertEqual(delete_report.status, "FAIL")
 
