@@ -191,7 +191,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                                                extra_scopes, boot_disk_size_gb,
                                                avd_spec)
         self._ssh = Ssh(ip=self._ip,
-                        gce_user=constants.GCE_USER,
+                        user=constants.GCE_USER,
                         ssh_private_key_path=self._ssh_private_key_path,
                         extra_args_ssh_tunnel=self._extra_args_ssh_tunnel,
                         report_internal_ip=self._report_internal_ip)

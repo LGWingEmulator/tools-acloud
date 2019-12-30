@@ -58,7 +58,7 @@ def PullFileFromInstance(cfg, instance, file_name=None, no_prompts=False):
         A Report instance.
     """
     ssh = Ssh(ip=IP(ip=instance.ip),
-              gce_user=constants.GCE_USER,
+              user=constants.GCE_USER,
               ssh_private_key_path=cfg.ssh_private_key_path,
               extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
     log_files = SelectLogFileToPull(ssh, file_name)

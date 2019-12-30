@@ -133,7 +133,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         ip = ssh.IP(ip=self._avd_spec.remote_host)
         self._ssh = ssh.Ssh(
             ip=ip,
-            gce_user=self._avd_spec.host_user or constants.GCE_USER,
+            user=self._avd_spec.host_user or constants.GCE_USER,
             ssh_private_key_path=(self._avd_spec.host_ssh_private_key_path or
                                   self._cfg.ssh_private_key_path),
             extra_args_ssh_tunnel=self._cfg.extra_args_ssh_tunnel,
@@ -243,7 +243,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             avd_spec=self._avd_spec)
         ip = self._compute_client.GetInstanceIP(instance)
         self._ssh = ssh.Ssh(ip=ip,
-                            gce_user=constants.GCE_USER,
+                            user=constants.GCE_USER,
                             ssh_private_key_path=self._cfg.ssh_private_key_path,
                             extra_args_ssh_tunnel=self._cfg.extra_args_ssh_tunnel,
                             report_internal_ip=self._report_internal_ip)

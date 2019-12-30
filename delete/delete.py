@@ -245,7 +245,7 @@ def CleanUpRemoteHost(cfg, remote_host, host_user=None,
         oauth2_credentials=credentials)
     ssh = ssh_object.Ssh(
         ip=ssh_object.IP(ip=remote_host),
-        gce_user=host_user or constants.GCE_USER,
+        user=host_user or constants.GCE_USER,
         ssh_private_key_path=(
             host_ssh_private_key_path or cfg.ssh_private_key_path))
     try:
