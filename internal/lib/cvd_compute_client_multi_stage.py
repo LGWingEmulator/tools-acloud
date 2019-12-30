@@ -54,6 +54,7 @@ from acloud.pull import pull
 
 logger = logging.getLogger(__name__)
 
+_DECOMPRESS_KERNEL_ARG = "-decompress_kernel=true"
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
 _FETCHER_NAME = "fetch_cvd"
@@ -223,13 +224,14 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             return instance
 
     def _GetLaunchCvdArgs(self, avd_spec=None, blank_data_disk_size_gb=None,
-                          kernel_build=None):
+                          kernel_build=None, decompress_kernel=None):
         """Get launch_cvd args.
 
         Args:
             avd_spec: An AVDSpec instance.
             blank_data_disk_size_gb: Size of the blank data disk in GB.
             kernel_build: String, kernel build info.
+            decompress_kernel: Boolean, if true decompress the kernel.
 
         Returns:
             String, args of launch_cvd.
@@ -272,6 +274,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         if self._launch_args:
             launch_cvd_args.append(self._launch_args)
+
+        if decompress_kernel:
+            launch_cvd_args.append(_DECOMPRESS_KERNEL_ARG)
+
         return launch_cvd_args
 
     @staticmethod
@@ -347,11 +353,10 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         error_msg = ""
         launch_cvd_args = self._GetLaunchCvdArgs(avd_spec,
                                                  blank_data_disk_size_gb,
-                                                 kernel_build)
+                                                 kernel_build,
+                                                 decompress_kernel)
         boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
         ssh_command = "./bin/launch_cvd -daemon " + " ".join(launch_cvd_args)
-        if decompress_kernel:
-            ssh_command = ssh_command + " " + "-decompress_kernel=true"
         try:
             self._ssh.Run(ssh_command, boot_timeout_secs)
         except (subprocess.CalledProcessError, errors.DeviceConnectionError) as e:
