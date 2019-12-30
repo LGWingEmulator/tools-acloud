@@ -229,6 +229,8 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                              _DEFAULT_EMULATOR_TIMEOUT_SECS)
         self._WaitForEmulatorToStart(adb, proc, boot_timeout_secs)
 
+        inst.WriteCreationTimestamp()
+
         result_report = report.Report(command="create")
         result_report.SetStatus(report.Status.SUCCESS)
         # Emulator has no VNC port.
@@ -410,6 +412,8 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         """
         emulator_env = os.environ.copy()
         emulator_env[constants.ENV_ANDROID_PRODUCT_OUT] = image_dir
+        # Set ANDROID_TMP for emulator to create AVD info files in.
+        emulator_env[constants.ENV_ANDROID_TMP] = working_dir
         # Set ANDROID_BUILD_TOP so that the emulator considers itself to be in
         # build environment.
         if constants.ENV_ANDROID_BUILD_TOP not in emulator_env:

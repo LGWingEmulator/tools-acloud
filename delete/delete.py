@@ -22,7 +22,6 @@ from __future__ import print_function
 import logging
 import os
 import re
-import shutil
 import subprocess
 
 from acloud import errors
@@ -221,7 +220,7 @@ def DeleteLocalGoldfishInstance(instance, delete_report):
         delete_report.AddError("Cannot kill %s." % instance.device_serial)
         delete_report.SetStatus(report.Status.FAIL)
 
-    shutil.rmtree(instance.instance_dir, ignore_errors=True)
+    instance.DeleteCreationTimestamp(ignore_errors=True)
     return delete_report
 
 
