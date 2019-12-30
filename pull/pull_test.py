@@ -70,7 +70,7 @@ class PullTest(driver_test_lib.BaseDriverTest):
         """Test DisplayLog."""
         fake_ip = ssh.IP(external="1.1.1.1", internal="10.1.1.1")
         _ssh = ssh.Ssh(ip=fake_ip,
-                       gce_user=constants.GCE_USER,
+                       user=constants.GCE_USER,
                        ssh_private_key_path="/fake/acloud_rea")
         self.Patch(utils, "GetUserAnswerYes", return_value="Y")
         log_file = "file1.log"

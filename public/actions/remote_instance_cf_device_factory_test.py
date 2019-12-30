@@ -255,7 +255,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             fake_image,
             fake_host_package)
         factory._ssh = ssh.Ssh(ip=fake_ip,
-                               gce_user=constants.GCE_USER,
+                               user=constants.GCE_USER,
                                ssh_private_key_path="/fake/acloud_rea")
         factory._UploadArtifacts(fake_image, fake_host_package, fake_local_image_dir)
         expected_cmd1 = ("/usr/bin/install_zip.sh . < %s" % fake_image)
