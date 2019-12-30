@@ -19,8 +19,6 @@ Reconnect will:
  - restart vnc for remote/local instances
 """
 
-from __future__ import print_function
-
 import re
 
 from acloud import errors

@@ -20,7 +20,6 @@ and Cuttlefish (create_cuttlefish_action) devices. Should not be called
 directly.
 """
 
-from __future__ import print_function
 import logging
 import os
 

@@ -15,7 +15,6 @@
 """RemoteInstanceDeviceFactory provides basic interface to create a cuttlefish
 device factory."""
 
-from __future__ import print_function
 import glob
 import logging
 import os
