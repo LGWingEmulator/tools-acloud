@@ -215,6 +215,9 @@ def Run(args):
 
     Args:
         args: Namespace object from argparse.parse_args.
+
+    Returns:
+        A Report instance.
     """
     if not args.skip_pre_run_check:
         PreRunCheck(args)
@@ -224,5 +227,4 @@ def Run(args):
                                            spec.image_source)
     avd_creator = avd_creator_class()
     report = avd_creator.Create(spec, args.no_prompt)
-    if report and args.report_file:
-        report.Dump(args.report_file)
+    return report
