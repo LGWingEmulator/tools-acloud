@@ -360,7 +360,7 @@ def main(argv=None):
 
     report = None
     if args.which == create_args.CMD_CREATE:
-        create.Run(args)
+        report = create.Run(args)
     elif args.which == CMD_CREATE_CUTTLEFISH:
         report = create_cuttlefish_action.CreateDevices(
             cfg=cfg,
