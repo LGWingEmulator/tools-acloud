@@ -341,14 +341,16 @@ def GetCreateArgParser(subparser):
         type=str,
         dest="remote_host",
         default=None,
-        help="'cuttlefish only' Provide host name for launch AVD on this "
-        "devices.")
+        help="'cuttlefish only' Provide host name to clean up the remote host. "
+        "For example: '--host 1.1.1.1'")
     create_parser.add_argument(
         "--host-user",
         type=str,
         dest="host_user",
-        default=None,
-        help="'remote host only' Provide host user for login on this host.")
+        default=constants.GCE_USER,
+        help="'remote host only' Provide host user for logging in to the host. "
+        "The default value is vsoc-01. For example: '--host 1.1.1.1 --host-user "
+        "vsoc-02'")
     create_parser.add_argument(
         "--host-ssh-private-key-path",
         type=str,

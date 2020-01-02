@@ -132,7 +132,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         ip = ssh.IP(ip=self._avd_spec.remote_host)
         self._ssh = ssh.Ssh(
             ip=ip,
-            user=self._avd_spec.host_user or constants.GCE_USER,
+            user=self._avd_spec.host_user,
             ssh_private_key_path=(self._avd_spec.host_ssh_private_key_path or
                                   self._cfg.ssh_private_key_path),
             extra_args_ssh_tunnel=self._cfg.extra_args_ssh_tunnel,
