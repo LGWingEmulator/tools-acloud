@@ -35,7 +35,7 @@ _MK_COMBINED_IMG = "mk_combined_img"
 
 _BUILD_SUPER_IMAGE_TIMEOUT_SECS = 30
 _AVBTOOL_TIMEOUT_SECS = 30
-_MK_COMBINED_IMG_TIMEOUT_SECS = 60
+_MK_COMBINED_IMG_TIMEOUT_SECS = 180
 
 _MISSING_OTA_TOOLS_MSG = ("%(tool_name)s does not exist. Try `make otatools` "
                           "in build environment, or setting ANDROID_HOST_OUT "
