@@ -19,6 +19,9 @@ Defines the delete arg parser that holds delete specific args.
 """
 import argparse
 
+from acloud.internal import constants
+
+
 CMD_DELETE = "delete"
 
 
@@ -71,9 +74,10 @@ def GetDeleteArgParser(subparser):
         "--host-user",
         type=str,
         dest="host_user",
-        default=None,
-        help="'remote host only' Provide host user for logging in to the host"
-        "For example: '--host 1.1.1.1 --host-user vsoc-02'")
+        default=constants.GCE_USER,
+        help="'remote host only' Provide host user for logging in to the host. "
+        "The default value is vsoc-01. For example: '--host 1.1.1.1 --host-user "
+        "vsoc-02'")
     delete_parser.add_argument(
         "--host-ssh-private-key-path",
         type=str,

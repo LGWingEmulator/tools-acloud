@@ -224,7 +224,7 @@ def DeleteLocalGoldfishInstance(instance, delete_report):
     return delete_report
 
 
-def CleanUpRemoteHost(cfg, remote_host, host_user=None,
+def CleanUpRemoteHost(cfg, remote_host, host_user,
                       host_ssh_private_key_path=None):
     """Clean up the remote host.
 
@@ -245,12 +245,11 @@ def CleanUpRemoteHost(cfg, remote_host, host_user=None,
         oauth2_credentials=credentials)
     ssh = ssh_object.Ssh(
         ip=ssh_object.IP(ip=remote_host),
-        user=host_user or constants.GCE_USER,
+        user=host_user,
         ssh_private_key_path=(
             host_ssh_private_key_path or cfg.ssh_private_key_path))
     try:
-        compute_client.InitRemoteHost(ssh, remote_host, host_user or
-                                      constants.GCE_USER)
+        compute_client.InitRemoteHost(ssh, remote_host, host_user)
         delete_report.SetStatus(report.Status.SUCCESS)
         device_driver.AddDeletionResultToReport(
             delete_report, [remote_host], failed=[],
