@@ -662,11 +662,19 @@ class AVDSpec(object):
 
     @property
     def connect_vnc(self):
-        """launch vnc.
+        """Launch vnc.
 
         Return: Boolean, True if self._autoconnect is 'vnc'.
         """
         return self._autoconnect == constants.INS_KEY_VNC
+
+    @property
+    def connect_webrtc(self):
+        """Auto-launch webRTC AVD on the browser.
+
+        Return: Boolean, True if args.autoconnect is "webrtc".
+        """
+        return self._autoconnect == constants.INS_KEY_WEBRTC
 
     @property
     def unlock_screen(self):

@@ -182,7 +182,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE,
             extra_scopes=self.EXTRA_SCOPES,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            tags=None)
 
         mock_check_img.return_value = True
         #test use local image in the remote instance.
@@ -215,7 +216,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE,
             extra_scopes=self.EXTRA_SCOPES,
-            gpu=self.GPU)
+            gpu=self.GPU,
+            tags=None)
 
 
 if __name__ == "__main__":

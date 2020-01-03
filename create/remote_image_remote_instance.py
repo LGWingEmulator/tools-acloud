@@ -18,7 +18,6 @@ r"""RemoteImageRemoteInstance class.
 Create class that is responsible for creating a remote instance AVD with a
 remote image.
 """
-
 from acloud.create import base_avd_create
 from acloud.internal.lib import utils
 from acloud.public.actions import common_operations
@@ -54,5 +53,7 @@ class RemoteImageRemoteInstance(base_avd_create.BaseAVDCreate):
         # Launch vnc client if we're auto-connecting.
         if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(report, avd_spec, no_prompts)
+        if avd_spec.connect_webrtc:
+            utils.LaunchBrowserFromReport(report)
 
         return report
