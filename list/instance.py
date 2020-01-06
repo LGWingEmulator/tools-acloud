@@ -48,7 +48,6 @@ logger = logging.getLogger(__name__)
 
 _ACLOUD_CVD_TEMP = os.path.join(tempfile.gettempdir(), "acloud_cvd_temp")
 _CVD_RUNTIME_FOLDER_NAME = "cuttlefish_runtime"
-_LOCAL_INSTANCE_HOME = "instance_home_%s"
 _MSG_UNABLE_TO_CALCULATE = "Unable to calculate"
 _RE_GROUP_ADB = "local_adb_port"
 _RE_GROUP_VNC = "local_vnc_port"
@@ -68,6 +67,18 @@ LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
                                                    constants.ADB_PORT])
 
 
+def GetLocalInstanceName(local_instance_id):
+    """Get local cuttlefish instance name by instance id.
+
+    Args:
+        local_instance_id: Integer of instance id.
+
+    Return:
+        String, the instance name.
+    """
+    return "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
+
+
 def GetLocalInstanceHomeDir(local_instance_id):
     """Get local instance home dir accroding to instance id.
 
@@ -78,7 +89,7 @@ def GetLocalInstanceHomeDir(local_instance_id):
         String, path of instance home dir.
     """
     return os.path.join(_ACLOUD_CVD_TEMP,
-                        _LOCAL_INSTANCE_HOME % local_instance_id)
+                        GetLocalInstanceName(local_instance_id))
 
 
 def GetLocalInstanceRuntimeDir(local_instance_id):
@@ -301,7 +312,7 @@ class LocalInstance(Instance):
                                      "dpi": cf_runtime_cfg.dpi}
         # TODO(143063678), there's no createtime info in
         # cuttlefish_config.json so far.
-        name = "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
+        name = GetLocalInstanceName(local_instance_id)
         fullname = (_FULL_NAME_STRING %
                     {"device_serial": "127.0.0.1:%d" % cf_runtime_cfg.adb_port,
                      "instance_name": name,
@@ -331,8 +342,8 @@ class LocalInstance(Instance):
 class LocalGoldfishInstance(Instance):
     """Class to store data of local goldfish instance."""
 
-    _INSTANCE_DIR_PATTERN = re.compile(r"^instance-(?P<id>\d+)$")
-    _INSTANCE_DIR_FORMAT = "instance-%(id)s"
+    _INSTANCE_NAME_PATTERN = re.compile(
+        r"^local-goldfish-instance-(?P<id>\d+)$")
     _CREATION_TIMESTAMP_FILE_NAME = "creation_timestamp.txt"
     _INSTANCE_NAME_FORMAT = "local-goldfish-instance-%(id)s"
     _EMULATOR_DEFAULT_CONSOLE_PORT = 5554
@@ -399,7 +410,7 @@ class LocalGoldfishInstance(Instance):
     def instance_dir(self):
         """Return the path to instance directory."""
         return os.path.join(self._GetInstanceDirRoot(),
-                            self._INSTANCE_DIR_FORMAT % {"id": self._id})
+                            self._INSTANCE_NAME_FORMAT % {"id": self._id})
 
     @property
     def creation_timestamp_path(self):
@@ -437,7 +448,7 @@ class LocalGoldfishInstance(Instance):
 
         instances = []
         for name in os.listdir(instance_root):
-            match = cls._INSTANCE_DIR_PATTERN.match(name)
+            match = cls._INSTANCE_NAME_PATTERN.match(name)
             timestamp_path = os.path.join(instance_root, name,
                                           cls._CREATION_TIMESTAMP_FILE_NAME)
             if match and os.path.isfile(timestamp_path):
