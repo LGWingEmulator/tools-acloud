@@ -127,6 +127,7 @@ from acloud.setup import setup_args
 
 LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 ACLOUD_LOGGER = "acloud"
+NO_ERROR_MESSAGE = ""
 
 # Commands
 CMD_CREATE_CUTTLEFISH = "create_cf"
@@ -344,7 +345,8 @@ def main(argv=None):
         argv: A list of system arguments.
 
     Returns:
-        0 if success. None-zero if fails.
+        Job status: Integer, 0 if success. None-zero if fails.
+        Stack trace: String of errors.
     """
     if argv is None:
         argv = sys.argv[1:]
@@ -407,16 +409,17 @@ def main(argv=None):
     elif args.which == setup_args.CMD_SETUP:
         setup.Run(args)
     else:
-        sys.stderr.write("Invalid command %s" % args.which)
-        return constants.EXIT_BY_WRONG_CMD
+        error_msg = "Invalid command %s" % args.which
+        sys.stderr.write(error_msg)
+        return constants.EXIT_BY_WRONG_CMD, error_msg
 
     if report and args.report_file:
         report.Dump(args.report_file)
     if report and report.errors:
-        msg = "\n".join(report.errors)
-        sys.stderr.write("Encountered the following errors:\n%s\n" % msg)
-        return constants.EXIT_BY_FAIL_REPORT
-    return constants.EXIT_SUCCESS
+        error_msg = "\n".join(report.errors)
+        sys.stderr.write("Encountered the following errors:\n%s\n" % error_msg)
+        return constants.EXIT_BY_FAIL_REPORT, error_msg
+    return constants.EXIT_SUCCESS, NO_ERROR_MESSAGE
 
 
 if __name__ == "__main__":
@@ -425,7 +428,7 @@ if __name__ == "__main__":
     EXCEPTION_LOG = None
     LOG_METRICS = metrics.LogUsage(sys.argv[1:])
     try:
-        EXIT_CODE = main(sys.argv[1:])
+        EXIT_CODE, EXCEPTION_STACKTRACE = main(sys.argv[1:])
     except Exception as e:
         EXIT_CODE = constants.EXIT_BY_ERROR
         EXCEPTION_STACKTRACE = traceback.format_exc()
