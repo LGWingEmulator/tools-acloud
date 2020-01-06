@@ -366,7 +366,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                          % (instance, boot_timeout_secs))
             self._all_failures[instance] = error_msg
             utils.PrintColorString(str(e), utils.TextColors.FAIL)
-            self._PullAllLogFiles(instance)
+            if avd_spec and not avd_spec.no_pull_log:
+                self._PullAllLogFiles(instance)
 
         self._execution_time[_LAUNCH_CVD] = round(time.time() - timestart, 2)
         return {instance: error_msg} if error_msg else {}
