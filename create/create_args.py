@@ -464,7 +464,7 @@ def _VerifyHostArgs(args):
         raise errors.UnsupportedCreateArgs(
             "--num is not supported for remote host.")
 
-    if args.host_user and args.remote_host is None:
+    if args.host_user != constants.GCE_USER and args.remote_host is None:
         raise errors.UnsupportedCreateArgs(
             "--host-user only support for remote host.")
 
