@@ -267,8 +267,6 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             images_dir: String, directory of local images which build
                         from 'm'.
         """
-        # TODO(b/133461252) Deprecate acloud create with local image zip.
-        # Upload local image zip file
         if local_image_zip:
             remote_cmd = ("/usr/bin/install_zip.sh . < %s" % local_image_zip)
             logger.debug("remote_cmd:\n %s", remote_cmd)
