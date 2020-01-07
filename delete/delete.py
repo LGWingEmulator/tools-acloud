@@ -43,6 +43,7 @@ _COMMAND_GET_PROCESS_ID = ["pgrep", "run_cvd"]
 _COMMAND_GET_PROCESS_COMMAND = ["ps", "-o", "command", "-p"]
 _RE_RUN_CVD = re.compile(r"^(?P<run_cvd>.+run_cvd)")
 _SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
+_LOCAL_INSTANCE_PREFIX = "local-"
 
 
 def _GetStopCvd():
@@ -261,6 +262,33 @@ def CleanUpRemoteHost(cfg, remote_host, host_user,
 
     return delete_report
 
+
+def DeleteInstanceByNames(cfg, instances):
+    """Delete instances by the names of these instances.
+
+    Args:
+        cfg: AcloudConfig object.
+        instances: List of instance name.
+
+    Returns:
+        A Report instance.
+    """
+    delete_report = report.Report(command="delete")
+    local_instances = [
+        ins for ins in instances if ins.startswith(_LOCAL_INSTANCE_PREFIX)
+    ]
+    remote_instances = list(set(instances) - set(local_instances))
+    if local_instances:
+        utils.PrintColorString("Deleting local instances")
+        delete_report = DeleteInstances(cfg, list_instances.FilterInstancesByNames(
+            list_instances.GetLocalInstances(), local_instances))
+    if remote_instances:
+        delete_report = DeleteRemoteInstances(cfg,
+                                              remote_instances,
+                                              delete_report)
+    return delete_report
+
+
 def Run(args):
     """Run delete.
 
@@ -273,10 +301,16 @@ def Run(args):
     Returns:
         A Report instance.
     """
+    # Prioritize delete instances by names without query all instance info from
+    # GCP project.
+    if args.instance_names:
+        return DeleteInstanceByNames(config.GetAcloudConfig(args),
+                                     args.instance_names)
     if args.remote_host:
         cfg = config.GetAcloudConfig(args)
         return CleanUpRemoteHost(cfg, args.remote_host, args.host_user,
                                  args.host_ssh_private_key_path)
+
     instances = list_instances.GetLocalInstances()
     if args.local_only:
         cfg = None
@@ -284,10 +318,7 @@ def Run(args):
         cfg = config.GetAcloudConfig(args)
         instances.extend(list_instances.GetRemoteInstances(cfg))
 
-    if args.instance_names:
-        instances = list_instances.FilterInstancesByNames(instances,
-                                                          args.instance_names)
-    elif args.adb_port:
+    if args.adb_port:
         instances = list_instances.FilterInstancesByAdbPort(instances,
                                                             args.adb_port)
     elif not args.all:

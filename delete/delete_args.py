@@ -43,8 +43,8 @@ def GetDeleteArgParser(subparser):
         dest="instance_names",
         nargs="+",
         required=False,
-        help="The names of the instances that need to delete, "
-        "separated by spaces, e.g. --instance-names instance-1 local-instance-1")
+        help="The names of the instances that need to delete, separated by "
+        "spaces, e.g. --instance-names instance-1 local-instance-1")
     delete_group.add_argument(
         "--all",
         action="store_true",
