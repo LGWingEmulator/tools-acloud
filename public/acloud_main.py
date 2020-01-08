@@ -189,14 +189,6 @@ def _ParseArgs(args):
         help="Emulator build branch name, e.g. aosp-emu-master-dev. If specified"
         " without emulator_build_id, the last green build will be used.")
     create_gf_parser.add_argument(
-        "--gpu",
-        type=str,
-        dest="gpu",
-        required=False,
-        default=None,
-        help="GPU accelerator to use if any."
-        " e.g. nvidia-tesla-k80, omit to use swiftshader")
-    create_gf_parser.add_argument(
         "--base_image",
         type=str,
         dest="base_image",
@@ -375,6 +367,7 @@ def main(argv=None):
             system_branch=args.system_branch,
             system_build_id=args.system_build_id,
             system_build_target=args.system_build_target,
+            gpu=args.gpu,
             num=args.num,
             serial_log_file=args.serial_log_file,
             autoconnect=args.autoconnect,
