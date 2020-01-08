@@ -158,6 +158,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         created_subprocess.stdout.readline = mock.MagicMock(return_value='')
         created_subprocess.poll = mock.MagicMock(return_value=0)
         created_subprocess.returncode = 0
+        created_subprocess.communicate = mock.MagicMock(return_value=('', ''))
         self.Patch(subprocess, "Popen", return_value=created_subprocess)
         self.Patch(subprocess, "check_call")
         self.Patch(os, "chmod")
