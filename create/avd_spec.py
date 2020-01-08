@@ -113,6 +113,7 @@ class AVDSpec(object):
         self._local_system_image_dir = None
         self._image_download_dir = None
         self._num_of_instances = None
+        self._no_pull_log = None
         self._remote_image = None
         self._system_build_info = None
         self._kernel_build_info = None
@@ -295,6 +296,7 @@ class AVDSpec(object):
         self._host_ssh_private_key_path = args.host_ssh_private_key_path
         self._local_instance_id = args.local_instance
         self._num_of_instances = args.num
+        self._no_pull_log = args.no_pull_log
         self._serial_log_file = args.serial_log_file
         self._emulator_build_id = args.emulator_build_id
         self._gpu = args.gpu
@@ -772,3 +774,8 @@ class AVDSpec(object):
     def host_ssh_private_key_path(self):
         """Return host_ssh_private_key_path."""
         return self._host_ssh_private_key_path
+
+    @property
+    def no_pull_log(self):
+        """Return no_pull_log."""
+        return self._no_pull_log
