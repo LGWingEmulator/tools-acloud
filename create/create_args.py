@@ -179,17 +179,24 @@ def AddCommonCreateArgs(parser):
     parser.add_argument(
         "--multi-stage-launch",
         dest="multi_stage_launch",
-        action='store_true',
+        action="store_true",
         required=False,
         default=True,
         help="Enable the multi-stage cuttlefish launch.")
     parser.add_argument(
         "--no-multi-stage-launch",
         dest="multi_stage_launch",
-        action='store_false',
+        action="store_false",
         required=False,
         default=None,
         help="Disable the multi-stage cuttlefish launch.")
+    parser.add_argument(
+        "--no-pull-log",
+        dest="no_pull_log",
+        action="store_true",
+        required=False,
+        default=None,
+        help="Disable auto download logs when AVD booting up failed.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
