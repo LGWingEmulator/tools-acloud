@@ -51,12 +51,9 @@ def _SshCall(cmd, timeout=None):
         # TODO: if process is killed, out error message to log.
         timer = threading.Timer(timeout, process.kill)
         timer.start()
-    while True:
-        if process.poll() is not None:
-            break
+    process.communicate()
     if timeout:
         timer.cancel()
-    process.stdout.close()
     return process.returncode
 
 
@@ -86,20 +83,15 @@ def _SshLogOutput(cmd, timeout=None, show_output=False):
         # TODO: if process is killed, out error message to log.
         timer = threading.Timer(timeout, process.kill)
         timer.start()
-    while True:
-        output = process.stdout.readline()
-        # poll() can return "0" for success, None means it is still running.
-        if output == "" and process.poll() is not None:
-            break
-        if output:
-            if show_output:
-                print(output.strip())
-            else:
-                # fetch_cvd and launch_cvd can be noisy, so left at debug
-                logger.debug(output.strip())
+    stdout, _ = process.communicate()
+    if stdout:
+        if show_output:
+            print(stdout.strip())
+        else:
+            # fetch_cvd and launch_cvd can be noisy, so left at debug
+            logger.debug(stdout.strip())
     if timeout:
         timer.cancel()
-    process.stdout.close()
     if process.returncode == 255:
         raise errors.DeviceConnectionError(
             "Failed to send command to instance (%s)" % cmd)
