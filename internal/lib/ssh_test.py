@@ -43,6 +43,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
         self.created_subprocess.stdout.readline = mock.MagicMock(return_value='')
         self.created_subprocess.poll = mock.MagicMock(return_value=0)
         self.created_subprocess.returncode = 0
+        self.created_subprocess.communicate = mock.MagicMock(return_value=
+                                                             ('', ''))
 
     def testSSHExecuteWithRetry(self):
         """test SSHExecuteWithRetry method."""
