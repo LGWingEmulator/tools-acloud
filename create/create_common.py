@@ -63,44 +63,32 @@ def ParseHWPropertyArgs(dict_str, item_separator=",", key_value_separator=":"):
     return hw_dict
 
 
-def VerifyHostPackageArtifactsExist():
-    """Verify the host package exists and return its path.
+def GetCvdHostPackage():
+    """Get cvd host package path.
 
-    Look for the host package in $ANDROID_HOST_OUT and dist dir.
+    Look for the host package in $ANDROID_HOST_OUT and dist dir then verify
+    existence and get cvd host package path.
 
     Return:
         A string, the path to the host package.
+
+    Raises:
+        errors.GetCvdLocalHostPackageError: Can't find cvd host package.
     """
     dirs_to_check = list(filter(None, [os.environ.get(constants.ENV_ANDROID_HOST_OUT)]))
     dist_dir = utils.GetDistDir()
     if dist_dir:
         dirs_to_check.append(dist_dir)
 
-    cvd_host_package_artifact = GetCvdHostPackage(dirs_to_check)
-    logger.debug("cvd host package: %s", cvd_host_package_artifact)
-    return cvd_host_package_artifact
-
-
-def GetCvdHostPackage(paths):
-    """Get cvd host package path.
-
-    Args:
-        paths: A list, holds the paths to check for the host package.
-
-    Returns:
-        String, full path of cvd host package.
-
-    Raises:
-        errors.GetCvdLocalHostPackageError: Can't find cvd host package.
-    """
-    for path in paths:
+    for path in dirs_to_check:
         cvd_host_package = os.path.join(path, constants.CVD_HOST_PACKAGE)
         if os.path.exists(cvd_host_package):
+            logger.debug("cvd host package: %s", cvd_host_package)
             return cvd_host_package
-    raise errors.GetCvdLocalHostPackageError, (
+    raise errors.GetCvdLocalHostPackageError(
         "Can't find the cvd host package (Try lunching a cuttlefish target"
         " like aosp_cf_x86_phone-userdebug and running 'm'): \n%s" %
-        '\n'.join(paths))
+        '\n'.join(dirs_to_check))
 
 
 def DownloadRemoteArtifact(cfg, build_target, build_id, artifact, extract_path,

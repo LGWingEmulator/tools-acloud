@@ -65,14 +65,14 @@ class CreateCommonTest(driver_test_lib.BaseDriverTest):
         result_dict = create_common.ParseHWPropertyArgs(args_str)
         self.assertTrue(expected_dict == result_dict)
 
-    def testVerifyHostPackageArtifactsExist(self):
-        """test verify host package artifacts exist."""
+    def testGetCvdHostPackage(self):
+        """test GetCvdHostPackage."""
         # Can't find the cvd host package
         with mock.patch("os.path.exists") as exists:
             exists.return_value = False
             self.assertRaises(
                 errors.GetCvdLocalHostPackageError,
-                create_common.VerifyHostPackageArtifactsExist)
+                create_common.GetCvdHostPackage)
 
         self.Patch(os.environ, "get", return_value="/fake_dir2")
         self.Patch(utils, "GetDistDir", return_value="/fake_dir1")
@@ -82,7 +82,7 @@ class CreateCommonTest(driver_test_lib.BaseDriverTest):
 
         # Find cvd host in dist dir.
         self.assertEqual(
-            create_common.VerifyHostPackageArtifactsExist(),
+            create_common.GetCvdHostPackage(),
             "/fake_dir1/cvd-host_package.tar.gz")
 
         # Find cvd host in host out dir.
@@ -91,7 +91,7 @@ class CreateCommonTest(driver_test_lib.BaseDriverTest):
         with mock.patch("os.path.exists") as exists:
             exists.return_value = True
             self.assertEqual(
-                create_common.VerifyHostPackageArtifactsExist(),
+                create_common.GetCvdHostPackage(),
                 "/fake_dir2/cvd-host_package.tar.gz")
 
     @mock.patch.object(utils, "Decompress")
