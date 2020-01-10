@@ -45,7 +45,7 @@ class LocalImageRemoteHost(base_avd_create.BaseAVDCreate):
         device_factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
             avd_spec,
             avd_spec.local_image_artifact,
-            create_common.VerifyHostPackageArtifactsExist())
+            create_common.GetCvdHostPackage())
         report = common_operations.CreateDevices(
             "create_cf", avd_spec.cfg, device_factory, num=1,
             report_internal_ip=avd_spec.report_internal_ip,
