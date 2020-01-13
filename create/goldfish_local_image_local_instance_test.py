@@ -29,7 +29,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         self._goldfish = instance_module.GoldfishLocalImageLocalInstance()
         self._temp_dir = tempfile.mkdtemp()
         self._image_dir = os.path.join(self._temp_dir, "images")
-        self._host_out_dir = os.path.join(self._temp_dir, "host")
+        self._tool_dir = os.path.join(self._temp_dir, "tool")
         self._instance_dir = os.path.join(self._temp_dir, "instance")
         self._emulator_is_running = False
         self._mock_proc = mock.Mock()
@@ -37,10 +37,10 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
             lambda: None if self._emulator_is_running else 0)
 
         os.mkdir(self._image_dir)
-        os.mkdir(self._host_out_dir)
+        os.mkdir(self._tool_dir)
 
         # Create emulator binary
-        self._emulator_path = os.path.join(self._host_out_dir, "emulator",
+        self._emulator_path = os.path.join(self._tool_dir, "emulator",
                                            "emulator")
         self._CreateEmptyFile(self._emulator_path)
 
@@ -119,7 +119,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                                            "build.prop"))
 
         mock_environ = {"ANDROID_EMULATOR_PREBUILTS":
-                        os.path.join(self._host_out_dir, "emulator")}
+                        os.path.join(self._tool_dir, "emulator")}
 
         mock_avd_spec = mock.Mock(flavor="phone",
                                   boot_timeout_secs=100,
@@ -127,7 +127,8 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                                   autoconnect=True,
                                   local_instance_id=1,
                                   local_image_dir=self._image_dir,
-                                  local_system_image_dir=None)
+                                  local_system_image_dir=None,
+                                  local_tool_dirs=[])
 
         # Test deleting an existing instance.
         self._emulator_is_running = True
@@ -162,19 +163,18 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         self._CreateEmptyFile(os.path.join(self._image_dir, "system.img"))
         self._CreateEmptyFile(os.path.join(self._image_dir, "build.prop"))
 
-        mock_environ = {"ANDROID_HOST_OUT": self._host_out_dir}
-
         mock_avd_spec = mock.Mock(flavor="phone",
                                   boot_timeout_secs=None,
                                   gpu=None,
                                   autoconnect=True,
                                   local_instance_id=2,
                                   local_image_dir=self._image_dir,
-                                  local_system_image_dir=None)
+                                  local_system_image_dir=None,
+                                  local_tool_dirs=[self._tool_dir])
 
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
-                             mock_environ, clear=True):
+                             dict(), clear=True):
             self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
 
         mock_instance.assert_called_once_with(2, avd_flavor="phone")
@@ -197,14 +197,14 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                 "adb_tools.AdbTools")
     @mock.patch("acloud.create.goldfish_local_image_local_instance."
                 "subprocess.Popen")
-    @mock.patch("acloud.create.goldfish_local_image_local_instance."
-                "ota_tools.OtaTools")
+    @mock.patch("acloud.create.goldfish_local_image_local_instance.ota_tools")
     def testCreateAVDWithMixedImages(self, mock_ota_tools, mock_popen,
                                      mock_adb_tools, mock_utils,
                                      mock_instance):
         """Test _CreateAVD with mixed images in build environment."""
+        mock_ota_tools.FindOtaTools.return_value = self._tool_dir
         mock_ota_tools_object = mock.Mock()
-        mock_ota_tools.return_value = mock_ota_tools_object
+        mock_ota_tools.OtaTools.return_value = mock_ota_tools_object
         mock_ota_tools_object.MkCombinedImg.side_effect = (
             lambda out_path, _conf, _get_img: self._CreateEmptyFile(out_path))
 
@@ -216,8 +216,7 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                                            "build.prop"))
 
         mock_environ = {"ANDROID_EMULATOR_PREBUILTS":
-                        os.path.join(self._host_out_dir, "emulator"),
-                        "ANDROID_HOST_OUT": self._host_out_dir}
+                        os.path.join(self._tool_dir, "emulator")}
 
         mock_utils.GetBuildEnvironmentVariable.side_effect = (
             lambda key: mock_environ[key])
@@ -228,7 +227,8 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                                   autoconnect=False,
                                   local_instance_id=3,
                                   local_image_dir=self._image_dir,
-                                  local_system_image_dir="/unit/test")
+                                  local_system_image_dir="/unit/test",
+                                  local_tool_dirs=[])
 
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
@@ -239,7 +239,8 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
 
         self.assertTrue(os.path.isdir(self._instance_dir))
 
-        mock_ota_tools.assert_called_with(self._host_out_dir)
+        mock_ota_tools.FindOtaTools.assert_called_once()
+        mock_ota_tools.OtaTools.assert_called_with(self._tool_dir)
 
         mock_ota_tools_object.BuildSuperImage.assert_called_once()
         self.assertEqual(mock_ota_tools_object.BuildSuperImage.call_args[0][1],

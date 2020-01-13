@@ -17,12 +17,12 @@ r"""LocalImageLocalInstance class.
 
 Create class that is responsible for creating a local instance AVD with a
 local image. For launching multiple local instances under the same user,
-The cuttlefish tool requires the 3 variables. acloud user must set
-ANDROID_HOST_OUT. acloud sets the other 2 variables for each local instance.
-- Environment variable [ANDROID_HOST_OUT]: To locate the launch_cvd tool.
-- Environment variable [HOME]: To specify the temporary folder of launch_cvd.
-- Environment variable [CUTTLEFISH_INSTANCE]: To specify the instance id.
-- Argument -instance_dir: To specify the runtime folder of launch_cvd.
+The cuttlefish tool requires 3 variables:
+- ANDROID_HOST_OUT: To locate the launch_cvd tool.
+- HOME: To specify the temporary folder of launch_cvd.
+- CUTTLEFISH_INSTANCE: To specify the instance id.
+Acloud user must either set ANDROID_HOST_OUT or run acloud with --local-tool.
+Acloud sets the other 2 variables for each local instance.
 
 The adb port and vnc port of local instance will be decided according to
 instance id. The rule of adb port will be '6520 + [instance id] - 1' and the vnc
@@ -63,7 +63,6 @@ _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD[id:%d] is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out[y/N]: ")
-_ENV_ANDROID_HOST_OUT = "ANDROID_HOST_OUT"
 _ENV_CVD_HOME = "HOME"
 _ENV_CUTTLEFISH_INSTANCE = "CUTTLEFISH_INSTANCE"
 _LAUNCH_CVD_TIMEOUT_SECS = 120  # default timeout as 120 seconds
@@ -127,7 +126,24 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return result_report
 
     @staticmethod
-    def GetImageArtifactsPath(avd_spec):
+    def _FindCvdHostBinaries(search_paths):
+        """Return the directory that contains CVD host binaries."""
+        for search_path in search_paths:
+            if os.path.isfile(os.path.join(search_path, "bin",
+                                           constants.CMD_LAUNCH_CVD)):
+                return search_path
+
+        host_out_dir = os.environ.get(constants.ENV_ANDROID_HOST_OUT)
+        if (host_out_dir and
+                os.path.isfile(os.path.join(host_out_dir, "bin",
+                                            constants.CMD_LAUNCH_CVD))):
+            return host_out_dir
+
+        raise errors.GetCvdLocalHostPackageError(
+            "CVD host binaries are not found. Please run `make hosttar`, or "
+            "set --local-tool to an extracted CVD host package.")
+
+    def GetImageArtifactsPath(self, avd_spec):
         """Get image artifacts path.
 
         This method will check if launch_cvd is exist and return the tuple path
@@ -141,15 +157,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         Returns:
             Tuple of (local image file, host bins package) paths.
         """
-        # Check if launch_cvd is exist.
-        host_bins_path = os.environ.get(_ENV_ANDROID_HOST_OUT)
-        launch_cvd_path = os.path.join(host_bins_path, "bin",
-                                       constants.CMD_LAUNCH_CVD)
-        if not os.path.exists(launch_cvd_path):
-            raise errors.GetCvdLocalHostPackageError(
-                "No launch_cvd found. Please run \"m launch_cvd\" first")
-
-        return avd_spec.local_image_dir, host_bins_path
+        return (avd_spec.local_image_dir,
+                self._FindCvdHostBinaries(avd_spec.local_tool_dirs))
 
     @staticmethod
     def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, system_image_dir,
@@ -202,7 +211,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # launch_cvd assumes host bins are in $ANDROID_HOST_OUT, let's overwrite
         # it to wherever we're running launch_cvd since they could be in a
         # different dir (e.g. downloaded image).
-        os.environ[_ENV_ANDROID_HOST_OUT] = host_bins_path
+        os.environ[constants.ENV_ANDROID_HOST_OUT] = host_bins_path
         # Check if the instance with same id is running.
         if self.IsLocalCVDRunning(local_instance_id):
             if no_prompts or utils.GetUserAnswerYes(_CONFIRM_RELAUNCH %
