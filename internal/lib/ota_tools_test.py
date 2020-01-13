@@ -120,6 +120,27 @@ class OtaToolsTest(unittest.TestCase):
         popen.poll.return_value = None
         return popen
 
+    def testFindOtaTools(self):
+        """Test FindOtaTools."""
+        # CVD host package contains lpmake but not all tools.
+        self._CreateBinary("lpmake")
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             {"ANDROID_HOST_OUT": self._temp_dir}, clear=True):
+            with self.assertRaises(errors.CheckPathError):
+                ota_tools.FindOtaTools([self._temp_dir])
+
+        # The function identifies OTA tool directory by build_super_image.
+        self._CreateBinary("build_super_image")
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             dict(), clear=True):
+            self.assertEqual(ota_tools.FindOtaTools([self._temp_dir]),
+                             self._temp_dir)
+
+        # ANDROID_HOST_OUT contains OTA tools in build environment.
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             {"ANDROID_HOST_OUT": self._temp_dir}, clear=True):
+            self.assertEqual(ota_tools.FindOtaTools([]), self._temp_dir)
+
     # pylint: disable=broad-except
     def _TestBuildSuperImage(self, mock_popen, mock_popen_object,
                              expected_error=None):

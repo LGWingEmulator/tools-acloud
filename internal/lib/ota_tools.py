@@ -19,8 +19,8 @@ import stat
 import subprocess
 import tempfile
 
-
 from acloud import errors
+from acloud.internal import constants
 from acloud.internal.lib import utils
 
 logger = logging.getLogger(__name__)
@@ -37,9 +37,36 @@ _BUILD_SUPER_IMAGE_TIMEOUT_SECS = 30
 _AVBTOOL_TIMEOUT_SECS = 30
 _MK_COMBINED_IMG_TIMEOUT_SECS = 180
 
-_MISSING_OTA_TOOLS_MSG = ("%(tool_name)s does not exist. Try `make otatools` "
-                          "in build environment, or setting ANDROID_HOST_OUT "
-                          "to an extracted otatools.zip.")
+_MISSING_OTA_TOOLS_MSG = ("%(tool_name)s is not found. Run `make otatools` "
+                          "in build environment, or set --local-tool to an "
+                          "extracted otatools.zip.")
+
+
+def FindOtaTools(search_paths):
+    """Find OTA tools in the search paths and in build environment.
+
+    Args:
+        search_paths: List of paths, the directories to search for OTA tools.
+
+    Returns:
+        The directory containing OTA tools.
+
+    Raises:
+        errors.CheckPathError if OTA tools are not found.
+    """
+    for search_path in search_paths:
+        if os.path.isfile(os.path.join(search_path, _BIN_DIR_NAME,
+                                       _BUILD_SUPER_IMAGE)):
+            return search_path
+
+    host_out_dir = os.environ.get(constants.ENV_ANDROID_HOST_OUT)
+    if (host_out_dir and
+            os.path.isfile(os.path.join(host_out_dir, _BIN_DIR_NAME,
+                                        _BUILD_SUPER_IMAGE))):
+        return host_out_dir
+
+    raise errors.CheckPathError(_MISSING_OTA_TOOLS_MSG %
+                                {"tool_name": "OTA tool directory"})
 
 
 class OtaTools(object):

@@ -320,6 +320,16 @@ def GetCreateArgParser(subparser):
         "images in $ANDROID_PRODUCT_OUT if no args value is provided. "
         "e.g., --local-system-image or --local-system-image /path/to/dir")
     create_parser.add_argument(
+        "--local-tool",
+        type=str,
+        dest="local_tool",
+        action="append",
+        default=[],
+        required=False,
+        help="Use the tools in the specified directory to create local "
+        "instances. The directory structure follows $ANDROID_HOST_OUT or "
+        "$ANDROID_EMULATOR_PREBUILTS.")
+    create_parser.add_argument(
         "--image-download-dir",
         type=str,
         dest="image_download_dir",
@@ -451,6 +461,11 @@ def _VerifyLocalArgs(args):
         raise errors.UnsupportedLocalInstanceId("Local instance id can not be "
                                                 "less than 1. Actually passed:%d"
                                                 % args.local_instance)
+
+    for tool_dir in args.local_tool:
+        if not os.path.exists(tool_dir):
+            raise errors.CheckPathError(
+                "Specified path doesn't exist: %s" % tool_dir)
 
 
 def _VerifyHostArgs(args):
