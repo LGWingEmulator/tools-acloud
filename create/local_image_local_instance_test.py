@@ -21,6 +21,7 @@ import subprocess
 import unittest
 import mock
 
+from acloud import errors
 from acloud.create import local_image_local_instance
 from acloud.list import instance
 from acloud.internal import constants
@@ -45,6 +46,33 @@ EOF"""
         """Initialize new LocalImageLocalInstance."""
         super(LocalImageLocalInstanceTest, self).setUp()
         self.local_image_local_instance = local_image_local_instance.LocalImageLocalInstance()
+
+    # pylint: disable=protected-access
+    @mock.patch("acloud.create.local_image_local_instance.os.path.isfile")
+    def testFindCvdHostBinaries(self, mock_isfile):
+        """Test FindCvdHostBinaries."""
+        cvd_host_dir = "/unit/test"
+        mock_isfile.return_value = None
+
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             {"ANDROID_HOST_OUT": cvd_host_dir}, clear=True):
+            with self.assertRaises(errors.GetCvdLocalHostPackageError):
+                self.local_image_local_instance._FindCvdHostBinaries(
+                    [cvd_host_dir])
+
+        mock_isfile.side_effect = (
+            lambda path: path == "/unit/test/bin/launch_cvd")
+
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             {"ANDROID_HOST_OUT": cvd_host_dir}, clear=True):
+            path = self.local_image_local_instance._FindCvdHostBinaries([])
+            self.assertEqual(path, cvd_host_dir)
+
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             dict(), clear=True):
+            path = self.local_image_local_instance._FindCvdHostBinaries(
+                [cvd_host_dir])
+            self.assertEqual(path, cvd_host_dir)
 
     # pylint: disable=protected-access
     @mock.patch.object(instance, "GetLocalInstanceRuntimeDir")

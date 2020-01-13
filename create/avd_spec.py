@@ -111,6 +111,7 @@ class AVDSpec(object):
         self._local_image_dir = None
         self._local_image_artifact = None
         self._local_system_image_dir = None
+        self._local_tool_dirs = None
         self._image_download_dir = None
         self._num_of_instances = None
         self._no_pull_log = None
@@ -295,6 +296,7 @@ class AVDSpec(object):
         self._host_user = args.host_user
         self._host_ssh_private_key_path = args.host_ssh_private_key_path
         self._local_instance_id = args.local_instance
+        self._local_tool_dirs = args.local_tool
         self._num_of_instances = args.num
         self._no_pull_log = args.no_pull_log
         self._serial_log_file = args.serial_log_file
@@ -633,6 +635,11 @@ class AVDSpec(object):
     def local_system_image_dir(self):
         """Return local system image dir."""
         return self._local_system_image_dir
+
+    @property
+    def local_tool_dirs(self):
+        """Return a list of local tool directories."""
+        return self._local_tool_dirs
 
     @property
     def avd_type(self):
