@@ -28,7 +28,6 @@ The details include:
 
 import collections
 import datetime
-import json
 import logging
 import os
 import re
@@ -39,8 +38,8 @@ import tempfile
 import dateutil.parser
 import dateutil.tz
 
-from acloud import errors
 from acloud.internal import constants
+from acloud.internal.lib import cvd_runtime_config
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
 
@@ -102,18 +101,11 @@ def GetCuttlefishRuntimeConfig(local_instance_id):
         local_instance_id: Integer of instance id.
 
     Returns:
-        A dictionary that parsed from cuttlefish runtime config.
-
-    Raises:
-        errors.ConfigError: if file not found or config load failed.
+        A CvdRuntimeConfig instance.
     """
     runtime_cf_config_path = os.path.join(GetLocalInstanceRuntimeDir(
         local_instance_id), constants.CUTTLEFISH_CONFIG_FILE)
-    if not os.path.exists(runtime_cf_config_path):
-        raise errors.ConfigError(
-            "file does not exist: %s" % runtime_cf_config_path)
-    with open(runtime_cf_config_path, "r") as cf_config:
-        return json.load(cf_config)
+    return cvd_runtime_config.CvdRuntimeConfig(runtime_cf_config_path)
 
 
 def GetLocalPortsbyInsId(local_instance_id):
@@ -297,42 +289,38 @@ class Instance(object):
 class LocalInstance(Instance):
     """Class to store data of local cuttlefish instance."""
 
-    def __init__(self, local_instance_id, x_res, y_res, dpi, create_time,
-                 ins_dir=None):
+    def __init__(self, local_instance_id, cf_runtime_cfg):
         """Initialize a localInstance object.
 
         Args:
             local_instance_id: Integer of instance id.
-            x_res: Integer of x dimension.
-            y_res: Integer of y dimension.
-            dpi: Integer of dpi.
-            date_str: String of create time.
-            ins_dir: String, path of instance idr.
+            cf_runtime_cfg: A CvdRuntimeConfig instance.
         """
-        display = _DISPLAY_STRING % {"x_res": x_res, "y_res": y_res,
-                                     "dpi": dpi}
-        elapsed_time = _GetElapsedTime(create_time) if create_time else None
+        display = _DISPLAY_STRING % {"x_res": cf_runtime_cfg.x_res,
+                                     "y_res": cf_runtime_cfg.y_res,
+                                     "dpi": cf_runtime_cfg.dpi}
+        # TODO(143063678), there's no createtime info in
+        # cuttlefish_config.json so far.
         name = "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
-        local_ports = GetLocalPortsbyInsId(local_instance_id)
         fullname = (_FULL_NAME_STRING %
-                    {"device_serial": "127.0.0.1:%d" % local_ports.adb_port,
+                    {"device_serial": "127.0.0.1:%d" % cf_runtime_cfg.adb_port,
                      "instance_name": name,
-                     "elapsed_time": elapsed_time})
-        adb_device = AdbTools(local_ports.adb_port)
+                     "elapsed_time": None})
+        adb_device = AdbTools(cf_runtime_cfg.adb_port)
         device_information = None
         if adb_device.IsAdbConnected():
             device_information = adb_device.device_information
 
         super(LocalInstance, self).__init__(
             name=name, fullname=fullname, display=display, ip="127.0.0.1",
-            status=constants.INS_STATUS_RUNNING, adb_port=local_ports.adb_port,
-            vnc_port=local_ports.vnc_port, createtime=create_time,
-            elapsed_time=elapsed_time, avd_type=constants.TYPE_CF,
+            status=constants.INS_STATUS_RUNNING,
+            adb_port=cf_runtime_cfg.adb_port, vnc_port=cf_runtime_cfg.vnc_port,
+            createtime=None, elapsed_time=None, avd_type=constants.TYPE_CF,
             is_local=True, device_information=device_information,
             zone=_LOCAL_ZONE)
 
         # LocalInstance class properties
-        self._instance_dir = ins_dir
+        self._instance_dir = cf_runtime_cfg.instance_dir
 
     @property
     def instance_dir(self):

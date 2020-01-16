@@ -64,22 +64,24 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
     def testCreateLocalInstance(self):
         """"Test get local instance info from launch_cvd process."""
         self.Patch(subprocess, "check_output", return_value=self.PS_LAUNCH_CVD)
-        self.Patch(instance, "_GetElapsedTime", return_value="fake_time")
-        local_instance = instance.LocalInstance(2,
-                                                "1080",
-                                                "1920",
-                                                "480",
-                                                "Sat Nov 10 21:55:10 2018",
-                                                "fake_instance_dir")
+        cf_config = mock.MagicMock(
+            x_res=1080,
+            y_res=1920,
+            dpi=480,
+            instance_dir="fake_instance_dir",
+            adb_port=6521,
+            vnc_port=6445
+        )
+
+        local_instance = instance.LocalInstance(2, cf_config)
 
         self.assertEqual(constants.LOCAL_INS_NAME + "-2", local_instance.name)
         self.assertEqual(True, local_instance.islocal)
         self.assertEqual("1080x1920 (480)", local_instance.display)
-        self.assertEqual("Sat Nov 10 21:55:10 2018", local_instance.createtime)
         expected_full_name = ("device serial: 127.0.0.1:%s (%s) elapsed time: %s"
                               % ("6521",
                                  constants.LOCAL_INS_NAME + "-2",
-                                 "fake_time"))
+                                 "None"))
         self.assertEqual(expected_full_name, local_instance.fullname)
         self.assertEqual(6521, local_instance.forwarding_adb_port)
         self.assertEqual(6445, local_instance.forwarding_vnc_port)
@@ -299,7 +301,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         mock_open = mock.mock_open(read_data=fake_runtime_cf_config)
         with mock.patch.object(six.moves.builtins, "open", mock_open):
             self.assertEqual({u'y_res': 1280, u'x_res': 720, u'x_display': u':20'},
-                             instance.GetCuttlefishRuntimeConfig(1))
+                             instance.GetCuttlefishRuntimeConfig(1)._config_dict)
 
     def testGetZoneName(self):
         """Test GetZoneName."""
