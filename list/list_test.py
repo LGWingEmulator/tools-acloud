@@ -121,7 +121,14 @@ class ListTest(driver_test_lib.BaseDriverTest):
         """test PrintInstancesDetails."""
         # Test instance Summary should be called if verbose
         self.Patch(instance.Instance, "Summary")
-        ins = instance.LocalInstance(1, 728, 728, 240, None, "fake_dir")
+        cf_config = mock.MagicMock(
+            x_res=728,
+            y_res=728,
+            dpi=240,
+            instance_dir="fake_dir"
+        )
+
+        ins = instance.LocalInstance(1, cf_config)
         list_instance.PrintInstancesDetails([ins], verbose=True)
         instance.Instance.Summary.assert_called_once()
 

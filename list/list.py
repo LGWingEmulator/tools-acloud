@@ -148,25 +148,13 @@ def _GetLocalCuttlefishInstances():
     local_cvd_ids = GetActiveCVDIds()
     local_instance_list = []
     for cvd_id in local_cvd_ids:
-        ins_dir = x_res = y_res = dpi = cf_runtime_config_dict = None
         try:
-            cf_runtime_config_dict = instance.GetCuttlefishRuntimeConfig(cvd_id)
+            cf_runtime_cfg = instance.GetCuttlefishRuntimeConfig(cvd_id)
+            local_instance_list.append(
+                instance.LocalInstance(cvd_id, cf_runtime_cfg))
         except errors.ConfigError:
             logger.error("Instance[id:%d] dir not found!", cvd_id)
 
-        if cf_runtime_config_dict:
-            ins_dir = instance.GetLocalInstanceRuntimeDir(cvd_id)
-            x_res = cf_runtime_config_dict["x_res"]
-            y_res = cf_runtime_config_dict["y_res"]
-            dpi = cf_runtime_config_dict["dpi"]
-        # TODO(143063678), there's no createtime info in
-        # cuttlefish_config.json so far.
-        local_instance_list.append(instance.LocalInstance(cvd_id,
-                                                          x_res,
-                                                          y_res,
-                                                          dpi,
-                                                          None,
-                                                          ins_dir))
     return local_instance_list
 
 
