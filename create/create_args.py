@@ -53,10 +53,10 @@ def AddCommonCreateArgs(parser):
         "--autoconnect",
         type=str,
         nargs="?",
-        const=True,
+        const=constants.INS_KEY_VNC,
         dest="autoconnect",
         required=False,
-        choices=[True, "adb"],
+        choices=[constants.INS_KEY_VNC, constants.INS_KEY_ADB],
         help="For each remote instance, automatically create 2 ssh tunnels "
              "forwarding both adb & vnc, and then add the device to adb. "
              "For local cuttlefish instance, create a vnc connection. "
@@ -69,7 +69,7 @@ def AddCommonCreateArgs(parser):
         required=False,
         help="Will not automatically create ssh tunnels forwarding adb & vnc "
              "when instance created.")
-    parser.set_defaults(autoconnect=True)
+    parser.set_defaults(autoconnect=constants.INS_KEY_VNC)
     parser.add_argument(
         "--unlock",
         action="store_true",
