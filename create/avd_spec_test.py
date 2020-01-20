@@ -355,7 +355,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_HOST)
 
         # Test avd_spec.autoconnect and avd_spec.connect_vnc
-        self.args.autoconnect = True
+        self.args.autoconnect = constants.INS_KEY_VNC
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, True)
         self.assertEqual(self.AvdSpec.connect_vnc, True)
@@ -365,7 +365,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(self.AvdSpec.autoconnect, False)
         self.assertEqual(self.AvdSpec.connect_vnc, False)
 
-        self.args.autoconnect = "adb"
+        self.args.autoconnect = constants.INS_KEY_ADB
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, True)
         self.assertEqual(self.AvdSpec.connect_vnc, False)
