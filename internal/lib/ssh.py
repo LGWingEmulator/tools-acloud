@@ -16,6 +16,7 @@ from __future__ import print_function
 import logging
 
 import subprocess
+import sys
 import threading
 
 from acloud import errors
@@ -85,8 +86,8 @@ def _SshLogOutput(cmd, timeout=None, show_output=False):
         timer.start()
     stdout, _ = process.communicate()
     if stdout:
-        if show_output:
-            print(stdout.strip())
+        if show_output or process.returncode != 0:
+            print(stdout.strip(), file=sys.stderr)
         else:
             # fetch_cvd and launch_cvd can be noisy, so left at debug
             logger.debug(stdout.strip())
