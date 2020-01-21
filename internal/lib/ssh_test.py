@@ -48,8 +48,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
 
     def testSSHExecuteWithRetry(self):
         """test SSHExecuteWithRetry method."""
-        self.Patch(subprocess, "check_call",
-                   side_effect=errors.DeviceConnectionError(
+        self.Patch(subprocess, "Popen",
+                   side_effect=subprocess.CalledProcessError(
                        None, "ssh command fail."))
         self.assertRaises(subprocess.CalledProcessError,
                           ssh.ShellCmdWithRetry,
