@@ -132,11 +132,9 @@ def PackageInstalled(pkg_name, compare_version=True):
                      installed_ver,
                      candidate_ver)
         return False
-    # installed package is old and we care about the version.
+    # TODO(148116924):Setup process should ask user to update package if the
+    # minimax required version is specified.
     if compare_version and installed_ver != candidate_ver:
-        logger.debug("Package %s version at %s, expected %s",
-                     pkg_name,
-                     installed_ver,
-                     candidate_ver)
-        return False
+        logger.warning("Package %s version at %s, expected %s",
+                       pkg_name, installed_ver, candidate_ver)
     return True
