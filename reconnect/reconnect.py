@@ -22,7 +22,6 @@ Reconnect will:
 import re
 
 from acloud import errors
-from acloud.delete import delete
 from acloud.internal import constants
 from acloud.internal.lib import auth
 from acloud.internal.lib import android_compute_client
@@ -51,7 +50,7 @@ def StartVnc(vnc_port, display):
     vnc_started_pattern = _VNC_STARTED_PATTERN % {"vnc_port": vnc_port}
     if not utils.IsCommandRunning(vnc_started_pattern):
         #clean old disconnect ssvnc viewer.
-        delete.CleanupSSVncviewer(vnc_port)
+        utils.CleanupSSVncviewer(vnc_port)
 
         match = _RE_DISPLAY.match(display)
         if match:
@@ -110,9 +109,9 @@ def ReconnectInstance(ssh_private_key_path,
                                     "unknown avd type: %s" %
                                     (instance.name, instance.avd_type))
 
-    adb_cmd = AdbTools(instance.forwarding_adb_port)
-    vnc_port = instance.forwarding_vnc_port
-    adb_port = instance.forwarding_adb_port
+    adb_cmd = AdbTools(instance.adb_port)
+    vnc_port = instance.vnc_port
+    adb_port = instance.adb_port
     # ssh tunnel is up but device is disconnected on adb
     if instance.ssh_tunnel_is_connected and not adb_cmd.IsAdbConnectionAlive():
         adb_cmd.DisconnectAdb()

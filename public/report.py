@@ -150,7 +150,7 @@ class Report(object):
                 "requested to update to a status with lower severity %s, ignored.",
                 self.status, status)
 
-    def AddDevice(self, instance_name, ip_address, adb_port, vnc_port=None,
+    def AddDevice(self, instance_name, ip_address, adb_port, vnc_port,
                   key="devices"):
         """Add a record of a device.
 
@@ -161,9 +161,13 @@ class Report(object):
             vnc_port: An integer.
             key: A string, the data entry where the record is added.
         """
-        device = {constants.INSTANCE_NAME: instance_name,
-                  constants.IP: "%s:%d" % (ip_address, adb_port),
-                  constants.ADB_PORT: adb_port}
+        device = {constants.INSTANCE_NAME: instance_name}
+        if adb_port:
+            device[constants.ADB_PORT] = adb_port
+            device[constants.IP] = "%s:%d" % (ip_address, adb_port)
+        else:
+            device[constants.IP] = ip_address
+
         if vnc_port:
             device[constants.VNC_PORT] = vnc_port
         self.AddData(key=key, value=device)
