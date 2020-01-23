@@ -35,7 +35,6 @@ from acloud.public import config
 logger = logging.getLogger(__name__)
 
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
-_RE_LOCAL_INSTANCE_ID = re.compile(r".+instance_home_(?P<ins_id>\d+).+")
 _RE_LOCAL_CVD_PORT = re.compile(r"^127\.0\.0\.1:65(?P<cvd_port_suffix>\d{2})\s+")
 
 
@@ -170,27 +169,6 @@ def GetLocalInstances():
 
     return (_GetLocalCuttlefishInstances() +
             instance.LocalGoldfishInstance.GetExistingInstances())
-
-
-def _GetIdFromInstanceDirStr(instance_dir):
-    """Look for instance id from the path of instance dir.
-
-    Args:
-        instance_dir: String, path of instance_dir.
-
-    Returns:
-        Integer of instance id.
-
-    Raises:
-        errors.InvalidInstanceDir: Invalid instance idr.
-    """
-    match = _RE_LOCAL_INSTANCE_ID.match(instance_dir)
-    if match:
-        return int(match.group("ins_id"))
-
-    raise errors.InvalidInstanceDir("Instance dir is invalid:%s. local AVD "
-                                    "launched outside acloud is not supported"
-                                    % instance_dir)
 
 
 def GetInstances(cfg):

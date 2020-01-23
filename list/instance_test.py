@@ -102,7 +102,7 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(inst.console_port, 5554)
         self.assertEqual(inst.device_serial, "emulator-5554")
         self.assertEqual(inst.instance_dir,
-                         "/unit/test/acloud_gf_temp/instance-1")
+                         "/unit/test/acloud_gf_temp/local-goldfish-instance-1")
 
     @mock.patch("acloud.list.instance.open",
                 mock.mock_open(read_data="test createtime"))
@@ -119,25 +119,30 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         mock_get_elapsed_time.return_value = datetime.timedelta(hours=10)
         mock_adb_tools.return_value = mock.Mock(device_information={})
         mock_tempfile.gettempdir.return_value = "/unit/test"
-        mock_isdir.side_effect = lambda path: (
-            path == "/unit/test/acloud_gf_temp")
+        acloud_gf_temp_path = "/unit/test/acloud_gf_temp"
+        subdir_names = (
+            "local-goldfish-instance-1",
+            "local-goldfish-instance-2",
+            "local-goldfish-instance-3")
+        timestamp_paths = (
+            "/unit/test/acloud_gf_temp/local-goldfish-instance-1/"
+            "creation_timestamp.txt",
+            "/unit/test/acloud_gf_temp/local-goldfish-instance-2/"
+            "creation_timestamp.txt",
+            "/unit/test/acloud_gf_temp/local-goldfish-instance-3/"
+            "creation_timestamp.txt")
+        mock_isdir.side_effect = lambda path: path == acloud_gf_temp_path
         mock_listdir.side_effect = lambda path: (
-            ["instance-1", "instance-2", "instance-3"] if
-            path == "/unit/test/acloud_gf_temp" else [])
-        mock_isfile.side_effect = lambda path: path in (
-            "/unit/test/acloud_gf_temp/instance-1/creation_timestamp.txt",
-            "/unit/test/acloud_gf_temp/instance-3/creation_timestamp.txt")
+            subdir_names if path == acloud_gf_temp_path else [])
+        mock_isfile.side_effect = lambda path: (
+            path in (timestamp_paths[0], timestamp_paths[2]))
 
         instances = instance.LocalGoldfishInstance.GetExistingInstances()
 
-        mock_isdir.assert_called_with("/unit/test/acloud_gf_temp")
-        mock_listdir.assert_called_with("/unit/test/acloud_gf_temp")
-        mock_isfile.assert_any_call(
-            "/unit/test/acloud_gf_temp/instance-1/creation_timestamp.txt")
-        mock_isfile.assert_any_call(
-            "/unit/test/acloud_gf_temp/instance-2/creation_timestamp.txt")
-        mock_isfile.assert_any_call(
-            "/unit/test/acloud_gf_temp/instance-3/creation_timestamp.txt")
+        mock_isdir.assert_called_with(acloud_gf_temp_path)
+        mock_listdir.assert_called_with(acloud_gf_temp_path)
+        for timestamp_path in timestamp_paths:
+            mock_isfile.assert_any_call(timestamp_path)
         self.assertEqual(len(instances), 2)
         self.assertEqual(instances[0].console_port, 5554)
         self.assertEqual(instances[0].createtime, "test createtime")
