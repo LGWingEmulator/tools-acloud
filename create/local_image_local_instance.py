@@ -91,7 +91,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         """
         # Running instances on local is not supported on all OS.
         if not utils.IsSupportedPlatform(print_warning=True):
-            result_report = report.Report(constants.LOCAL_INS_NAME)
+            result_report = report.Report(command="create")
             result_report.SetStatus(report.Status.FAIL)
             return result_report
 
@@ -104,20 +104,25 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        avd_spec.hw_property,
                                        local_image_path,
                                        avd_spec.local_instance_id)
+
+        result_report = report.Report(command="create")
+        instance_name = instance.GetLocalInstanceName(
+            avd_spec.local_instance_id)
+        local_ports = instance.GetLocalPortsbyInsId(avd_spec.local_instance_id)
         try:
             self.CheckLaunchCVD(
                 cmd, host_bins_path, avd_spec.local_instance_id, local_image_path,
                 no_prompts, avd_spec.boot_timeout_secs or _LAUNCH_CVD_TIMEOUT_SECS)
         except errors.LaunchCVDFail as launch_error:
-            raise launch_error
+            result_report.SetStatus(report.Status.BOOT_FAIL)
+            result_report.AddDeviceBootFailure(
+                instance_name, constants.LOCALHOST, local_ports.adb_port,
+                local_ports.vnc_port, str(launch_error))
+            return result_report
 
-        result_report = report.Report(constants.LOCAL_INS_NAME)
         result_report.SetStatus(report.Status.SUCCESS)
-        local_ports = instance.GetLocalPortsbyInsId(avd_spec.local_instance_id)
-        result_report.AddData(
-            key="devices",
-            value={constants.ADB_PORT: local_ports.adb_port,
-                   constants.VNC_PORT: local_ports.vnc_port})
+        result_report.AddDevice(instance_name, constants.LOCALHOST,
+                                local_ports.adb_port, local_ports.vnc_port)
         # Launch vnc client if we're auto-connecting.
         if avd_spec.connect_vnc:
             utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
