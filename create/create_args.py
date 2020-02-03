@@ -197,6 +197,15 @@ def AddCommonCreateArgs(parser):
         required=False,
         default=None,
         help="Disable auto download logs when AVD booting up failed.")
+    # TODO(147335651): Add gpu in user config.
+    # TODO(147335651): Support "--gpu" without giving any value.
+    parser.add_argument(
+        "--gpu",
+        type=str,
+        dest="gpu",
+        required=False,
+        default=None,
+        help="GPU accelerator to use if any. e.g. nvidia-tesla-k80.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
@@ -394,14 +403,6 @@ def GetCreateArgParser(subparser):
     # Arguments for goldfish type.
     # TODO(b/118439885): Verify args that are used in wrong avd_type.
     # e.g. $acloud create --avd-type cuttlefish --emulator-build-id
-    create_parser.add_argument(
-        "--gpu",
-        type=str,
-        dest="gpu",
-        required=False,
-        default=None,
-        help="'goldfish only' GPU accelerator to use if any. "
-        "e.g. nvidia-tesla-k80, omit to use swiftshader")
     create_parser.add_argument(
         "--emulator-build-id",
         type=int,

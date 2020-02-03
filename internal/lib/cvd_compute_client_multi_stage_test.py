@@ -59,6 +59,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     BOOT_DISK_SIZE_GB = 10
     LAUNCH_ARGS = "--setupwizard_mode=REQUIRED"
     EXTRA_SCOPES = ["scope1"]
+    GPU = "fake-gpu"
 
     def _GetFakeConfig(self):
         """Create a fake configuration object.
@@ -91,7 +92,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.Patch(Ssh, "WaitForSsh")
         self.Patch(Ssh, "GetBaseCmd")
         self.cvd_compute_client_multi_stage = cvd_compute_client_multi_stage.CvdComputeClient(
-            self._GetFakeConfig(), mock.MagicMock())
+            self._GetFakeConfig(), mock.MagicMock(), gpu=self.GPU)
         self.args = mock.MagicMock()
         self.args.local_image = None
         self.args.config_file = ""
@@ -180,7 +181,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            gpu=self.GPU)
 
         mock_check_img.return_value = True
         #test use local image in the remote instance.
@@ -212,7 +214,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             machine_type=self.MACHINE_TYPE,
             network=self.NETWORK,
             zone=self.ZONE,
-            extra_scopes=self.EXTRA_SCOPES)
+            extra_scopes=self.EXTRA_SCOPES,
+            gpu=self.GPU)
 
 
 if __name__ == "__main__":

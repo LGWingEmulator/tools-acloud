@@ -92,7 +92,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                  oauth2_credentials,
                  boot_timeout_secs=None,
                  ins_timeout_secs=None,
-                 report_internal_ip=None):
+                 report_internal_ip=None,
+                 gpu=None):
         """Initialize.
 
         Args:
@@ -104,6 +105,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                               instance ready.
             report_internal_ip: Boolean to report the internal ip instead of
                                 external ip.
+            gpu: String, GPU to attach to the device.
         """
         super(CvdComputeClient, self).__init__(acloud_config, oauth2_credentials)
 
@@ -114,6 +116,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._boot_timeout_secs = boot_timeout_secs
         self._ins_timeout_secs = ins_timeout_secs
         self._report_internal_ip = report_internal_ip
+        self._gpu = gpu
         # Store all failures result when creating one or multiple instances.
         self._all_failures = dict()
         self._extra_args_ssh_tunnel = acloud_config.extra_args_ssh_tunnel
@@ -443,6 +446,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             machine_type=self._machine_type,
             network=self._network,
             zone=self._zone,
+            gpu=self._gpu,
             extra_scopes=extra_scopes)
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=instance, zone=self._zone)

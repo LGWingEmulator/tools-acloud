@@ -62,7 +62,8 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             acloud_config=avd_spec.cfg,
             oauth2_credentials=self.credentials,
             ins_timeout_secs=avd_spec.ins_timeout_secs,
-            report_internal_ip=avd_spec.report_internal_ip)
+            report_internal_ip=avd_spec.report_internal_ip,
+            gpu=avd_spec.gpu)
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
         self._ssh = None
 
