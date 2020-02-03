@@ -162,9 +162,6 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             contain required files.
             errors.CreateError if an instance exists and cannot be deleted.
             errors.CheckPathError if OTA tools are not found.
-            errors.DeviceBootTimeoutError if the emulator does not boot within
-            timeout.
-            errors.SubprocessFail if any command fails.
         """
         if not utils.IsSupportedPlatform(print_warning=True):
             result_report = report.Report(command="create")
@@ -210,16 +207,22 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         boot_timeout_secs = (avd_spec.boot_timeout_secs or
                              _DEFAULT_EMULATOR_TIMEOUT_SECS)
-        self._WaitForEmulatorToStart(adb, proc, boot_timeout_secs)
-
-        inst.WriteCreationTimestamp()
-
         result_report = report.Report(command="create")
-        result_report.SetStatus(report.Status.SUCCESS)
-        # Emulator has no VNC port.
-        result_report.AddData(
-            key="devices",
-            value={constants.ADB_PORT: inst.adb_port})
+        try:
+            self._WaitForEmulatorToStart(adb, proc, boot_timeout_secs)
+        except (errors.DeviceBootTimeoutError, errors.SubprocessFail) as e:
+            result_report.SetStatus(report.Status.BOOT_FAIL)
+            result_report.AddDeviceBootFailure(inst.name, inst.ip,
+                                               inst.adb_port, vnc_port=None,
+                                               error=str(e))
+        else:
+            result_report.SetStatus(report.Status.SUCCESS)
+            result_report.AddDevice(inst.name, inst.ip, inst.adb_port,
+                                    vnc_port=None)
+
+        if proc.poll() is None:
+            inst.WriteCreationTimestamp()
+
         return result_report
 
     @staticmethod
