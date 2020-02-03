@@ -19,11 +19,20 @@ import tempfile
 import unittest
 import mock
 
+from acloud import errors
 import acloud.create.goldfish_local_image_local_instance as instance_module
 
 
 class GoldfishLocalImageLocalInstance(unittest.TestCase):
     """Test GoldfishLocalImageLocalInstance methods."""
+
+    _EXPECTED_DEVICES_IN_REPORT = [
+        {
+            "instance_name": "local-goldfish-instance",
+            "ip": "127.0.0.1:5555",
+            "adb_port": 5555
+        }
+    ]
 
     def setUp(self):
         self._goldfish = instance_module.GoldfishLocalImageLocalInstance()
@@ -77,10 +86,14 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
                     mock_instance):
         mock_utils.IsSupportedPlatform.return_value = True
 
-        mock_instance.return_value = mock.Mock(adb_port=5555,
-                                               console_port="5554",
-                                               device_serial="unittest",
-                                               instance_dir=self._instance_dir)
+        mock_instance_object = mock.Mock(ip="127.0.0.1",
+                                         adb_port=5555,
+                                         console_port="5554",
+                                         device_serial="unittest",
+                                         instance_dir=self._instance_dir)
+        # name is a positional argument of Mock().
+        mock_instance_object.name = "local-goldfish-instance"
+        mock_instance.return_value = mock_instance_object
 
         mock_adb_tools_object = mock.Mock()
         mock_adb_tools_object.EmuCommand.side_effect = self._MockEmuCommand
@@ -136,7 +149,10 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
                              mock_environ, clear=True):
-            self._goldfish._CreateAVD(mock_avd_spec, no_prompts=False)
+            report = self._goldfish._CreateAVD(mock_avd_spec, no_prompts=False)
+
+        self.assertEqual(report.data.get("devices"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
 
         mock_instance.assert_called_once_with(1, avd_flavor="phone")
 
@@ -175,7 +191,10 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
                              dict(), clear=True):
-            self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
+            report = self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
+
+        self.assertEqual(report.data.get("devices"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
 
         mock_instance.assert_called_once_with(2, avd_flavor="phone")
 
@@ -188,6 +207,42 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(
             os.path.join(self._image_dir, "system", "build.prop")))
+
+    # pylint: disable=protected-access
+    @mock.patch("acloud.create.goldfish_local_image_local_instance.instance."
+                "LocalGoldfishInstance")
+    @mock.patch("acloud.create.goldfish_local_image_local_instance.utils")
+    @mock.patch("acloud.create.goldfish_local_image_local_instance."
+                "adb_tools.AdbTools")
+    @mock.patch("acloud.create.goldfish_local_image_local_instance."
+                "subprocess.Popen")
+    def testCreateAVDTimeout(self, mock_popen, mock_adb_tools,
+                             mock_utils, mock_instance):
+        """Test _CreateAVD with SDK repository files and timeout error."""
+        self._SetUpMocks(mock_popen, mock_adb_tools, mock_utils, mock_instance)
+        mock_utils.PollAndWait.side_effect = errors.DeviceBootTimeoutError(
+            "timeout")
+
+        self._CreateEmptyFile(os.path.join(self._image_dir, "system.img"))
+        self._CreateEmptyFile(os.path.join(self._image_dir, "build.prop"))
+
+        mock_avd_spec = mock.Mock(flavor="phone",
+                                  boot_timeout_secs=None,
+                                  gpu=None,
+                                  autoconnect=True,
+                                  local_instance_id=2,
+                                  local_image_dir=self._image_dir,
+                                  local_system_image_dir=None,
+                                  local_tool_dirs=[self._tool_dir])
+
+        with mock.patch.dict("acloud.create."
+                             "goldfish_local_image_local_instance.os.environ",
+                             dict(), clear=True):
+            report = self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
+
+        self.assertEqual(report.data.get("devices_failing_boot"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
+        self.assertEqual(report.errors, ["timeout"])
 
     # pylint: disable=protected-access
     @mock.patch("acloud.create.goldfish_local_image_local_instance.instance."
@@ -233,7 +288,10 @@ class GoldfishLocalImageLocalInstance(unittest.TestCase):
         with mock.patch.dict("acloud.create."
                              "goldfish_local_image_local_instance.os.environ",
                              mock_environ, clear=True):
-            self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
+            report = self._goldfish._CreateAVD(mock_avd_spec, no_prompts=True)
+
+        self.assertEqual(report.data.get("devices"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
 
         mock_instance.assert_called_once_with(3, avd_flavor="phone")
 

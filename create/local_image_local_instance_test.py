@@ -42,10 +42,56 @@ sg group2
 launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -system_image_dir fake_image_dir -instance_dir fake_cvd_dir
 EOF"""
 
+    _EXPECTED_DEVICES_IN_REPORT = [
+        {
+            "instance_name": "local-instance-1",
+            "ip": "127.0.0.1:6520",
+            "adb_port": 6520,
+            "vnc_port": 6444
+        }
+    ]
+
     def setUp(self):
         """Initialize new LocalImageLocalInstance."""
         super(LocalImageLocalInstanceTest, self).setUp()
         self.local_image_local_instance = local_image_local_instance.LocalImageLocalInstance()
+
+    # pylint: disable=protected-access
+    @mock.patch("acloud.create.local_image_local_instance.utils")
+    @mock.patch("acloud.create.local_image_local_instance.instance")
+    @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
+                       "PrepareLaunchCVDCmd")
+    @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
+                       "GetImageArtifactsPath")
+    @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
+                       "CheckLaunchCVD")
+    def testCreateAVD(self, mock_check_launch_cvd, mock_get_image,
+                      _mock_prepare, mock_instance, mock_utils):
+        """Test the report returned by _CreateAVD."""
+        mock_utils.IsSupportedPlatform.return_value = True
+
+        mock_instance.GetLocalInstanceName.return_value = "local-instance-1"
+        mock_instance.GetLocalPortsbyInsId.return_value = mock.Mock(
+            adb_port=6520, vnc_port=6444)
+
+        mock_get_image.return_value = ("/image/path", "/host/bin/path")
+
+        mock_avd_spec = mock.Mock(autoconnect=False, unlock_screen=False)
+        # Success
+        report = self.local_image_local_instance._CreateAVD(
+            mock_avd_spec, no_prompts=True)
+
+        self.assertEqual(report.data.get("devices"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
+        # Failure
+        mock_check_launch_cvd.side_effect = errors.LaunchCVDFail("timeout")
+
+        report = self.local_image_local_instance._CreateAVD(
+            mock_avd_spec, no_prompts=True)
+
+        self.assertEqual(report.data.get("devices_failing_boot"),
+                         self._EXPECTED_DEVICES_IN_REPORT)
+        self.assertEqual(report.errors, ["timeout"])
 
     # pylint: disable=protected-access
     @mock.patch("acloud.create.local_image_local_instance.os.path.isfile")
