@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 SDK_BIN_PATH = os.path.join("google-cloud-sdk", "bin")
 GCLOUD_BIN = "gcloud"
+GCLOUD_COMPONENT_NOT_INSTALLED = "Not Installed"
 GCP_SDK_VERSION = "209.0.0"
 GCP_SDK_TOOLS_URL = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads"
 LINUX_GCP_SDK_64_URL = "%s/google-cloud-sdk-%s-linux-x86_64.tar.gz" % (
@@ -126,7 +127,13 @@ class GoogleSDK(object):
             gcloud_runner: A GcloudRunner class to run "gcloud" command.
             component: String, name of gcloud component.
         """
-        gcloud_runner.RunGcloud(["components", "install", "--quiet", component])
+        result = gcloud_runner.RunGcloud([
+            "components", "list", "--format", "get(state.name)", "--filter",
+            "ID=%s" % component
+        ])
+        if result.strip() == GCLOUD_COMPONENT_NOT_INSTALLED:
+            gcloud_runner.RunGcloud(
+                ["components", "install", "--quiet", component])
 
     def GetSDKBinPath(self):
         """Get google SDK tools bin path.
