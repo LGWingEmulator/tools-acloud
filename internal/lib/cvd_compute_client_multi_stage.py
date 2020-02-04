@@ -450,6 +450,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             extra_scopes=extra_scopes)
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=instance, zone=self._zone)
+        logger.debug("'instance_ip': %s", ip.internal
+                     if self._report_internal_ip else ip.external)
 
         self._execution_time[_GCE_CREATE] = round(time.time() - timestart, 2)
         return ip
