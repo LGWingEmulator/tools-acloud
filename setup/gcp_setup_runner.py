@@ -55,6 +55,7 @@ _DEFAULT_SSH_PRIVATE_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                         _DEFAULT_SSH_KEY)
 _DEFAULT_SSH_PUBLIC_KEY = os.path.join(_DEFAULT_SSH_FOLDER,
                                        _DEFAULT_SSH_KEY + ".pub")
+_ENV_CLOUDSDK_PYTHON = "CLOUDSDK_PYTHON"
 _GCLOUD_COMPONENT_ALPHA = "alpha"
 # Regular expression to get project/zone information.
 _PROJECT_RE = re.compile(r"^project = (?P<project>.+)")
@@ -150,6 +151,9 @@ class GoogleSDKBins(object):
         """
         self.gcloud_command_path = os.path.join(google_sdk_folder, "gcloud")
         self.gsutil_command_path = os.path.join(google_sdk_folder, "gsutil")
+        # TODO(137195528): Remove python2 environment after acloud support python3.
+        self._env = os.environ.copy()
+        self._env[_ENV_CLOUDSDK_PYTHON] = "python2"
 
     def RunGcloud(self, cmd, **kwargs):
         """Run gcloud command.
@@ -162,7 +166,8 @@ class GoogleSDKBins(object):
         Returns:
             String, return message after execute gcloud command.
         """
-        return subprocess.check_output([self.gcloud_command_path] + cmd, **kwargs)
+        return subprocess.check_output([self.gcloud_command_path] + cmd,
+                                       env=self._env, **kwargs)
 
     def RunGsutil(self, cmd, **kwargs):
         """Run gsutil command.
@@ -175,7 +180,8 @@ class GoogleSDKBins(object):
         Returns:
             String, return message after execute gsutil command.
         """
-        return subprocess.check_output([self.gsutil_command_path] + cmd, **kwargs)
+        return subprocess.check_output([self.gsutil_command_path] + cmd,
+                                       env=self._env, **kwargs)
 
 
 class GoogleAPIService(object):
