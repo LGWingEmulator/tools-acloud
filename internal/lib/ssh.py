@@ -33,13 +33,42 @@ _SSH_CMD_RETRY_SLEEP = 3
 _WAIT_FOR_SSH_MAX_TIMEOUT = 60
 
 
+def _SshCallWait(cmd, timeout=None):
+    """Runs a single SSH command.
+
+    - SSH returns code 0 for "Successful execution".
+    - Use wait() until the process is complete without receiving any output.
+
+    Args:
+        cmd: String of the full SSH command to run, including the SSH binary
+             and its arguments.
+        timeout: Optional integer, number of seconds to give
+
+    Returns:
+        An exit status of 0 indicates that it ran successfully.
+    """
+    logger.info("Running command \"%s\"", cmd)
+    process = subprocess.Popen(cmd, shell=True, stdin=None,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if timeout:
+        # TODO: if process is killed, out error message to log.
+        timer = threading.Timer(timeout, process.kill)
+        timer.start()
+    process.wait()
+    if timeout:
+        timer.cancel()
+    return process.returncode
+
+
 def _SshCall(cmd, timeout=None):
     """Runs a single SSH command.
 
-    SSH returns code 0 for "Successful execution".
+    - SSH returns code 0 for "Successful execution".
+    - Use communicate() until the process and the child thread are complete.
 
     Args:
-        cmd: String of the full SSH command to run, including the SSH binary and its arguments.
+        cmd: String of the full SSH command to run, including the SSH binary
+             and its arguments.
         timeout: Optional integer, number of seconds to give
 
     Returns:
@@ -222,7 +251,7 @@ class Ssh(object):
         remote_cmd = [self.GetBaseCmd(constants.SSH_BIN)]
         remote_cmd.append("uptime")
 
-        if _SshCall(" ".join(remote_cmd), timeout) == 0:
+        if _SshCallWait(" ".join(remote_cmd), timeout) == 0:
             return
         raise errors.DeviceConnectionError(
             "Ssh isn't ready in the remote instance.")
