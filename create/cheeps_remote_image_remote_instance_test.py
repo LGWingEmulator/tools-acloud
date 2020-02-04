@@ -45,6 +45,15 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
             return_value=self.compute_client)
         self.Patch(auth, "CreateCredentials", return_value=mock.MagicMock())
 
+        # Mock uuid
+        fake_uuid = mock.MagicMock(hex="1234")
+        self.Patch(uuid, "uuid4", return_value=fake_uuid)
+
+        # Mock compute client methods
+        self.compute_client.GetInstanceIP.return_value = self.IP
+        self.compute_client.GenerateImageName.return_value = self.IMAGE
+        self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
+
     def _CreateCfg(self):
         """A helper method that creates a mock configuration object."""
         cfg = mock.MagicMock()
@@ -57,24 +66,21 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
         cfg.stable_cheeps_host_image_project = self.CHEEPS_HOST_IMAGE_PROJECT
         return cfg
 
-    def testCreate(self):
-        """Test CreateDevices."""
-        # Mock uuid
-        fake_uuid = mock.MagicMock(hex="1234")
-        self.Patch(uuid, "uuid4", return_value=fake_uuid)
-
-        # Mock compute client methods
-        self.compute_client.GetInstanceIP.return_value = self.IP
-        self.compute_client.GenerateImageName.return_value = self.IMAGE
-        self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
-
-        # Call CreateDevices
+    def _CreateAvdSpec(self, stable_cheeps_host_image_name=None,
+                       stable_cheeps_host_image_project=None):
         avd_spec = mock.MagicMock()
         avd_spec.cfg = self._CreateCfg()
         avd_spec.remote_image = {constants.BUILD_ID: self.ANDROID_BUILD_ID,
                                  constants.BUILD_TARGET: self.ANDROID_BUILD_TARGET}
         avd_spec.autoconnect = False
         avd_spec.report_internal_ip = False
+        avd_spec.stable_cheeps_host_image_name = stable_cheeps_host_image_name
+        avd_spec.stable_cheeps_host_image_project = stable_cheeps_host_image_project
+        return avd_spec
+
+    def testCreate(self):
+        """Test CreateDevices."""
+        avd_spec = self._CreateAvdSpec()
         instance = cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance()
         report = instance.Create(avd_spec, no_prompts=False)
 
@@ -94,6 +100,28 @@ class CheepsRemoteImageRemoteInstanceTest(driver_test_lib.BaseDriverTest):
         })
         self.assertEqual(report.command, "create_cheeps")
         self.assertEqual(report.status, "SUCCESS")
+
+    def testStableCheepsHostImageArgsOverrideConfig(self):
+        """Test that Cheeps host image specifed through args (which goes into
+        avd_spec) override values set in Acloud config."""
+        stable_cheeps_host_image_name = 'override-stable-host-image-name'
+        stable_cheeps_host_image_project = 'override-stable-host-image-project'
+        self.assertNotEqual(stable_cheeps_host_image_name,
+                            self.CHEEPS_HOST_IMAGE_NAME)
+        self.assertNotEqual(stable_cheeps_host_image_project,
+                            self.CHEEPS_HOST_IMAGE_PROJECT)
+
+        avd_spec = self._CreateAvdSpec(stable_cheeps_host_image_name,
+                                       stable_cheeps_host_image_project)
+        instance = cheeps_remote_image_remote_instance.CheepsRemoteImageRemoteInstance()
+        instance.Create(avd_spec, no_prompts=False)
+
+        # Verify
+        self.compute_client.CreateInstance.assert_called_with(
+            instance=self.INSTANCE,
+            image_name=stable_cheeps_host_image_name,
+            image_project=stable_cheeps_host_image_project,
+            avd_spec=avd_spec)
 
 if __name__ == "__main__":
     unittest.main()

@@ -130,7 +130,9 @@ class AVDSpec(object):
         self._gpu = None
         self._emulator_build_id = None
 
-        # username and password only used for cheeps type.
+        # Fields only used for cheeps type.
+        self._stable_cheeps_host_image_name = None
+        self._stable_cheeps_host_image_project = None
         self._username = None
         self._password = None
 
@@ -303,6 +305,8 @@ class AVDSpec(object):
         self._emulator_build_id = args.emulator_build_id
         self._gpu = args.gpu
 
+        self._stable_cheeps_host_image_name = args.stable_cheeps_host_image_name
+        self._stable_cheeps_host_image_project = args.stable_cheeps_host_image_project
         self._username = args.username
         self._password = args.password
 
@@ -728,6 +732,16 @@ class AVDSpec(object):
     def client_adb_port(self):
         """Return the client adb port."""
         return self._client_adb_port
+
+    @property
+    def stable_cheeps_host_image_name(self):
+        """Return the Cheeps host image name."""
+        return self._stable_cheeps_host_image_name
+
+    @property
+    def stable_cheeps_host_image_project(self):
+        """Return the project hosting the Cheeps host image."""
+        return self._stable_cheeps_host_image_project
 
     @property
     def username(self):
