@@ -111,9 +111,21 @@ class CheepsDeviceFactory(base_device_factory.BaseDeviceFactory):
         instance = self._compute_client.GenerateInstanceName(
             build_id=self._avd_spec.remote_image[constants.BUILD_ID],
             build_target=self._avd_spec.remote_image[constants.BUILD_TARGET])
+
+        # Cheeps image specified through args (if any) overrides that in the
+        # Acloud config file.
+        image_name = (self._avd_spec.stable_cheeps_host_image_name or
+                      self._cfg.stable_cheeps_host_image_name)
+        image_project = (self._avd_spec.stable_cheeps_host_image_project or
+                         self._cfg.stable_cheeps_host_image_project)
+        if not (image_name and image_project):
+            raise ValueError(
+                "Both Cheeps image name and project should be set, either in "
+                "Acloud config or via command line args.")
+
         self._compute_client.CreateInstance(
             instance=instance,
-            image_name=self._cfg.stable_cheeps_host_image_name,
-            image_project=self._cfg.stable_cheeps_host_image_project,
+            image_name=image_name,
+            image_project=image_project,
             avd_spec=self._avd_spec)
         return instance
