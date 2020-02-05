@@ -413,6 +413,24 @@ def GetCreateArgParser(subparser):
 
     # Arguments for cheeps type.
     create_parser.add_argument(
+        "--stable-cheeps-host-image-name",
+        type=str,
+        dest="stable_cheeps_host_image_name",
+        required=False,
+        default=None,
+        help=("'cheeps only' The Cheeps host image from which instances are "
+              "launched. If specified here, the value set in Acloud config "
+              "file will be overridden."))
+    create_parser.add_argument(
+        "--stable-cheeps-host-image-project",
+        type=str,
+        dest="stable_cheeps_host_image_project",
+        required=False,
+        default=None,
+        help=("'cheeps only' The project hosting the specified Cheeps host "
+              "image. If specified here, the value set in Acloud config file "
+              "will be overridden."))
+    create_parser.add_argument(
         "--user",
         type=str,
         dest="username",
@@ -540,9 +558,13 @@ def VerifyArgs(args):
                 "[%s] is an invalid hw property, supported values are:%s. "
                 % (key, constants.HW_PROPERTIES))
 
-    if (args.username or args.password) and args.avd_type != constants.TYPE_CHEEPS:
-        raise ValueError("--username and --password are only valid with avd_type == %s"
-                         % constants.TYPE_CHEEPS)
+    if args.avd_type != constants.TYPE_CHEEPS and (
+            args.stable_cheeps_host_image_name or
+            args.stable_cheeps_host_image_project or
+            args.username or args.password):
+        raise errors.UnsupportedCreateArgs(
+            "--stable-cheeps-*, --username and --password are only valid with "
+            "avd_type == %s" % constants.TYPE_CHEEPS)
     if (args.username or args.password) and not (args.username and args.password):
         raise ValueError("--username and --password must both be set")
     if not args.autoconnect and args.unlock_screen:
