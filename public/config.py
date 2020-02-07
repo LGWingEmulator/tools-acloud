@@ -278,6 +278,10 @@ class AcloudConfig(object):
                 "invalid value: %d" % (self.precreated_data_image_map.keys(),
                                        self.extra_data_disk_size_gb))
 
+    def SupportRemoteInstance(self):
+        """Return True if gcp project is provided in config."""
+        return True if self.project else False
+
 
 class AcloudConfigManager(object):
     """A class that loads configurations."""
