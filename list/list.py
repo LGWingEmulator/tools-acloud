@@ -341,8 +341,8 @@ def Run(args):
         args: Namespace object from argparse.parse_args.
     """
     instances = GetLocalInstances()
-    if not args.local_only:
-        cfg = config.GetAcloudConfig(args)
+    cfg = config.GetAcloudConfig(args)
+    if not args.local_only and cfg.SupportRemoteInstance():
         instances.extend(GetRemoteInstances(cfg))
 
     PrintInstancesDetails(instances, args.verbose)

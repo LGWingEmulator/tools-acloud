@@ -17,18 +17,15 @@
 
 import collections
 import datetime
-import os
 import subprocess
 
 import unittest
 import mock
-import six
 
 # pylint: disable=import-error
 import dateutil.parser
 import dateutil.tz
 
-from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib.adb_tools import AdbTools
@@ -294,19 +291,6 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                           "   zone: fake_zone\n "
                           "   adb serial: disconnected")
         self.assertEqual(remote_instance.Summary(), result_summary)
-
-    def testGetCuttlefishRuntimeConfig(self):
-        """Test GetCuttlefishRuntimeConfig."""
-        # Should raise error when file does not exist.
-        self.Patch(os.path, "exists", return_value=False)
-        self.assertRaises(errors.ConfigError, instance.GetCuttlefishRuntimeConfig, 9)
-        # Verify return data.
-        self.Patch(os.path, "exists", return_value=True)
-        fake_runtime_cf_config = ("{\"x_display\" : \":20\",\"x_res\" : 720,\"y_res\" : 1280}")
-        mock_open = mock.mock_open(read_data=fake_runtime_cf_config)
-        with mock.patch.object(six.moves.builtins, "open", mock_open):
-            self.assertEqual({u'y_res': 1280, u'x_res': 720, u'x_display': u':20'},
-                             instance.GetCuttlefishRuntimeConfig(1)._config_dict)
 
     def testGetZoneName(self):
         """Test GetZoneName."""
