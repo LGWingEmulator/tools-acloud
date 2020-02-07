@@ -143,7 +143,14 @@ def DeleteRemoteInstances(cfg, instances_to_delete, delete_report=None):
 
     Returns:
         Report instance if there are instances to delete, None otherwise.
+
+    Raises:
+        error.ConfigError: when config doesn't support remote instances.
     """
+    if not cfg.SupportRemoteInstance():
+        raise errors.ConfigError("No gcp project info found in config! "
+                                 "The execution of deleting remote instances "
+                                 "has been aborted.")
     utils.PrintColorString("")
     for instance in instances_to_delete:
         utils.PrintColorString(" - %s" % instance, utils.TextColors.WARNING)
@@ -303,19 +310,16 @@ def Run(args):
     """
     # Prioritize delete instances by names without query all instance info from
     # GCP project.
+    cfg = config.GetAcloudConfig(args)
     if args.instance_names:
-        return DeleteInstanceByNames(config.GetAcloudConfig(args),
+        return DeleteInstanceByNames(cfg,
                                      args.instance_names)
     if args.remote_host:
-        cfg = config.GetAcloudConfig(args)
         return CleanUpRemoteHost(cfg, args.remote_host, args.host_user,
                                  args.host_ssh_private_key_path)
 
     instances = list_instances.GetLocalInstances()
-    if args.local_only:
-        cfg = None
-    else:
-        cfg = config.GetAcloudConfig(args)
+    if not args.local_only and cfg.SupportRemoteInstance():
         instances.extend(list_instances.GetRemoteInstances(cfg))
 
     if args.adb_port:
