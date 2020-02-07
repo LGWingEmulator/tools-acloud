@@ -922,7 +922,7 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
                          "Skipping VNC startup.", TextColors.FAIL)
         return
 
-    if not FindExecutable(_VNC_BIN):
+    if IsSupportedPlatform() and not FindExecutable(_VNC_BIN):
         if no_prompts or GetUserAnswerYes(_CONFIRM_CONTINUE):
             try:
                 PrintColorString("Installing ssvnc vnc client... ", end="")
