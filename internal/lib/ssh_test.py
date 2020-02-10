@@ -82,7 +82,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
         self.Patch(subprocess, "Popen", return_value=self.created_subprocess)
         ssh_object = ssh.Ssh(self.FAKE_IP, self.FAKE_SSH_USER, self.FAKE_SSH_PRIVATE_KEY_PATH)
         ssh_object.Run("command")
-        expected_cmd = ("/usr/bin/ssh -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/ssh -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no -l fake_user 1.1.1.1 command")
         subprocess.Popen.assert_called_with(expected_cmd,
                                             shell=True,
@@ -98,7 +98,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
                              self.FAKE_SSH_PRIVATE_KEY_PATH,
                              self.FAKE_EXTRA_ARGS_SSH)
         ssh_object.Run("command")
-        expected_cmd = ("/usr/bin/ssh -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/ssh -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no "
                         "-o ProxyCommand='ssh fake_user@2.2.2.2 Server 22' "
                         "-l fake_user 1.1.1.1 command")
@@ -113,7 +113,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
         self.Patch(subprocess, "Popen", return_value=self.created_subprocess)
         ssh_object = ssh.Ssh(self.FAKE_IP, self.FAKE_SSH_USER, self.FAKE_SSH_PRIVATE_KEY_PATH)
         ssh_object.ScpPullFile("/tmp/test", "/tmp/test_1.log")
-        expected_cmd = ("/usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no fake_user@1.1.1.1:/tmp/test /tmp/test_1.log")
         subprocess.Popen.assert_called_with(expected_cmd,
                                             shell=True,
@@ -129,7 +129,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
                              self.FAKE_SSH_PRIVATE_KEY_PATH,
                              self.FAKE_EXTRA_ARGS_SSH)
         ssh_object.ScpPullFile("/tmp/test", "/tmp/test_1.log")
-        expected_cmd = ("/usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no "
                         "-o ProxyCommand='ssh fake_user@2.2.2.2 Server 22' "
                         "fake_user@1.1.1.1:/tmp/test /tmp/test_1.log")
@@ -144,7 +144,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
         self.Patch(subprocess, "Popen", return_value=self.created_subprocess)
         ssh_object = ssh.Ssh(self.FAKE_IP, self.FAKE_SSH_USER, self.FAKE_SSH_PRIVATE_KEY_PATH)
         ssh_object.ScpPushFile("/tmp/test", "/tmp/test_1.log")
-        expected_cmd = ("/usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no /tmp/test fake_user@1.1.1.1:/tmp/test_1.log")
         subprocess.Popen.assert_called_with(expected_cmd,
                                             shell=True,
@@ -160,7 +160,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
                              self.FAKE_SSH_PRIVATE_KEY_PATH,
                              self.FAKE_EXTRA_ARGS_SSH)
         ssh_object.ScpPushFile("/tmp/test", "/tmp/test_1.log")
-        expected_cmd = ("/usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
+        expected_cmd = ("exec /usr/bin/scp -i /fake/acloud_rea -q -o UserKnownHostsFile=/dev/null "
                         "-o StrictHostKeyChecking=no "
                         "-o ProxyCommand='ssh fake_user@2.2.2.2 Server 22' "
                         "/tmp/test fake_user@1.1.1.1:/tmp/test_1.log")

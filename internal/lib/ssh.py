@@ -104,9 +104,10 @@ def _SshLogOutput(cmd, timeout=None, show_output=False):
         errors.DeviceConnectionError: Failed to connect to the GCE instance.
         subprocess.CalledProc: The process exited with an error on the instance.
     """
+    # Use "exec" to let cmd to inherit the shell process, instead of having the
+    # shell launch a child process which does not get killed.
+    cmd = "exec " + cmd
     logger.info("Running command \"%s\"", cmd)
-    # This code could use check_output instead, but this construction supports
-    # streaming the logs as they are received.
     process = subprocess.Popen(cmd, shell=True, stdin=None,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if timeout:
