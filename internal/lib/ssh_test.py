@@ -205,7 +205,6 @@ class SshTest(driver_test_lib.BaseDriverTest):
         self.assertRaises(errors.DeviceConnectionError,
                           ssh_object.WaitForSsh,
                           timeout=1,
-                          sleep_for_retry=1,
                           max_retry=1)
 
 
