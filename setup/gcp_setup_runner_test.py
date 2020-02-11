@@ -233,9 +233,11 @@ class AcloudGCPSetupTest(unittest.TestCase):
         self.gcp_env_runner._EnableGcloudServices(self.gcloud_runner)
         mock_run.assert_has_calls([
             mock.call(["gcloud", "services", "enable",
-                       gcp_setup_runner._ANDROID_BUILD_SERVICE], stderr=-2),
+                       gcp_setup_runner._ANDROID_BUILD_SERVICE],
+                      env=self.gcloud_runner._env, stderr=-2),
             mock.call(["gcloud", "services", "enable",
-                       gcp_setup_runner._COMPUTE_ENGINE_SERVICE], stderr=-2)])
+                       gcp_setup_runner._COMPUTE_ENGINE_SERVICE],
+                      env=self.gcloud_runner._env, stderr=-2)])
 
     @mock.patch("subprocess.check_output")
     def testGoogleAPIService(self, mock_run):
@@ -244,7 +246,8 @@ class AcloudGCPSetupTest(unittest.TestCase):
                                                         "error_message")
         api_service.EnableService(self.gcloud_runner)
         mock_run.assert_has_calls([
-            mock.call(["gcloud", "services", "enable", "service_name"], stderr=-2)])
+            mock.call(["gcloud", "services", "enable", "service_name"],
+                      env=self.gcloud_runner._env, stderr=-2)])
 
     @mock.patch("subprocess.check_output")
     def testCheckBillingEnable(self, mock_run):
@@ -253,8 +256,13 @@ class AcloudGCPSetupTest(unittest.TestCase):
         mock_run.return_value = "billingEnabled: true"
         self.gcp_env_runner._CheckBillingEnable(self.gcloud_runner)
         mock_run.assert_has_calls([
-            mock.call(["gcloud", "alpha", "billing", "projects", "describe",
-                       self.gcp_env_runner.project])])
+            mock.call(
+                [
+                    "gcloud", "alpha", "billing", "projects", "describe",
+                    self.gcp_env_runner.project
+                ],
+                env=self.gcloud_runner._env)
+        ])
 
         # Test billing account in gcp project was not enabled.
         mock_run.return_value = "billingEnabled: false"
