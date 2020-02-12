@@ -15,6 +15,8 @@
 
 import glob
 import os
+import shutil
+import tempfile
 import unittest
 import uuid
 
@@ -22,6 +24,7 @@ import mock
 
 from acloud.create import avd_spec
 from acloud.internal import constants
+from acloud.create import create_common
 from acloud.internal.lib import android_build_client
 from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
@@ -327,6 +330,43 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(mock_create_gce_instance.call_count, 1)
         self.assertEqual(mock_upload.call_count, 1)
         self.assertEqual(mock_launchcvd.call_count, 1)
+
+    # pylint: disable=no-member
+    @mock.patch.object(create_common, "DownloadRemoteArtifact")
+    def testDownloadArtifacts(self, mock_download):
+        """Test process remote cuttlefish image."""
+        extract_path = "/tmp/1111/"
+        fake_remote_image = {"build_target" : "aosp_cf_x86_phone-userdebug",
+                             "build_id": "1234"}
+        self.Patch(
+            cvd_compute_client_multi_stage,
+            "CvdComputeClient",
+            return_value=mock.MagicMock())
+        self.Patch(tempfile, "mkdtemp", return_value="/tmp/1111/")
+        self.Patch(shutil, "rmtree")
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.cfg = mock.MagicMock()
+        fake_avd_spec.remote_image = fake_remote_image
+        fake_avd_spec.image_download_dir = "/tmp"
+        self.Patch(os.path, "exists", return_value=False)
+        self.Patch(os, "makedirs")
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec)
+        factory._DownloadArtifacts(extract_path)
+        build_id = "1234"
+        build_target = "aosp_cf_x86_phone-userdebug"
+        checkfile1 = "aosp_cf_x86_phone-img-1234.zip"
+        checkfile2 = "cvd-host_package.tar.gz"
+
+        # To validate DownloadArtifact runs twice.
+        self.assertEqual(mock_download.call_count, 2)
+
+        # To validate DownloadArtifact arguments correct.
+        mock_download.assert_has_calls([
+            mock.call(fake_avd_spec.cfg, build_target, build_id, checkfile1,
+                      extract_path, decompress=True),
+            mock.call(fake_avd_spec.cfg, build_target, build_id, checkfile2,
+                      extract_path)], any_order=True)
 
 
 if __name__ == "__main__":
