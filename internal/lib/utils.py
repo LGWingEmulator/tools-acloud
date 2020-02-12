@@ -36,6 +36,7 @@ import tarfile
 import tempfile
 import time
 import uuid
+import webbrowser
 import zipfile
 
 import six
@@ -85,6 +86,10 @@ _ENV_DISPLAY = "DISPLAY"
 _SSVNC_ENV_VARS = {"SSVNC_NO_ENC_WARN": "1", "SSVNC_SCALE": "auto", "VNCVIEWER_X11CURSOR": "1"}
 _DEFAULT_DISPLAY_SCALE = 1.0
 _DIST_DIR = "DIST_DIR"
+
+# For webrtc
+_WEBRTC_URL = "https://"
+_WEBRTC_PORT = "8443"
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssvnc). \nWould you like acloud to "
@@ -796,6 +801,7 @@ def _ExecuteCommand(cmd, args):
         subprocess.check_call(command, stderr=dev_null, stdout=dev_null)
 
 
+# TODO(147337696): create ssh tunnels tear down as adb and vnc.
 # pylint: disable=too-many-locals
 def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
                 ssh_user, client_adb_port=None, extra_args_ssh_tunnel=None):
@@ -905,6 +911,23 @@ def LaunchVNCFromReport(report, avd_spec, no_prompts=False):
             PrintColorString("No VNC port specified, skipping VNC startup.",
                              TextColors.FAIL)
 
+def LaunchBrowserFromReport(report):
+    """Open browser when autoconnect to webrtc according to the instances report.
+
+    Args:
+        report: Report object, that stores and generates report.
+    """
+    for device in report.data.get("devices", []):
+        if device.get("ip"):
+            PrintColorString("(This is an experimental project for webrtc, and "
+                             "since the certificate is self-signed, Chrome will "
+                             "mark it as an insecure website. keep going.)",
+                             TextColors.WARNING)
+            webbrowser.open_new_tab("%s%s:%s" % (
+                _WEBRTC_URL, device.get("ip"), _WEBRTC_PORT))
+        else:
+            PrintColorString("Auto-launch devices webrtc in browser failed!",
+                             TextColors.FAIL)
 
 def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
     """Launch ssvnc.
