@@ -62,6 +62,12 @@ _FETCHER_NAME = "fetch_cvd"
 _FETCH_ARTIFACT = "fetch_artifact_time"
 _GCE_CREATE = "gce_create_time"
 _LAUNCH_CVD = "launch_cvd_time"
+# WebRTC args for launching AVD
+_GUEST_ENFORCE_SECURITY_FALSE = "--guest_enforce_security=false"
+_START_WEBRTC = "--start_webrtc"
+_VM_MANAGER = "--vm_manager=crosvm"
+_WEBRTC_ARGS = [_GUEST_ENFORCE_SECURITY_FALSE, _START_WEBRTC, _VM_MANAGER]
+_WEBRTC_PUBLIC_IP = "--webrtc_public_ip=%s"
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -266,6 +272,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             if constants.HW_ALIAS_MEMORY in avd_spec.hw_property:
                 launch_cvd_args.append(
                     "-memory_mb=%s" % avd_spec.hw_property[constants.HW_ALIAS_MEMORY])
+            if avd_spec.connect_webrtc:
+                launch_cvd_args.append(_WEBRTC_PUBLIC_IP % self._ip.external)
+                launch_cvd_args.extend(_WEBRTC_ARGS)
         else:
             resolution = self._resolution.split("x")
             launch_cvd_args.append("-x_res=" + resolution[0])
@@ -447,7 +456,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             network=self._network,
             zone=self._zone,
             gpu=self._gpu,
-            extra_scopes=extra_scopes)
+            extra_scopes=extra_scopes,
+            tags=["appstreaming"] if (
+                avd_spec and avd_spec.connect_webrtc) else None)
         ip = gcompute_client.ComputeClient.GetInstanceIP(
             self, instance=instance, zone=self._zone)
         logger.debug("'instance_ip': %s", ip.internal

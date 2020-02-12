@@ -56,12 +56,15 @@ def AddCommonCreateArgs(parser):
         const=constants.INS_KEY_VNC,
         dest="autoconnect",
         required=False,
-        choices=[constants.INS_KEY_VNC, constants.INS_KEY_ADB],
-        help="For each remote instance, automatically create 2 ssh tunnels "
-             "forwarding both adb & vnc, and then add the device to adb. "
-             "For local cuttlefish instance, create a vnc connection. "
-             "For local goldfish instance, create a window."
-             "If need adb only, you can pass in 'adb' here.")
+        choices=[constants.INS_KEY_VNC, constants.INS_KEY_ADB,
+                 constants.INS_KEY_WEBRTC],
+        help="Determines to establish a tunnel forwarding adb/vnc and "
+             "launch VNC/webrtc. Establish a tunnel forwarding adb and vnc "
+             "then launch vnc if --autoconnect vnc is provided. Establish a "
+             "tunnel forwarding adb if --autoconnect adb is provided. "
+             "Establish a tunnel forwarding adb and auto-launch on the browser "
+             "if --autoconnect webrtc is provided. For local goldfish "
+             "instance, create a window.")
     parser.add_argument(
         "--no-autoconnect",
         action="store_false",
@@ -485,6 +488,11 @@ def _VerifyLocalArgs(args):
         if not os.path.exists(tool_dir):
             raise errors.CheckPathError(
                 "Specified path doesn't exist: %s" % tool_dir)
+
+    if args.autoconnect == constants.INS_KEY_WEBRTC:
+        if args.avd_type != constants.TYPE_CF:
+            raise errors.UnsupportedCreateArgs(
+                "'--autoconnect webrtc' only support cuttlefish.")
 
 
 def _VerifyHostArgs(args):
