@@ -368,6 +368,45 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             mock.call(fake_avd_spec.cfg, build_target, build_id, checkfile2,
                       extract_path)], any_order=True)
 
+    @mock.patch.object(create_common, "DownloadRemoteArtifact")
+    @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
+                       "_UploadArtifacts")
+    def testProcessRemoteHostArtifacts(self, mock_upload, mock_download):
+        """Test process remote host artifacts."""
+        self.Patch(
+            cvd_compute_client_multi_stage,
+            "CvdComputeClient",
+            return_value=mock.MagicMock())
+        fake_avd_spec = mock.MagicMock()
+
+        # Test process remote host artifacts with local images.
+        fake_avd_spec.instance_type = constants.INSTANCE_TYPE_HOST
+        fake_avd_spec.image_source = constants.IMAGE_SRC_LOCAL
+        fake_avd_spec._instance_name_to_reuse = None
+        fake_host_package_name = "/fake/host_package.tar.gz"
+        fake_image_name = ""
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec,
+            fake_image_name,
+            fake_host_package_name)
+        factory._ProcessRemoteHostArtifacts()
+        self.assertEqual(mock_upload.call_count, 1)
+
+        # Test process remote host artifacts with remote images.
+        fake_tmp_folder = "/tmp/1111/"
+        mock_upload.call_count = 0
+        self.Patch(tempfile, "mkdtemp", return_value=fake_tmp_folder)
+        self.Patch(shutil, "rmtree")
+        fake_avd_spec.instance_type = constants.INSTANCE_TYPE_HOST
+        fake_avd_spec.image_source = constants.IMAGE_SRC_REMOTE
+        fake_avd_spec._instance_name_to_reuse = None
+        factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
+            fake_avd_spec)
+        factory._ProcessRemoteHostArtifacts()
+        self.assertEqual(mock_upload.call_count, 1)
+        self.assertEqual(mock_download.call_count, 2)
+        shutil.rmtree.assert_called_once_with(fake_tmp_folder)
+
 
 if __name__ == "__main__":
     unittest.main()
