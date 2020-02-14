@@ -43,6 +43,11 @@ sg group2
 launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir
 EOF"""
 
+    LAUNCH_CVD_CMD_WITH_WEBRTC = """sg group1 <<EOF
+sg group2
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -guest_enforce_security=false -vm_manager=crosvm -start_webrtc=true -webrtc_public_ip=127.0.0.1
+EOF"""
+
     _EXPECTED_DEVICES_IN_REPORT = [
         {
             "instance_name": "local-instance-1",
@@ -146,16 +151,21 @@ EOF"""
 
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
             constants.CMD_LAUNCH_CVD, hw_property, True, "fake_image_dir",
-            "fake_cvd_dir")
+            "fake_cvd_dir", False)
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_WITH_DISK)
 
         # "disk" doesn't exist in hw_property.
         hw_property = {"cpu": "fake", "x_res": "fake", "y_res": "fake",
-                       "dpi":"fake", "memory": "fake"}
+                       "dpi": "fake", "memory": "fake"}
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
             constants.CMD_LAUNCH_CVD, hw_property, True, "fake_image_dir",
-            "fake_cvd_dir")
+            "fake_cvd_dir", False)
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_NO_DISK)
+
+        launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
+            constants.CMD_LAUNCH_CVD, hw_property, True, "fake_image_dir",
+            "fake_cvd_dir", True)
+        self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_WITH_WEBRTC)
 
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
                        "_LaunchCvd")
