@@ -20,8 +20,7 @@ of an Android Virtual Device.
 from __future__ import print_function
 import getpass
 import logging
-import re
-import subprocess
+import os
 
 from acloud import errors
 from acloud.internal import constants
@@ -35,28 +34,6 @@ from acloud.public import config
 logger = logging.getLogger(__name__)
 
 _COMMAND_PS_LAUNCH_CVD = ["ps", "-wweo", "lstart,cmd"]
-_RE_LOCAL_CVD_PORT = re.compile(r"^127\.0\.0\.1:65(?P<cvd_port_suffix>\d{2})\s+")
-
-
-def GetActiveCVDIds():
-    """Get active local cvd ids from adb devices.
-
-    The adb port of local instance will be decided according to instance id.
-    The rule of adb port will be '6520 + [instance id] - 1'. So we grep last
-    two digits of port and calculate the instance id.
-
-    Return:
-        List of cvd id.
-    """
-    local_cvd_ids = []
-    adb_cmd = [constants.ADB_BIN, "devices"]
-    device_info = subprocess.check_output(adb_cmd)
-    for device in device_info.splitlines():
-        match = _RE_LOCAL_CVD_PORT.match(device)
-        if match:
-            cvd_serial = match.group("cvd_port_suffix")
-            local_cvd_ids.append(int(cvd_serial) - 19)
-    return local_cvd_ids
 
 
 def _ProcessInstances(instance_list):
@@ -144,17 +121,37 @@ def _GetLocalCuttlefishInstances():
     Returns:
         instance_list: List of local instances.
     """
-    local_cvd_ids = GetActiveCVDIds()
     local_instance_list = []
-    for cvd_id in local_cvd_ids:
-        try:
-            cf_runtime_cfg = instance.GetCuttlefishRuntimeConfig(cvd_id)
-            local_instance_list.append(
-                instance.LocalInstance(cvd_id, cf_runtime_cfg))
-        except errors.ConfigError:
-            logger.error("Instance[id:%d] dir not found!", cvd_id)
-
+    for cf_runtime_config_path in instance.GetAllLocalInstanceConfigs():
+        ins = instance.LocalInstance(cf_runtime_config_path)
+        if ins.CvdStatus():
+            local_instance_list.append(ins)
+        else:
+            logger.info("cvd runtime config found but instance is not active:%s"
+                        , cf_runtime_config_path)
     return local_instance_list
+
+
+def GetActiveCVD(local_instance_id):
+    """Check if the local AVD with specific instance id is running
+
+    Args:
+        local_instance_id: Integer of instance id.
+
+    Return:
+        LocalInstance object.
+    """
+    cfg_path = instance.GetLocalInstanceConfig(local_instance_id)
+    if cfg_path:
+        ins = instance.LocalInstance(cfg_path)
+        if ins.CvdStatus():
+            return ins
+    cfg_path = instance.GetDefaultCuttlefishConfig()
+    if local_instance_id == 1 and os.path.isfile(cfg_path):
+        ins = instance.LocalInstance(cfg_path)
+        if ins.CvdStatus():
+            return ins
+    return None
 
 
 def GetLocalInstances():
@@ -308,7 +305,7 @@ def FilterInstancesByAdbPort(instances, adb_port):
     """
     all_instance_info = []
     for instance_object in instances:
-        if instance_object.forwarding_adb_port == adb_port:
+        if instance_object.adb_port == adb_port:
             return [instance_object]
         all_instance_info.append(instance_object.fullname)
 

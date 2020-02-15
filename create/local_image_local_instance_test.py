@@ -24,6 +24,7 @@ import mock
 from acloud import errors
 from acloud.create import local_image_local_instance
 from acloud.list import instance
+from acloud.list import list as list_instance
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
@@ -51,6 +52,13 @@ EOF"""
         }
     ]
 
+    _EXPECTED_DEVICES_IN_FAILED_REPORT = [
+        {
+            "instance_name": "local-instance-1",
+            "ip": "127.0.0.1"
+        }
+    ]
+
     def setUp(self):
         """Initialize new LocalImageLocalInstance."""
         super(LocalImageLocalInstanceTest, self).setUp()
@@ -58,7 +66,6 @@ EOF"""
 
     # pylint: disable=protected-access
     @mock.patch("acloud.create.local_image_local_instance.utils")
-    @mock.patch("acloud.create.local_image_local_instance.instance")
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
                        "PrepareLaunchCVDCmd")
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
@@ -66,17 +73,23 @@ EOF"""
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
                        "CheckLaunchCVD")
     def testCreateAVD(self, mock_check_launch_cvd, mock_get_image,
-                      _mock_prepare, mock_instance, mock_utils):
+                      _mock_prepare, mock_utils):
         """Test the report returned by _CreateAVD."""
         mock_utils.IsSupportedPlatform.return_value = True
-
-        mock_instance.GetLocalInstanceName.return_value = "local-instance-1"
-        mock_instance.GetLocalPortsbyInsId.return_value = mock.Mock(
-            adb_port=6520, vnc_port=6444)
-
         mock_get_image.return_value = ("/image/path", "/host/bin/path")
-
         mock_avd_spec = mock.Mock(autoconnect=False, unlock_screen=False)
+        self.Patch(instance, "GetLocalInstanceName",
+                   return_value="local-instance-1")
+        local_ins = mock.MagicMock(
+            adb_port=6520,
+            vnc_port=6444
+        )
+        local_ins.CvdStatus.return_value = True
+        self.Patch(instance, "LocalInstance",
+                   return_value=local_ins)
+        self.Patch(list_instance, "GetActiveCVD",
+                   return_value=local_ins)
+
         # Success
         report = self.local_image_local_instance._CreateAVD(
             mock_avd_spec, no_prompts=True)
@@ -90,7 +103,7 @@ EOF"""
             mock_avd_spec, no_prompts=True)
 
         self.assertEqual(report.data.get("devices_failing_boot"),
-                         self._EXPECTED_DEVICES_IN_REPORT)
+                         self._EXPECTED_DEVICES_IN_FAILED_REPORT)
         self.assertEqual(report.errors, ["timeout"])
 
     # pylint: disable=protected-access
@@ -147,8 +160,7 @@ EOF"""
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
                        "_LaunchCvd")
     @mock.patch.object(utils, "GetUserAnswerYes")
-    @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
-                       "IsLocalCVDRunning")
+    @mock.patch.object(list_instance, "GetActiveCVD")
     @mock.patch.object(local_image_local_instance.LocalImageLocalInstance,
                        "IsLocalImageOccupied")
     def testCheckLaunchCVD(self, mock_image_occupied, mock_cvd_running,
@@ -195,8 +207,8 @@ EOF"""
         local_instance_id = 3
         launch_cvd_cmd = "launch_cvd"
         cvd_env = {}
-        cvd_env[local_image_local_instance._ENV_CVD_HOME] = "fake_home"
-        cvd_env[local_image_local_instance._ENV_CUTTLEFISH_INSTANCE] = str(
+        cvd_env[constants.ENV_CVD_HOME] = "fake_home"
+        cvd_env[constants.ENV_CUTTLEFISH_INSTANCE] = str(
             local_instance_id)
         process = mock.MagicMock()
         process.wait.return_value = True
