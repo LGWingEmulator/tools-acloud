@@ -20,7 +20,6 @@ of an Android Virtual Device.
 from __future__ import print_function
 
 import logging
-import os
 import re
 import subprocess
 
@@ -42,51 +41,7 @@ logger = logging.getLogger(__name__)
 _COMMAND_GET_PROCESS_ID = ["pgrep", "run_cvd"]
 _COMMAND_GET_PROCESS_COMMAND = ["ps", "-o", "command", "-p"]
 _RE_RUN_CVD = re.compile(r"^(?P<run_cvd>.+run_cvd)")
-_SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 _LOCAL_INSTANCE_PREFIX = "local-"
-
-
-def _GetStopCvd():
-    """Get stop_cvd path.
-
-    "stop_cvd" and "run_cvd" are in the same folder(host package folder).
-    Try to get directory of "run_cvd" by "ps -o command -p <pid>." command.
-    For example: "/tmp/bin/run_cvd"
-
-    Returns:
-        String of stop_cvd file path.
-
-    Raises:
-        errors.NoExecuteCmd: Can't find stop_cvd.
-    """
-    process_id = subprocess.check_output(_COMMAND_GET_PROCESS_ID)
-    process_info = subprocess.check_output(
-        _COMMAND_GET_PROCESS_COMMAND + process_id.splitlines())
-    for process in process_info.splitlines():
-        match = _RE_RUN_CVD.match(process)
-        if match:
-            run_cvd_path = match.group("run_cvd")
-            stop_cvd_cmd = os.path.join(os.path.dirname(run_cvd_path),
-                                        constants.CMD_STOP_CVD)
-            if os.path.exists(stop_cvd_cmd):
-                logger.debug("stop_cvd command: %s", stop_cvd_cmd)
-                return stop_cvd_cmd
-
-    default_stop_cvd = utils.FindExecutable(constants.CMD_STOP_CVD)
-    if default_stop_cvd:
-        return default_stop_cvd
-
-    raise errors.NoExecuteCmd("Cannot find stop_cvd binary.")
-
-
-def CleanupSSVncviewer(vnc_port):
-    """Cleanup the old disconnected ssvnc viewer.
-
-    Args:
-        vnc_port: Integer, port number of vnc.
-    """
-    ssvnc_viewer_pattern = _SSVNC_VIEWER_PATTERN % {"vnc_port":vnc_port}
-    utils.CleanupProcess(ssvnc_viewer_pattern)
 
 
 def DeleteInstances(cfg, instances_to_delete):
@@ -118,8 +73,8 @@ def DeleteInstances(cfg, instances_to_delete):
         else:
             remote_instance_list.append(instance.name)
         # Delete ssvnc viewer
-        if instance.forwarding_vnc_port:
-            CleanupSSVncviewer(instance.forwarding_vnc_port)
+        if instance.vnc_port:
+            utils.CleanupSSVncviewer(instance.vnc_port)
 
     if remote_instance_list:
         # TODO(119283708): We should move DeleteAndroidVirtualDevices into
@@ -171,7 +126,7 @@ def DeleteRemoteInstances(cfg, instances_to_delete, delete_report=None):
 def DeleteLocalCuttlefishInstance(instance, delete_report):
     """Delete a local cuttlefish instance.
 
-    Delete local instance with stop_cvd command and write delete instance
+    Delete local instance and write delete instance
     information to report.
 
     Args:
@@ -182,21 +137,12 @@ def DeleteLocalCuttlefishInstance(instance, delete_report):
         delete_report.
     """
     try:
-        with open(os.devnull, "w") as dev_null:
-            cvd_env = os.environ.copy()
-            if instance.instance_dir:
-                cvd_env[constants.ENV_CUTTLEFISH_CONFIG_FILE] = os.path.join(
-                    instance.instance_dir, constants.CUTTLEFISH_CONFIG_FILE)
-            subprocess.check_call(
-                utils.AddUserGroupsToCmd(_GetStopCvd(),
-                                         constants.LIST_CF_USER_GROUPS),
-                stderr=dev_null, stdout=dev_null, shell=True, env=cvd_env)
-            delete_report.SetStatus(report.Status.SUCCESS)
-            device_driver.AddDeletionResultToReport(
-                delete_report, [instance.name], failed=[],
-                error_msgs=[],
-                resource_name="instance")
-            CleanupSSVncviewer(instance.vnc_port)
+        instance.Delete()
+        delete_report.SetStatus(report.Status.SUCCESS)
+        device_driver.AddDeletionResultToReport(
+            delete_report, [instance.name], failed=[],
+            error_msgs=[],
+            resource_name="instance")
     except subprocess.CalledProcessError as e:
         delete_report.AddError(str(e))
         delete_report.SetStatus(report.Status.FAIL)

@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for list."""
-import subprocess
+
 import unittest
 
 import mock
 
 from acloud import errors
+from acloud.internal.lib import cvd_runtime_config
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib import utils
 from acloud.list import list as list_instance
@@ -91,7 +92,7 @@ class ListTest(driver_test_lib.BaseDriverTest):
     def testFilterInstancesByAdbPort(self):
         """test FilterInstancesByAdbPort."""
         alive_instance1 = InstanceObject("alive_instance1")
-        alive_instance1.forwarding_adb_port = 1111
+        alive_instance1.adb_port = 1111
         alive_instance1.fullname = "device serial: 127.0.0.1:1111 alive_instance1"
         expected_instance = [alive_instance1]
         # Test to find instance by adb port number.
@@ -105,16 +106,23 @@ class ListTest(driver_test_lib.BaseDriverTest):
     # pylint: disable=protected-access
     def testGetLocalCuttlefishInstances(self):
         """test _GetLocalCuttlefishInstances."""
-        cf_config = mock.MagicMock()
-
         # Test getting two instance case
-        self.Patch(list_instance, "GetActiveCVDIds", return_value=[1, 2])
-        self.Patch(instance, "GetCuttlefishRuntimeConfig", return_value=cf_config)
+        self.Patch(instance, "GetAllLocalInstanceConfigs",
+                   return_value=["fake_path1", "fake_path2"])
         self.Patch(instance, "GetLocalInstanceRuntimeDir")
-        self.Patch(instance, "LocalInstance")
+
+        local_ins = mock.MagicMock()
+        local_ins.CvdStatus.return_value = True
+        self.Patch(instance, "LocalInstance", return_value=local_ins)
 
         ins_list = list_instance._GetLocalCuttlefishInstances()
         self.assertEqual(2, len(ins_list))
+
+        local_ins = mock.MagicMock()
+        local_ins.CvdStatus.return_value = False
+        self.Patch(instance, "LocalInstance", return_value=local_ins)
+        ins_list = list_instance._GetLocalCuttlefishInstances()
+        self.assertEqual(0, len(ins_list))
 
     # pylint: disable=no-member
     def testPrintInstancesDetails(self):
@@ -125,10 +133,13 @@ class ListTest(driver_test_lib.BaseDriverTest):
             x_res=728,
             y_res=728,
             dpi=240,
-            instance_dir="fake_dir"
+            instance_dir="fake_dir",
+            adb_ip_port="127.0.0.1:6520"
         )
+        self.Patch(cvd_runtime_config, "CvdRuntimeConfig",
+                   return_value=cf_config)
 
-        ins = instance.LocalInstance(1, cf_config)
+        ins = instance.LocalInstance("fake_cf_path")
         list_instance.PrintInstancesDetails([ins], verbose=True)
         instance.Instance.Summary.assert_called_once()
 
@@ -140,15 +151,6 @@ class ListTest(driver_test_lib.BaseDriverTest):
         # Test Summary shouldn't be called if no instance found.
         list_instance.PrintInstancesDetails([], verbose=True)
         instance.Instance.Summary.assert_not_called()
-
-    # pylint: disable=no-member
-    def testGetActiveCVDIds(self):
-        """test GetActiveCVDIds."""
-        # Test getting two local devices
-        adb_output = "127.0.0.1:6520  device\n127.0.0.1:6521  device"
-        expected_result = [1, 2]
-        self.Patch(subprocess, "check_output", return_value=adb_output)
-        self.assertEqual(list_instance.GetActiveCVDIds(), expected_result)
 
 
 if __name__ == "__main__":

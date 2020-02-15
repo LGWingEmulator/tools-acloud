@@ -27,6 +27,7 @@ import dateutil.parser
 import dateutil.tz
 
 from acloud.internal import constants
+from acloud.internal.lib import cvd_runtime_config
 from acloud.internal.lib import driver_test_lib
 from acloud.internal.lib.adb_tools import AdbTools
 from acloud.list import instance
@@ -62,15 +63,18 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         """"Test get local instance info from launch_cvd process."""
         self.Patch(subprocess, "check_output", return_value=self.PS_LAUNCH_CVD)
         cf_config = mock.MagicMock(
+            instance_id=2,
             x_res=1080,
             y_res=1920,
             dpi=480,
             instance_dir="fake_instance_dir",
             adb_port=6521,
-            vnc_port=6445
+            vnc_port=6445,
+            adb_ip_port="127.0.0.1:6521",
         )
-
-        local_instance = instance.LocalInstance(2, cf_config)
+        self.Patch(cvd_runtime_config, "CvdRuntimeConfig",
+                   return_value=cf_config)
+        local_instance = instance.LocalInstance(cf_config)
 
         self.assertEqual(constants.LOCAL_INS_NAME + "-2", local_instance.name)
         self.assertEqual(True, local_instance.islocal)
@@ -80,8 +84,8 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                                  constants.LOCAL_INS_NAME + "-2",
                                  "None"))
         self.assertEqual(expected_full_name, local_instance.fullname)
-        self.assertEqual(6521, local_instance.forwarding_adb_port)
-        self.assertEqual(6445, local_instance.forwarding_vnc_port)
+        self.assertEqual(6521, local_instance.adb_port)
+        self.assertEqual(6445, local_instance.vnc_port)
 
     @mock.patch("acloud.list.instance.tempfile")
     @mock.patch("acloud.list.instance.AdbTools")
@@ -214,8 +218,8 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
         # test ssh_tunnel_is_connected will be true if ssh tunnel connection is found
         instance_info = instance.RemoteInstance(self.GCE_INSTANCE)
         self.assertTrue(instance_info.ssh_tunnel_is_connected)
-        self.assertEqual(instance_info.forwarding_adb_port, fake_adb)
-        self.assertEqual(instance_info.forwarding_vnc_port, fake_vnc)
+        self.assertEqual(instance_info.adb_port, fake_adb)
+        self.assertEqual(instance_info.vnc_port, fake_vnc)
         self.assertEqual("1.1.1.1", instance_info.ip)
         self.assertEqual("fake_status", instance_info.status)
         self.assertEqual("fake_type", instance_info.avd_type)
