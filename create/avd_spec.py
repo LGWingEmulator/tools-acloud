@@ -577,7 +577,11 @@ class AVDSpec(object):
         """
         repo_output = ""
         try:
-            repo_output = subprocess.check_output(_COMMAND_REPO_INFO)
+            # TODO(149460014): Migrate acloud to py3, then remove this
+            # workaround.
+            env = os.environ.copy()
+            env.pop("PYTHONPATH", None)
+            repo_output = subprocess.check_output(_COMMAND_REPO_INFO, env=env)
         except subprocess.CalledProcessError:
             utils.PrintColorString(
                 "Unable to determine your repo branch, defaulting to %s"
