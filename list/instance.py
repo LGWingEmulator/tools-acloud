@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 _ACLOUD_CVD_TEMP = os.path.join(tempfile.gettempdir(), "acloud_cvd_temp")
 _CVD_RUNTIME_FOLDER_NAME = "cuttlefish_runtime"
+_CVD_STATUS_BIN = "cvd_status"
 _MSG_UNABLE_TO_CALCULATE = "Unable to calculate"
 _RE_GROUP_ADB = "local_adb_port"
 _RE_GROUP_VNC = "local_vnc_port"
@@ -63,8 +64,19 @@ _RE_ZONE = re.compile(r".+/zones/(?P<zone>.+)$")
 _LOCAL_ZONE = "local"
 _FULL_NAME_STRING = ("device serial: %(device_serial)s (%(instance_name)s) "
                      "elapsed time: %(elapsed_time)s")
+_INDENT = " " * 3
 LocalPorts = collections.namedtuple("LocalPorts", [constants.VNC_PORT,
                                                    constants.ADB_PORT])
+
+
+def GetDefaultCuttlefishConfig():
+    """Get the path of default cuttlefish instance config.
+
+    Return:
+        String, path of cf runtime config.
+    """
+    return os.path.join(os.path.expanduser("~"), _CVD_RUNTIME_FOLDER_NAME,
+                        constants.CUTTLEFISH_CONFIG_FILE)
 
 
 def GetLocalInstanceName(local_instance_id):
@@ -79,8 +91,48 @@ def GetLocalInstanceName(local_instance_id):
     return "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
 
 
+def GetLocalInstanceConfig(local_instance_id):
+    """Get the path of instance config.
+
+    Args:
+        local_instance_id: Integer of instance id.
+
+    Return:
+        String, path of cf runtime config.
+    """
+    cfg_path = os.path.join(GetLocalInstanceRuntimeDir(local_instance_id),
+                            constants.CUTTLEFISH_CONFIG_FILE)
+    if os.path.isfile(cfg_path):
+        return cfg_path
+    return None
+
+
+def GetAllLocalInstanceConfigs():
+    """Get the list of instance config.
+
+    Return:
+        List of instance config path.
+    """
+    cfg_list = []
+    # Check if any instance config is under home folder.
+    cfg_path = GetDefaultCuttlefishConfig()
+    if os.path.isfile(cfg_path):
+        cfg_list.append(cfg_path)
+
+    # Check if any instance config is under acloud cvd temp folder.
+    if os.path.exists(_ACLOUD_CVD_TEMP):
+        for ins_name in os.listdir(_ACLOUD_CVD_TEMP):
+            cfg_path = os.path.join(_ACLOUD_CVD_TEMP,
+                                    ins_name,
+                                    _CVD_RUNTIME_FOLDER_NAME,
+                                    constants.CUTTLEFISH_CONFIG_FILE)
+            if os.path.isfile(cfg_path):
+                cfg_list.append(cfg_path)
+    return cfg_list
+
+
 def GetLocalInstanceHomeDir(local_instance_id):
-    """Get local instance home dir accroding to instance id.
+    """Get local instance home dir according to instance id.
 
     Args:
         local_instance_id: Integer of instance id.
@@ -103,34 +155,6 @@ def GetLocalInstanceRuntimeDir(local_instance_id):
     """
     return os.path.join(GetLocalInstanceHomeDir(local_instance_id),
                         _CVD_RUNTIME_FOLDER_NAME)
-
-
-def GetCuttlefishRuntimeConfig(local_instance_id):
-    """Get and parse cuttlefish_config.json.
-
-    Args:
-        local_instance_id: Integer of instance id.
-
-    Returns:
-        A CvdRuntimeConfig instance.
-    """
-    runtime_cf_config_path = os.path.join(GetLocalInstanceRuntimeDir(
-        local_instance_id), constants.CUTTLEFISH_CONFIG_FILE)
-    return cvd_runtime_config.CvdRuntimeConfig(runtime_cf_config_path)
-
-
-def GetLocalPortsbyInsId(local_instance_id):
-    """Get vnc and adb port by local instance id.
-
-    Args:
-        local_instance_id: local_instance_id: Integer of instance id.
-
-    Returns:
-        NamedTuple of (vnc_port, adb_port) used by local instance, both are
-        integers.
-    """
-    return LocalPorts(vnc_port=constants.CF_VNC_PORT + local_instance_id - 1,
-                      adb_port=constants.CF_ADB_PORT + local_instance_id - 1)
 
 
 def _GetCurrentLocalTime():
@@ -193,31 +217,30 @@ class Instance(object):
 
     def Summary(self):
         """Let's make it easy to see what this class is holding."""
-        indent = " " * 3
         representation = []
         representation.append(" name: %s" % self._name)
-        representation.append("%s IP: %s" % (indent, self._ip))
-        representation.append("%s create time: %s" % (indent, self._createtime))
-        representation.append("%s elapse time: %s" % (indent, self._elapsed_time))
-        representation.append("%s status: %s" % (indent, self._status))
-        representation.append("%s avd type: %s" % (indent, self._avd_type))
-        representation.append("%s display: %s" % (indent, self._display))
-        representation.append("%s vnc: 127.0.0.1:%s" % (indent, self._vnc_port))
-        representation.append("%s zone: %s" % (indent, self._zone))
+        representation.append("%s IP: %s" % (_INDENT, self._ip))
+        representation.append("%s create time: %s" % (_INDENT, self._createtime))
+        representation.append("%s elapse time: %s" % (_INDENT, self._elapsed_time))
+        representation.append("%s status: %s" % (_INDENT, self._status))
+        representation.append("%s avd type: %s" % (_INDENT, self._avd_type))
+        representation.append("%s display: %s" % (_INDENT, self._display))
+        representation.append("%s vnc: 127.0.0.1:%s" % (_INDENT, self._vnc_port))
+        representation.append("%s zone: %s" % (_INDENT, self._zone))
 
-        if self._adb_port:
+        if self._adb_port and self._device_information:
             representation.append("%s adb serial: 127.0.0.1:%s" %
-                                  (indent, self._adb_port))
+                                  (_INDENT, self._adb_port))
             representation.append("%s product: %s" % (
-                indent, self._device_information["product"]))
+                _INDENT, self._device_information["product"]))
             representation.append("%s model: %s" % (
-                indent, self._device_information["model"]))
+                _INDENT, self._device_information["model"]))
             representation.append("%s device: %s" % (
-                indent, self._device_information["device"]))
+                _INDENT, self._device_information["device"]))
             representation.append("%s transport_id: %s" % (
-                indent, self._device_information["transport_id"]))
+                _INDENT, self._device_information["transport_id"]))
         else:
-            representation.append("%s adb serial: disconnected" % indent)
+            representation.append("%s adb serial: disconnected" % _INDENT)
 
         return "\n".join(representation)
 
@@ -245,16 +268,6 @@ class Instance(object):
     def display(self):
         """Return display."""
         return self._display
-
-    @property
-    def forwarding_adb_port(self):
-        """Return the adb port."""
-        return self._adb_port
-
-    @property
-    def forwarding_vnc_port(self):
-        """Return the vnc port."""
-        return self._vnc_port
 
     @property
     def ssh_tunnel_is_connected(self):
@@ -299,25 +312,28 @@ class Instance(object):
 
 class LocalInstance(Instance):
     """Class to store data of local cuttlefish instance."""
-
-    def __init__(self, local_instance_id, cf_runtime_cfg):
+    def __init__(self, cf_config_path):
         """Initialize a localInstance object.
 
         Args:
-            local_instance_id: Integer of instance id.
-            cf_runtime_cfg: A CvdRuntimeConfig instance.
+            cf_config_path: String, path to the cf runtime config.
         """
-        display = _DISPLAY_STRING % {"x_res": cf_runtime_cfg.x_res,
-                                     "y_res": cf_runtime_cfg.y_res,
-                                     "dpi": cf_runtime_cfg.dpi}
+        self._cf_runtime_cfg = cvd_runtime_config.CvdRuntimeConfig(cf_config_path)
+        self._instance_dir = self._cf_runtime_cfg.instance_dir
+        self._virtual_disk_paths = self._cf_runtime_cfg.virtual_disk_paths
+        self._local_instance_id = int(self._cf_runtime_cfg.instance_id)
+
+        display = _DISPLAY_STRING % {"x_res": self._cf_runtime_cfg.x_res,
+                                     "y_res": self._cf_runtime_cfg.y_res,
+                                     "dpi": self._cf_runtime_cfg.dpi}
         # TODO(143063678), there's no createtime info in
         # cuttlefish_config.json so far.
-        name = GetLocalInstanceName(local_instance_id)
+        name = GetLocalInstanceName(self._local_instance_id)
         fullname = (_FULL_NAME_STRING %
-                    {"device_serial": "127.0.0.1:%d" % cf_runtime_cfg.adb_port,
+                    {"device_serial": "127.0.0.1:%d" % self._cf_runtime_cfg.adb_port,
                      "instance_name": name,
                      "elapsed_time": None})
-        adb_device = AdbTools(cf_runtime_cfg.adb_port)
+        adb_device = AdbTools(self._cf_runtime_cfg.adb_port)
         device_information = None
         if adb_device.IsAdbConnected():
             device_information = adb_device.device_information
@@ -325,18 +341,101 @@ class LocalInstance(Instance):
         super(LocalInstance, self).__init__(
             name=name, fullname=fullname, display=display, ip="127.0.0.1",
             status=constants.INS_STATUS_RUNNING,
-            adb_port=cf_runtime_cfg.adb_port, vnc_port=cf_runtime_cfg.vnc_port,
+            adb_port=self._cf_runtime_cfg.adb_port,
+            vnc_port=self._cf_runtime_cfg.vnc_port,
             createtime=None, elapsed_time=None, avd_type=constants.TYPE_CF,
             is_local=True, device_information=device_information,
             zone=_LOCAL_ZONE)
 
-        # LocalInstance class properties
-        self._instance_dir = cf_runtime_cfg.instance_dir
+    def Summary(self):
+        """Return the string that this class is holding."""
+        instance_home = "%s instance home: %s" % (_INDENT, self._instance_dir)
+        return "%s\n%s" % (super(LocalInstance, self).Summary(), instance_home)
+
+    def CvdStatus(self):
+        """check if local instance is active.
+
+        Execute cvd_status cmd to check if it exit without error.
+
+        Returns
+            True if instance is active.
+        """
+        cvd_env = os.environ.copy()
+        cvd_env[constants.ENV_CUTTLEFISH_CONFIG_FILE] = self._cf_runtime_cfg.config_path
+        cvd_env[constants.ENV_CVD_HOME] = GetLocalInstanceHomeDir(self._local_instance_id)
+        cvd_env[constants.ENV_CUTTLEFISH_INSTANCE] = str(self._local_instance_id)
+        try:
+            cvd_status_cmd = os.path.join(self._cf_runtime_cfg.cvd_tools_path,
+                                          _CVD_STATUS_BIN)
+            logger.debug("Running cmd[%s] to check cvd status.", cvd_status_cmd)
+            process = subprocess.Popen(cvd_status_cmd,
+                                       stdin=None,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT,
+                                       env=cvd_env)
+            stdout, _ = process.communicate()
+            if process.returncode != 0:
+                if stdout:
+                    logger.debug("Local instance[%s] is not active: %s",
+                                 self.name, stdout.strip())
+                return False
+            return True
+        except subprocess.CalledProcessError as cpe:
+            logger.error("Failed to run cvd_status: %s", cpe.output)
+            return False
+
+    def Delete(self):
+        """Execute stop_cvd to stop local cuttlefish instance.
+
+        - We should get the same host tool used to launch cvd to delete instance
+        , So get stop_cvd bin from the cvd runtime config.
+        - Add CUTTLEFISH_CONFIG_FILE env variable to tell stop_cvd which cvd
+        need to be deleted.
+        - Stop adb since local instance use the fixed adb port and could be
+         reused again soon.
+        """
+        stop_cvd_cmd = os.path.join(self.cf_runtime_cfg.cvd_tools_path,
+                                    constants.CMD_STOP_CVD)
+        logger.debug("Running cmd[%s] to delete local cvd", stop_cvd_cmd)
+        with open(os.devnull, "w") as dev_null:
+            cvd_env = os.environ.copy()
+            if self.instance_dir:
+                cvd_env[constants.ENV_CUTTLEFISH_CONFIG_FILE] = self._cf_runtime_cfg.config_path
+                cvd_env[constants.ENV_CVD_HOME] = GetLocalInstanceHomeDir(
+                    self._local_instance_id)
+                cvd_env[constants.ENV_CUTTLEFISH_INSTANCE] = str(self._local_instance_id)
+            else:
+                logger.error("instance_dir is null!! instance[%d] might not be"
+                             " deleted", self._local_instance_id)
+            subprocess.check_call(
+                utils.AddUserGroupsToCmd(stop_cvd_cmd,
+                                         constants.LIST_CF_USER_GROUPS),
+                stderr=dev_null, stdout=dev_null, shell=True, env=cvd_env)
+
+        adb_cmd = AdbTools(self.adb_port)
+        # When relaunch a local instance, we need to pass in retry=True to make
+        # sure adb device is completely gone since it will use the same adb port
+        adb_cmd.DisconnectAdb(retry=True)
 
     @property
     def instance_dir(self):
         """Return _instance_dir."""
         return self._instance_dir
+
+    @property
+    def instance_id(self):
+        """Return _local_instance_id."""
+        return self._local_instance_id
+
+    @property
+    def virtual_disk_paths(self):
+        """Return virtual_disk_paths"""
+        return self._virtual_disk_paths
+
+    @property
+    def cf_runtime_cfg(self):
+        """Return _cf_runtime_cfg"""
+        return self._cf_runtime_cfg
 
 
 class LocalGoldfishInstance(Instance):

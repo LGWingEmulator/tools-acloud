@@ -100,6 +100,7 @@ _EvaluatedResult = collections.namedtuple("EvaluatedResult",
 # dict of supported system and their distributions.
 _SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
 _DEFAULT_TIMEOUT_ERR = "Function did not complete within %d secs."
+_SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 
 
 class TempDir(object):
@@ -1251,3 +1252,13 @@ def GetDictItems(namedtuple_object):
     """
     return (namedtuple_object.__dict__.items() if six.PY2
             else namedtuple_object._asdict().items())
+
+
+def CleanupSSVncviewer(vnc_port):
+    """Cleanup the old disconnected ssvnc viewer.
+
+    Args:
+        vnc_port: Integer, port number of vnc.
+    """
+    ssvnc_viewer_pattern = _SSVNC_VIEWER_PATTERN % {"vnc_port":vnc_port}
+    CleanupProcess(ssvnc_viewer_pattern)

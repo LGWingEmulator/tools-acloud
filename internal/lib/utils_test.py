@@ -411,6 +411,22 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         first_call_args = utils._ExecuteCommand.call_args_list[0][0]
         self.assertEqual(first_call_args[1], args_list)
 
+    # pylint: disable=protected-access, no-member
+    def testCleanupSSVncviwer(self):
+        """test cleanup ssvnc viewer."""
+        fake_vnc_port = 9999
+        fake_ss_vncviewer_pattern = utils._SSVNC_VIEWER_PATTERN % {
+            "vnc_port": fake_vnc_port}
+        self.Patch(utils, "IsCommandRunning", return_value=True)
+        self.Patch(subprocess, "check_call", return_value=True)
+        utils.CleanupSSVncviewer(fake_vnc_port)
+        subprocess.check_call.assert_called_with(["pkill", "-9", "-f", fake_ss_vncviewer_pattern])
+
+        subprocess.check_call.call_count = 0
+        self.Patch(utils, "IsCommandRunning", return_value=False)
+        utils.CleanupSSVncviewer(fake_vnc_port)
+        subprocess.check_call.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

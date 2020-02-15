@@ -63,12 +63,13 @@ class ReportTest(unittest.TestCase):
     def testAddDevice(self):
         """test AddDevice."""
         test_report = report.Report("create")
-        test_report.AddDevice("instance_1", "127.0.0.1", 6520)
+        test_report.AddDevice("instance_1", "127.0.0.1", 6520, 6444)
         expected = {
             "devices": [{
                 "instance_name": "instance_1",
                 "ip": "127.0.0.1:6520",
-                "adb_port": 6520
+                "adb_port": 6520,
+                "vnc_port": 6444
             }]
         }
         self.assertEqual(test_report.data, expected)

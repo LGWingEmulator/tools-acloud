@@ -75,16 +75,16 @@ class CvdRuntimeConfig(object):
     "memory_mb" : 4096,
     "cpus" : 2,
     "dpi" : 320,
-    "virtual_disk_paths" :
-        [
-            "/path-to-image"
-        ],
     "instances" :
         {
             "1" :
             {
                 "adb_ip_and_port" : "127.0.0.1:6520",
                 "instance_dir" : "/path-to-instance-dir",
+                "virtual_disk_paths" :
+                [
+                    "/path-to-image"
+                ],
             }
         }
     }
@@ -101,8 +101,6 @@ class CvdRuntimeConfig(object):
         adb_connector = self._config_dict.get(_CFG_KEY_ADB_CONNECTOR_BINARY)
         self._cvd_tools_path = (os.path.dirname(adb_connector)
                                 if adb_connector else None)
-        self._virtual_disk_paths = self._config_dict.get(
-            _CFG_KEY_VIRTUAL_DISK_PATHS)
 
         # Below properties will be collected inside of instance id node if there
         # are more than one instance.
@@ -110,6 +108,8 @@ class CvdRuntimeConfig(object):
         self._vnc_port = self._config_dict.get(_CFG_KEY_VNC_PORT)
         self._adb_port = self._config_dict.get(_CFG_KEY_ADB_PORT)
         self._adb_ip_port = self._config_dict.get(_CFG_KEY_ADB_IP_PORT)
+        self._virtual_disk_paths = self._config_dict.get(
+            _CFG_KEY_VIRTUAL_DISK_PATHS)
         if not self._instance_dir:
             ins_cfg = self._config_dict.get(_CFG_KEY_INSTANCES)
             ins_dict = ins_cfg.get(self._instance_id)
@@ -121,6 +121,7 @@ class CvdRuntimeConfig(object):
             self._vnc_port = ins_dict.get(_CFG_KEY_VNC_PORT)
             self._adb_port = ins_dict.get(_CFG_KEY_ADB_PORT)
             self._adb_ip_port = ins_dict.get(_CFG_KEY_ADB_IP_PORT)
+            self._virtual_disk_paths = ins_dict.get(_CFG_KEY_VIRTUAL_DISK_PATHS)
 
     @staticmethod
     def _GetCuttlefishRuntimeConfig(runtime_cf_config_path):
