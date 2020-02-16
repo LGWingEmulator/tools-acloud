@@ -918,14 +918,22 @@ def LaunchBrowserFromReport(report):
     Args:
         report: Report object, that stores and generates report.
     """
+    PrintColorString("(This is an experimental project for webrtc, and since "
+                     "the certificate is self-signed, Chrome will mark it as "
+                     "an insecure website. keep going.)",
+                     TextColors.WARNING)
+
     for device in report.data.get("devices", []):
         if device.get("ip"):
-            PrintColorString("(This is an experimental project for webrtc, and "
-                             "since the certificate is self-signed, Chrome will "
-                             "mark it as an insecure website. keep going.)",
-                             TextColors.WARNING)
-            webbrowser.open_new_tab("%s%s:%s" % (
-                _WEBRTC_URL, device.get("ip"), _WEBRTC_PORT))
+            webrtc_link = "%s%s:%s" % (_WEBRTC_URL, device.get("ip"),
+                                       _WEBRTC_PORT)
+            if os.environ.get(_ENV_DISPLAY, None):
+                webbrowser.open_new_tab(webrtc_link)
+            else:
+                PrintColorString("Remote terminal can't support launch webbrowser.",
+                                 TextColors.FAIL)
+                PrintColorString("Open %s to remotely control AVD on the "
+                                 "browser." % webrtc_link)
         else:
             PrintColorString("Auto-launch devices webrtc in browser failed!",
                              TextColors.FAIL)
