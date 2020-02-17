@@ -26,6 +26,7 @@ import os
 import re
 import subprocess
 import tempfile
+import threading
 
 from acloud import errors
 from acloud.create import create_common
@@ -41,7 +42,8 @@ logger = logging.getLogger(__name__)
 
 # Default values for build target.
 _BRANCH_RE = re.compile(r"^Manifest branch: (?P<branch>.+)")
-_COMMAND_REPO_INFO = ["repo", "info"]
+_COMMAND_REPO_INFO = "repo info platform/tools/acloud"
+_REPO_TIMEOUT = 3
 _CF_ZIP_PATTERN = "*img*.zip"
 _DEFAULT_BUILD_BITNESS = "x86"
 _DEFAULT_BUILD_TYPE = "userdebug"
@@ -575,23 +577,31 @@ class AVDSpec(object):
         Returns:
             branch: String, git branch name. e.g. "aosp-master"
         """
-        repo_output = ""
-        try:
-            # TODO(149460014): Migrate acloud to py3, then remove this
-            # workaround.
-            env = os.environ.copy()
-            env.pop("PYTHONPATH", None)
-            repo_output = subprocess.check_output(_COMMAND_REPO_INFO, env=env)
-        except subprocess.CalledProcessError:
-            utils.PrintColorString(
-                "Unable to determine your repo branch, defaulting to %s"
-                % _DEFAULT_BRANCH, utils.TextColors.WARNING)
-        for line in repo_output.splitlines():
-            match = _BRANCH_RE.match(EscapeAnsi(line))
-            if match:
-                branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
-                                                   _DEFAULT_BRANCH_PREFIX)
-                return branch_prefix + match.group("branch")
+        branch = None
+        # TODO(149460014): Migrate acloud to py3, then remove this
+        # workaround.
+        env = os.environ.copy()
+        env.pop("PYTHONPATH", None)
+        logger.info("Running command \"%s\"", _COMMAND_REPO_INFO)
+        process = subprocess.Popen(_COMMAND_REPO_INFO, shell=True, stdin=None,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, env=env)
+        timer = threading.Timer(_REPO_TIMEOUT, process.kill)
+        timer.start()
+        stdout, _ = process.communicate()
+        if stdout:
+            for line in stdout.splitlines():
+                match = _BRANCH_RE.match(EscapeAnsi(line))
+                if match:
+                    branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
+                                                       _DEFAULT_BRANCH_PREFIX)
+                    branch = branch_prefix + match.group("branch")
+        timer.cancel()
+        if branch:
+            return branch
+        utils.PrintColorString(
+            "Unable to determine your repo branch, defaulting to %s"
+            % _DEFAULT_BRANCH, utils.TextColors.WARNING)
         return _DEFAULT_BRANCH
 
     def _GetBuildTarget(self, args):
@@ -750,6 +760,7 @@ class AVDSpec(object):
         """Return the Cheeps host image name."""
         return self._stable_cheeps_host_image_name
 
+    # pylint: disable=invalid-name
     @property
     def stable_cheeps_host_image_project(self):
         """Return the project hosting the Cheeps host image."""
