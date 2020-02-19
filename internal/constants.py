@@ -169,3 +169,10 @@ EXIT_BY_ERROR = -99
 
 # For reuse gce instance
 SELECT_ONE_GCE_INSTANCE = "select_one_gce_instance"
+
+# Webrtc
+WEBRTC_LOCAL_PORT = 8443
+WEBRTC_LOCAL_HOST = "localhost"
+
+# Remote Log
+REMOTE_LOG_FOLDER = "/home/%s/cuttlefish_runtime" % GCE_USER
