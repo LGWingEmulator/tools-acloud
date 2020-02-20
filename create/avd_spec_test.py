@@ -370,24 +370,28 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.args.autoconnect = False
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, False)
+        self.assertEqual(self.AvdSpec.connect_adb, False)
         self.assertEqual(self.AvdSpec.connect_vnc, False)
         self.assertEqual(self.AvdSpec.connect_webrtc, False)
 
         self.args.autoconnect = constants.INS_KEY_VNC
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, True)
+        self.assertEqual(self.AvdSpec.connect_adb, True)
         self.assertEqual(self.AvdSpec.connect_vnc, True)
         self.assertEqual(self.AvdSpec.connect_webrtc, False)
 
         self.args.autoconnect = constants.INS_KEY_ADB
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, True)
+        self.assertEqual(self.AvdSpec.connect_adb, True)
         self.assertEqual(self.AvdSpec.connect_vnc, False)
         self.assertEqual(self.AvdSpec.connect_webrtc, False)
 
         self.args.autoconnect = constants.INS_KEY_WEBRTC
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec.autoconnect, True)
+        self.assertEqual(self.AvdSpec.connect_adb, True)
         self.assertEqual(self.AvdSpec.connect_vnc, False)
         self.assertEqual(self.AvdSpec.connect_webrtc, True)
 
