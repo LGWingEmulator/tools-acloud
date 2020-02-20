@@ -90,7 +90,7 @@ def EscapeAnsi(line):
 
 
 # pylint: disable=too-many-public-methods
-class AVDSpec(object):
+class AVDSpec:
     """Class to store data on the type of AVD to create."""
 
     def __init__(self, args):
@@ -671,6 +671,14 @@ class AVDSpec(object):
         args.autoconnect could pass as Boolean or String.
 
         Return: Boolean, True only if self._autoconnect is not False.
+        """
+        return self._autoconnect is not False
+
+    @property
+    def connect_adb(self):
+        """Auto-connect to adb.
+
+        Return: Boolean, whether autoconnect is enabled.
         """
         return self._autoconnect is not False
 
