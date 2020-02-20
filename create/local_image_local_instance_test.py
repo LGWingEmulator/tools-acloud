@@ -35,12 +35,12 @@ class LocalImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
 
     LAUNCH_CVD_CMD_WITH_DISK = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -blank_data_image_mb fake -data_policy always_create
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -blank_data_image_mb fake -data_policy always_create
 EOF"""
 
     LAUNCH_CVD_CMD_NO_DISK = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -system_image_dir fake_image_dir -instance_dir fake_cvd_dir
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir
 EOF"""
 
     _EXPECTED_DEVICES_IN_REPORT = [
@@ -77,7 +77,7 @@ EOF"""
         """Test the report returned by _CreateAVD."""
         mock_utils.IsSupportedPlatform.return_value = True
         mock_get_image.return_value = ("/image/path", "/host/bin/path")
-        mock_avd_spec = mock.Mock(autoconnect=False, unlock_screen=False)
+        mock_avd_spec = mock.Mock(connect_adb=False, unlock_screen=False)
         self.Patch(instance, "GetLocalInstanceName",
                    return_value="local-instance-1")
         local_ins = mock.MagicMock(
@@ -145,7 +145,7 @@ EOF"""
         constants.LIST_CF_USER_GROUPS = ["group1", "group2"]
 
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
-            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir",
+            constants.CMD_LAUNCH_CVD, hw_property, True, "fake_image_dir",
             "fake_cvd_dir")
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_WITH_DISK)
 
@@ -153,7 +153,7 @@ EOF"""
         hw_property = {"cpu": "fake", "x_res": "fake", "y_res": "fake",
                        "dpi":"fake", "memory": "fake"}
         launch_cmd = self.local_image_local_instance.PrepareLaunchCVDCmd(
-            constants.CMD_LAUNCH_CVD, hw_property, "fake_image_dir",
+            constants.CMD_LAUNCH_CVD, hw_property, True, "fake_image_dir",
             "fake_cvd_dir")
         self.assertEqual(launch_cmd, self.LAUNCH_CVD_CMD_NO_DISK)
 
