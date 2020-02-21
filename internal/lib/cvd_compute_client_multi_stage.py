@@ -55,6 +55,7 @@ from acloud.pull import pull
 logger = logging.getLogger(__name__)
 
 _DECOMPRESS_KERNEL_ARG = "-decompress_kernel=true"
+_GPU_ARG = "-gpu_mode=drm_virgl"
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
 _FETCHER_NAME = "fetch_cvd"
@@ -289,6 +290,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
 
         if decompress_kernel:
             launch_cvd_args.append(_DECOMPRESS_KERNEL_ARG)
+
+        if self._gpu:
+            launch_cvd_args.append(_GPU_ARG)
 
         return launch_cvd_args
 
