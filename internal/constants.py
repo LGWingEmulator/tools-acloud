@@ -130,6 +130,7 @@ LOCALHOST_ADB_SERIAL = LOCALHOST + ":%d"
 SSH_BIN = "ssh"
 SCP_BIN = "scp"
 ADB_BIN = "adb"
+DEFAULT_SSH_TIMEOUT = 300
 
 LABEL_CREATE_BY = "created_by"
 

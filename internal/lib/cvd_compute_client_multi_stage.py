@@ -519,7 +519,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if kernel_build:
             fetch_cvd_args.append("-kernel_build=" + kernel_build)
 
-        self._ssh.Run("./fetch_cvd " + " ".join(fetch_cvd_args))
+        self._ssh.Run("./fetch_cvd " + " ".join(fetch_cvd_args),
+                      timeout=constants.DEFAULT_SSH_TIMEOUT)
         self._execution_time[_FETCH_ARTIFACT] = round(time.time() - timestart, 2)
 
     def GetInstanceIP(self, instance=None):
