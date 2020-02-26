@@ -30,7 +30,7 @@ _SSH_CMD = ("-i %(rsa_key_file)s "
 _SSH_IDENTITY = "-l %(login_user)s %(ip_addr)s"
 _SSH_CMD_MAX_RETRY = 5
 _SSH_CMD_RETRY_SLEEP = 3
-_WAIT_FOR_SSH_MAX_TIMEOUT = 60
+_CONNECTION_TIMEOUT = 10
 
 
 def _SshCallWait(cmd, timeout=None):
@@ -258,27 +258,27 @@ class Ssh(object):
             "Ssh isn't ready in the remote instance.")
 
     @utils.TimeExecute(function_description="Waiting for SSH server")
-    def WaitForSsh(self, timeout=None, sleep_for_retry=_SSH_CMD_RETRY_SLEEP,
-                   max_retry=_SSH_CMD_MAX_RETRY):
+    def WaitForSsh(self, timeout=None, max_retry=_SSH_CMD_MAX_RETRY):
         """Wait until the remote instance is ready to accept commands over SSH.
 
         Args:
             timeout: Integer, the maximum time in seconds to wait for the
                      command to respond.
-            sleep_for_retry: Integer, the sleep time in seconds for retry.
             max_retry: Integer, the maximum number of retry.
 
         Raises:
             errors.DeviceConnectionError: Ssh isn't ready in the remote instance.
         """
-        timeout_one_round = timeout / max_retry if timeout else None
+        ssh_timeout = timeout or constants.DEFAULT_SSH_TIMEOUT
+        sleep_multiplier = ssh_timeout / sum(range(max_retry + 1))
+        logger.debug("Retry with interval time: %s", str(sleep_multiplier))
         utils.RetryExceptionType(
             exception_types=errors.DeviceConnectionError,
             max_retries=max_retry,
             functor=self.CheckSshConnection,
-            sleep_multiplier=sleep_for_retry,
+            sleep_multiplier=sleep_multiplier,
             retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
-            timeout=timeout_one_round or _WAIT_FOR_SSH_MAX_TIMEOUT)
+            timeout=_CONNECTION_TIMEOUT)
 
     def ScpPushFile(self, src_file, dst_file):
         """Scp push file to remote.
