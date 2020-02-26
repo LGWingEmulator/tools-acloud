@@ -128,6 +128,7 @@ from acloud.setup import setup_args
 LOGGING_FMT = "%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s"
 ACLOUD_LOGGER = "acloud"
 NO_ERROR_MESSAGE = ""
+PROG = "acloud"
 
 # Commands
 CMD_CREATE_CUTTLEFISH = "create_cf"
@@ -156,6 +157,9 @@ def _ParseArgs(args):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         usage="acloud {" + usage + "} ...")
+    parser = argparse.ArgumentParser(prog=PROG)
+    parser.add_argument('--version', action='version', version=(
+        '%(prog)s ' + config.GetVersion()))
     subparsers = parser.add_subparsers(metavar="{" + usage + "}")
     subparser_list = []
 
@@ -346,6 +350,9 @@ def main(argv=None):
     args = _ParseArgs(argv)
     _SetupLogging(args.log_file, args.verbose)
     _VerifyArgs(args)
+
+    if args.verbose:
+        print("%s %s" % (PROG, config.GetVersion()))
 
     cfg = config.GetAcloudConfig(args)
     # TODO: Move this check into the functions it is actually needed.
