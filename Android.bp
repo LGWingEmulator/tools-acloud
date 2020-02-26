@@ -39,6 +39,7 @@ python_binary_host {
     ],
     data: [
         "public/data/default.config",
+	":acloud_version",
     ],
     libs: [
         "acloud_create",
@@ -197,4 +198,11 @@ python_library_host{
          "asuite_cc_client",
          "asuite_metrics",
     ],
+}
+
+genrule {
+    name: "acloud_version",
+    tool_files: ["gen_version.sh"],
+    cmd: "$(location gen_version.sh) $(out)",
+    out: ["public/data/VERSION"],
 }

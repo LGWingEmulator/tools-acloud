@@ -64,6 +64,26 @@ _CONFIG_DATA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data")
 _DEFAULT_CONFIG_FILE = "acloud.config"
 
+# VERSION
+_VERSION_FILE = "VERSION"
+_UNKNOWN = "UNKNOWN"
+
+
+def GetVersion():
+    """Print the version of acloud.
+
+    The VERSION file is built into the acloud binary. The version file path is
+    under "public/data".
+
+    Returns:
+        String of the acloud version.
+    """
+    version_file_path = os.path.join(_CONFIG_DATA_PATH, _VERSION_FILE)
+    if os.path.exists(version_file_path):
+        with open(version_file_path) as version_file:
+            return version_file.read()
+    return _UNKNOWN
+
 
 def GetDefaultConfigFile():
     """Return path to default config file."""
