@@ -925,7 +925,7 @@ def LaunchBrowserFromReport(report):
 
     for device in report.data.get("devices", []):
         if device.get("ip"):
-            webrtc_link = "%s%s:%s" % (_WEBRTC_URL, device.get("ip"),
+            webrtc_link = "%s%s:%s" % (_WEBRTC_URL, device.get("ip").split(":")[0],
                                        _WEBRTC_PORT)
             if os.environ.get(_ENV_DISPLAY, None):
                 webbrowser.open_new_tab(webrtc_link)

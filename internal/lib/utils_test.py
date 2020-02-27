@@ -23,10 +23,11 @@ import shutil
 import subprocess
 import tempfile
 import time
+import webbrowser
 
 import unittest
-import mock
 import six
+import mock
 
 from acloud import errors
 from acloud.internal.lib import driver_test_lib
@@ -426,6 +427,34 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         self.Patch(utils, "IsCommandRunning", return_value=False)
         utils.CleanupSSVncviewer(fake_vnc_port)
         subprocess.check_call.assert_not_called()
+
+    def testLaunchBrowserFromReport(self):
+        """test launch browser from report."""
+        self.Patch(webbrowser, "open_new_tab")
+        fake_report = mock.MagicMock(data={})
+
+        # test remote instance
+        self.Patch(os.environ, "get", return_value=True)
+        fake_report.data = {
+            "devices": [{"instance_name": "remote_cf_instance_name",
+                         "ip": "192.168.1.1",},],}
+
+        utils.LaunchBrowserFromReport(fake_report)
+        webbrowser.open_new_tab.assert_called_once_with("https://192.168.1.1:8443")
+        webbrowser.open_new_tab.call_count = 0
+
+        # test local instance
+        fake_report.data = {
+            "devices": [{"instance_name": "local-instance1",
+                         "ip": "127.0.0.1:6250",},],}
+        utils.LaunchBrowserFromReport(fake_report)
+        webbrowser.open_new_tab.assert_called_once_with("https://127.0.0.1:8443")
+        webbrowser.open_new_tab.call_count = 0
+
+        # verify terminal can't support launch webbrowser.
+        self.Patch(os.environ, "get", return_value=False)
+        utils.LaunchBrowserFromReport(fake_report)
+        self.assertEqual(webbrowser.open_new_tab.call_count, 0)
 
 
 if __name__ == "__main__":
