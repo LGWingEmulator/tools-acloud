@@ -130,7 +130,8 @@ def _SshLogOutput(cmd, timeout=None, show_output=False):
         raise subprocess.CalledProcessError(process.returncode, cmd)
 
 
-def ShellCmdWithRetry(cmd, timeout=None, show_output=False):
+def ShellCmdWithRetry(cmd, timeout=None, show_output=False,
+                      retry=_SSH_CMD_MAX_RETRY):
     """Runs a shell command on remote device.
 
     If the network is unstable and causes SSH connect fail, it will retry. When
@@ -142,14 +143,15 @@ def ShellCmdWithRetry(cmd, timeout=None, show_output=False):
         cmd: String of the full SSH command to run, including the SSH binary and its arguments.
         timeout: Optional integer, number of seconds to give.
         show_output: Boolean, True to show command output in screen.
+        retry: Integer, the retry times.
 
     Raises:
         errors.DeviceConnectionError: For any non-zero return code of
                                       remote_cmd.
     """
     utils.RetryExceptionType(
-        exception_types=errors.DeviceConnectionError,
-        max_retries=_SSH_CMD_MAX_RETRY,
+        exception_types=(errors.DeviceConnectionError, subprocess.CalledProcessError),
+        max_retries=retry,
         functor=_SshLogOutput,
         sleep_multiplier=_SSH_CMD_RETRY_SLEEP,
         retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
@@ -188,7 +190,8 @@ class Ssh(object):
         self._ssh_private_key_path = ssh_private_key_path
         self._extra_args_ssh_tunnel = extra_args_ssh_tunnel
 
-    def Run(self, target_command, timeout=None, show_output=False):
+    def Run(self, target_command, timeout=None, show_output=False,
+            retry=_SSH_CMD_MAX_RETRY):
         """Run a shell command over SSH on a remote instance.
 
         Example:
@@ -203,10 +206,12 @@ class Ssh(object):
             target_command: String, text of command to run on the remote instance.
             timeout: Integer, the maximum time to wait for the command to respond.
             show_output: Boolean, True to show command output in screen.
+            retry: Integer, the retry times.
         """
         ShellCmdWithRetry(self.GetBaseCmd(constants.SSH_BIN) + " " + target_command,
                           timeout,
-                          show_output)
+                          show_output,
+                          retry)
 
     def GetBaseCmd(self, execute_bin):
         """Get a base command over SSH on a remote instance.

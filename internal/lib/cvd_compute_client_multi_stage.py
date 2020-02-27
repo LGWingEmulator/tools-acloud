@@ -70,6 +70,7 @@ _GUEST_ENFORCE_SECURITY_FALSE = "--guest_enforce_security=false"
 _START_WEBRTC = "--start_webrtc"
 _VM_MANAGER = "--vm_manager=crosvm"
 _WEBRTC_ARGS = [_GUEST_ENFORCE_SECURITY_FALSE, _START_WEBRTC, _VM_MANAGER]
+_NO_RETRY = 0
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -375,7 +376,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         boot_timeout_secs = boot_timeout_secs or constants.DEFAULT_CF_BOOT_TIMEOUT
         ssh_command = "./bin/launch_cvd -daemon " + " ".join(launch_cvd_args)
         try:
-            self._ssh.Run(ssh_command, boot_timeout_secs)
+            self._ssh.Run(ssh_command, boot_timeout_secs, retry=_NO_RETRY)
         except (subprocess.CalledProcessError, errors.DeviceConnectionError) as e:
             # TODO(b/140475060): Distinguish the error is command return error
             # or timeout error.
