@@ -58,6 +58,10 @@ _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-system_image_dir %s -instance_dir %s")
 _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
                              "-data_policy always_create")
+_CMD_LAUNCH_CVD_WEBRTC_ARGS = (" -guest_enforce_security=false "
+                               "-vm_manager=crosvm "
+                               "-start_webrtc=true "
+                               "-webrtc_public_ip=%s" % constants.LOCALHOST)
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD[id:%d] is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out[y/N]: ")
@@ -100,7 +104,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        avd_spec.hw_property,
                                        avd_spec.connect_adb,
                                        local_image_path,
-                                       avd_spec.local_instance_id)
+                                       avd_spec.local_instance_id,
+                                       avd_spec.connect_webrtc)
 
         result_report = report.Report(command="create")
         instance_name = instance.GetLocalInstanceName(
@@ -124,6 +129,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             # Launch vnc client if we're auto-connecting.
             if avd_spec.connect_vnc:
                 utils.LaunchVNCFromReport(result_report, avd_spec, no_prompts)
+            if avd_spec.connect_webrtc:
+                utils.LaunchBrowserFromReport(result_report)
             if avd_spec.unlock_screen:
                 AdbTools(active_ins.adb_port).AutoUnlockScreen()
         else:
@@ -132,7 +139,6 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             result_report.SetStatus(report.Status.BOOT_FAIL)
             result_report.AddDeviceBootFailure(
                 instance_name, constants.LOCALHOST, None, None, error=err_msg)
-
         return result_report
 
     @staticmethod
@@ -172,7 +178,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
     @staticmethod
     def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, connect_adb,
-                            system_image_dir, local_instance_id):
+                            system_image_dir, local_instance_id, connect_webrtc):
         """Prepare launch_cvd command.
 
         Create the launch_cvd commands with all the required args and add
@@ -184,6 +190,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             system_image_dir: String of local images path.
             connect_adb: Boolean flag that enables adb_connector.
             local_instance_id: Integer of instance id.
+            connect_webrtc: Boolean of connect_webrtc.
 
         Returns:
             String, launch_cvd cmd.
@@ -197,6 +204,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         if constants.HW_ALIAS_DISK in hw_property:
             launch_cvd_w_args = (launch_cvd_w_args + _CMD_LAUNCH_CVD_DISK_ARGS %
                                  hw_property[constants.HW_ALIAS_DISK])
+        if connect_webrtc:
+            launch_cvd_w_args += _CMD_LAUNCH_CVD_WEBRTC_ARGS
 
         launch_cmd = utils.AddUserGroupsToCmd(launch_cvd_w_args,
                                               constants.LIST_CF_USER_GROUPS)
