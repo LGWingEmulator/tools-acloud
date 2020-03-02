@@ -271,7 +271,7 @@ class Ssh(object):
         """
         ssh_timeout = timeout or constants.DEFAULT_SSH_TIMEOUT
         sleep_multiplier = ssh_timeout / sum(range(max_retry + 1))
-        logger.debug("Retry with interval time: %s", str(sleep_multiplier))
+        logger.debug("Retry with interval time: %s secs", str(sleep_multiplier))
         utils.RetryExceptionType(
             exception_types=errors.DeviceConnectionError,
             max_retries=max_retry,

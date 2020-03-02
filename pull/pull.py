@@ -34,7 +34,7 @@ from acloud.public import report
 
 logger = logging.getLogger(__name__)
 
-_REMOTE_LOG_FOLDER = "/home/%s/cuttlefish_runtime" % constants.GCE_USER
+_REMOTE_LOG_FOLDER = "/home/%s/cuttlefish_runtime/" % constants.GCE_USER
 _FIND_LOG_FILE_CMD = "find %s -type f" % _REMOTE_LOG_FOLDER
 # Black list for log files.
 _KERNEL = "kernel"
