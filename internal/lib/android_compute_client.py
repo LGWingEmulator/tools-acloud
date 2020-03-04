@@ -52,7 +52,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
     DATA_DISK_NAME_FMT = "data-{instance}"
     BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
     BOOT_STARTED_MSG = "VIRTUAL_DEVICE_BOOT_STARTED"
-    BOOT_TIMEOUT_SECS = 5 * 60  # 5 mins, usually it should take ~2 mins
+    BOOT_TIMEOUT_SECS = 450  # 7.5 mins, usually it should take ~2 mins
     BOOT_CHECK_INTERVAL_SECS = 10
 
     OPERATION_TIMEOUT_SECS = 20 * 60  # Override parent value, 20 mins
