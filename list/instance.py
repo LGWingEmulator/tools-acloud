@@ -364,10 +364,6 @@ class LocalInstance(Instance):
             logger.debug("No cvd tools path found from config:%s",
                          self._cf_runtime_cfg.config_path)
             return False
-        if not os.path.exists(self._cf_runtime_cfg.cvd_tools_path):
-            logger.debug("Cvd tools path doesn't exist:%s",
-                         self._cf_runtime_cfg.cvd_tools_path)
-            return False
         cvd_env = os.environ.copy()
         cvd_env[constants.ENV_CUTTLEFISH_CONFIG_FILE] = self._cf_runtime_cfg.config_path
         cvd_env[constants.ENV_CVD_HOME] = GetLocalInstanceHomeDir(self._local_instance_id)
@@ -375,6 +371,18 @@ class LocalInstance(Instance):
         try:
             cvd_status_cmd = os.path.join(self._cf_runtime_cfg.cvd_tools_path,
                                           _CVD_STATUS_BIN)
+            # TODO(b/150575261): Change the cvd home and cvd artifact path to
+            #  another place instead of /tmp to prevent from the file not
+            #  found exception.
+            if not os.path.exists(cvd_status_cmd):
+                logger.warning("Cvd tools path doesn't exist:%s", cvd_status_cmd)
+                if os.environ.get(constants.ENV_ANDROID_HOST_OUT) in cvd_status_cmd:
+                    utils.PrintColorString(
+                        "Can't find the cvd_status tool (Try lunching a "
+                        "cuttlefish target like aosp_cf_x86_phone-userdebug "
+                        "and running 'make hosttar' before list/delete local "
+                        "instances)", utils.TextColors.WARNING)
+                return False
             logger.debug("Running cmd[%s] to check cvd status.", cvd_status_cmd)
             process = subprocess.Popen(cvd_status_cmd,
                                        stdin=None,
