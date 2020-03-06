@@ -98,7 +98,7 @@ _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
 _EvaluatedResult = collections.namedtuple("EvaluatedResult",
                                           ["is_result_ok", "result_message"])
 # dict of supported system and their distributions.
-_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "Debian"]}
+_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "ubuntu", "Debian", "debian"]}
 _DEFAULT_TIMEOUT_ERR = "Function did not complete within %d secs."
 _SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 
@@ -1142,7 +1142,7 @@ def IsSupportedPlatform(print_warning=False):
     platform_supported = (system in _SUPPORTED_SYSTEMS_AND_DISTS and
                           dist in _SUPPORTED_SYSTEMS_AND_DISTS[system])
 
-    logger.info("supported system and dists: %s",
+    logger.info("Updated supported system and dists: %s",
                 _SUPPORTED_SYSTEMS_AND_DISTS)
     platform_supported_msg = ("%s[%s] %s supported platform" %
                               (system,
