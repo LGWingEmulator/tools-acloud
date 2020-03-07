@@ -67,6 +67,7 @@ _DEFAULT_CONFIG_FILE = "acloud.config"
 # VERSION
 _VERSION_FILE = "VERSION"
 _UNKNOWN = "UNKNOWN"
+_NUM_INSTANCES_ARG = "-num_instances"
 
 
 def GetVersion():
@@ -272,6 +273,14 @@ class AcloudConfig(object):
                 self.network = parsed_args.network
             if parsed_args.multi_stage_launch is not None:
                 self.enable_multi_stage = parsed_args.multi_stage_launch
+        if (parsed_args.which == "create_cf" and
+                parsed_args.num_avds_per_instance > 1):
+            scrubbed_args = [arg for arg in self.launch_args.split()
+                             if _NUM_INSTANCES_ARG not in arg]
+            scrubbed_args.append("%s=%d" % (_NUM_INSTANCES_ARG,
+                                            parsed_args.num_avds_per_instance))
+
+            self.launch_args = " ".join(scrubbed_args)
 
     def OverrideHwPropertyWithFlavor(self, flavor):
         """Override hw configuration values with flavor name.
