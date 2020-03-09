@@ -130,7 +130,9 @@ LOCALHOST_ADB_SERIAL = LOCALHOST + ":%d"
 SSH_BIN = "ssh"
 SCP_BIN = "scp"
 ADB_BIN = "adb"
+# Default timeout, the unit is seconds.
 DEFAULT_SSH_TIMEOUT = 300
+DEFAULT_CF_BOOT_TIMEOUT = 450
 
 LABEL_CREATE_BY = "created_by"
 

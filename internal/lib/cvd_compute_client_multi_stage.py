@@ -371,7 +371,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                                                  blank_data_disk_size_gb,
                                                  kernel_build,
                                                  decompress_kernel)
-        boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
+        boot_timeout_secs = boot_timeout_secs or constants.DEFAULT_CF_BOOT_TIMEOUT
         ssh_command = "./bin/launch_cvd -daemon " + " ".join(launch_cvd_args)
         try:
             self._ssh.Run(ssh_command, boot_timeout_secs)
