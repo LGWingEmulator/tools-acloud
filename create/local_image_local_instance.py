@@ -65,7 +65,6 @@ _CMD_LAUNCH_CVD_WEBRTC_ARGS = (" -guest_enforce_security=false "
 _CONFIRM_RELAUNCH = ("\nCuttlefish AVD[id:%d] is already running. \n"
                      "Enter 'y' to terminate current instance and launch a new "
                      "instance, enter anything else to exit out[y/N]: ")
-_LAUNCH_CVD_TIMEOUT_SECS = 120  # default timeout as 120 seconds
 _LAUNCH_CVD_TIMEOUT_ERROR = ("Cuttlefish AVD launch timeout, did not complete "
                              "within %d secs.")
 _VIRTUAL_DISK_PATHS = "virtual_disk_paths"
@@ -112,8 +111,9 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             avd_spec.local_instance_id)
         try:
             self.CheckLaunchCVD(
-                cmd, host_bins_path, avd_spec.local_instance_id, local_image_path,
-                no_prompts, avd_spec.boot_timeout_secs or _LAUNCH_CVD_TIMEOUT_SECS)
+                cmd, host_bins_path, avd_spec.local_instance_id,
+                local_image_path, no_prompts,
+                avd_spec.boot_timeout_secs or constants.DEFAULT_CF_BOOT_TIMEOUT)
         except errors.LaunchCVDFail as launch_error:
             result_report.SetStatus(report.Status.BOOT_FAIL)
             result_report.AddDeviceBootFailure(
@@ -214,7 +214,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
     def CheckLaunchCVD(self, cmd, host_bins_path, local_instance_id,
                        local_image_path, no_prompts=False,
-                       timeout_secs=_LAUNCH_CVD_TIMEOUT_SECS):
+                       timeout_secs=constants.DEFAULT_CF_BOOT_TIMEOUT):
         """Execute launch_cvd command and wait for boot up completed.
 
         1. Check if the provided image files are in use by any launch_cvd process.

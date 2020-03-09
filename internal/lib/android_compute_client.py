@@ -52,9 +52,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
     DATA_DISK_NAME_FMT = "data-{instance}"
     BOOT_COMPLETED_MSG = "VIRTUAL_DEVICE_BOOT_COMPLETED"
     BOOT_STARTED_MSG = "VIRTUAL_DEVICE_BOOT_STARTED"
-    BOOT_TIMEOUT_SECS = 450  # 7.5 mins, usually it should take ~2 mins
     BOOT_CHECK_INTERVAL_SECS = 10
-
     OPERATION_TIMEOUT_SECS = 20 * 60  # Override parent value, 20 mins
 
     NAME_LENGTH_LIMIT = 63
@@ -352,7 +350,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
             boot_timeout_secs: Integer, the maximum time in seconds used to
                                wait for the AVD to boot.
         """
-        boot_timeout_secs = boot_timeout_secs or self.BOOT_TIMEOUT_SECS
+        boot_timeout_secs = boot_timeout_secs or constants.DEFAULT_CF_BOOT_TIMEOUT
         logger.info("Waiting for instance to boot up %s for %s secs",
                     instance, boot_timeout_secs)
         timeout_exception = errors.DeviceBootTimeoutError(
