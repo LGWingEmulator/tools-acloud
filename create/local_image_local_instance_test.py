@@ -208,7 +208,7 @@ EOF"""
                                                        local_instance_id,
                                                        local_image_path)
         mock_launch_cvd.assert_called_once_with(
-            "fake_launch_cvd", 3, timeout=local_image_local_instance._LAUNCH_CVD_TIMEOUT_SECS)
+            "fake_launch_cvd", 3, timeout=constants.DEFAULT_CF_BOOT_TIMEOUT)
 
     # pylint: disable=protected-access
     @mock.patch.dict("os.environ", clear=True)
