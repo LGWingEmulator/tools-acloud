@@ -51,8 +51,6 @@ instance (running on a virtual machine in the cloud) and local instance
 (running on your local host) use cases. You also have the option to use
 a locally built image or an image from the Android Build servers.
 
-**Disclaimer: Creation of a cuttlefish local instance is not formally supported, please use at your own risk.**
-
 Here's a quick cheat-sheet for the 4 use cases:
 
 * Remote instance using an Android Build image (LKGB (Last Known Good Build)
