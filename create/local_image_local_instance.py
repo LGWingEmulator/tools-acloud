@@ -94,7 +94,6 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             result_report.SetStatus(report.Status.FAIL)
             return result_report
 
-        self.PrintDisclaimer()
         local_image_path, host_bins_path = self.GetImageArtifactsPath(avd_spec)
 
         launch_cvd_path = os.path.join(host_bins_path, "bin",
@@ -295,14 +294,6 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         raise errors.LaunchCVDFail(
             "Can't launch cuttlefish AVD. Return code:%s. \nFor more detail: "
             "%s/launcher.log" % (str(process.returncode), cvd_runtime_dir))
-
-    @staticmethod
-    def PrintDisclaimer():
-        """Print Disclaimer."""
-        utils.PrintColorString(
-            "(Disclaimer: Local cuttlefish instance is not a fully supported\n"
-            "runtime configuration, fixing breakages is on a best effort SLO.)\n",
-            utils.TextColors.WARNING)
 
     @staticmethod
     def IsLocalImageOccupied(local_image_dir):
