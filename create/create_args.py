@@ -25,6 +25,7 @@ from acloud.internal import constants
 from acloud.internal.lib import utils
 
 
+_DEFAULT_GPU = "default"
 CMD_CREATE = "create"
 
 
@@ -205,10 +206,14 @@ def AddCommonCreateArgs(parser):
     parser.add_argument(
         "--gpu",
         type=str,
+        const=_DEFAULT_GPU,
+        nargs="?",
         dest="gpu",
         required=False,
         default=None,
-        help="GPU accelerator to use if any. e.g. nvidia-tesla-k80.")
+        help="GPU accelerator to use if any. e.g. nvidia-tesla-k80. For local "
+             "instances, this arg without assigning any value is to enable "
+             "local gpu support.")
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
@@ -555,6 +560,11 @@ def VerifyArgs(args):
     if args.num > 1 and args.local_instance is not None:
         raise errors.UnsupportedCreateArgs(
             "--num is not supported for local instance.")
+
+    if args.local_instance is None and args.gpu == _DEFAULT_GPU:
+        raise errors.UnsupportedCreateArgs(
+            "Please assign one gpu model for GCE instance. Reference: "
+            "https://cloud.google.com/compute/docs/gpus")
 
     if args.adb_port:
         utils.CheckPortFree(args.adb_port)
