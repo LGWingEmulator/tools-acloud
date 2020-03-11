@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s -run_adb_connector=%s "
                         "-system_image_dir %s -instance_dir %s")
+_CMD_LAUNCH_CVD_GPU_ARG = " -gpu_mode=drm_virgl"
 _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
                              "-data_policy always_create")
 _CMD_LAUNCH_CVD_WEBRTC_ARGS = (" -guest_enforce_security=false "
@@ -103,7 +104,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                        avd_spec.connect_adb,
                                        local_image_path,
                                        avd_spec.local_instance_id,
-                                       avd_spec.connect_webrtc)
+                                       avd_spec.connect_webrtc,
+                                       avd_spec.gpu)
 
         result_report = report.Report(command="create")
         instance_name = instance.GetLocalInstanceName(
@@ -177,7 +179,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
     @staticmethod
     def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, connect_adb,
-                            system_image_dir, local_instance_id, connect_webrtc):
+                            system_image_dir, local_instance_id, connect_webrtc,
+                            gpu):
         """Prepare launch_cvd command.
 
         Create the launch_cvd commands with all the required args and add
@@ -190,6 +193,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             connect_adb: Boolean flag that enables adb_connector.
             local_instance_id: Integer of instance id.
             connect_webrtc: Boolean of connect_webrtc.
+            gpu: String of gpu name, the gpu name of local instance should be
+                 "default" if gpu is enabled.
 
         Returns:
             String, launch_cvd cmd.
@@ -204,7 +209,10 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             launch_cvd_w_args = (launch_cvd_w_args + _CMD_LAUNCH_CVD_DISK_ARGS %
                                  hw_property[constants.HW_ALIAS_DISK])
         if connect_webrtc:
-            launch_cvd_w_args += _CMD_LAUNCH_CVD_WEBRTC_ARGS
+            launch_cvd_w_args = launch_cvd_w_args + _CMD_LAUNCH_CVD_WEBRTC_ARGS
+
+        if gpu:
+            launch_cvd_w_args = launch_cvd_w_args + _CMD_LAUNCH_CVD_GPU_ARG
 
         launch_cmd = utils.AddUserGroupsToCmd(launch_cvd_w_args,
                                               constants.LIST_CF_USER_GROUPS)
