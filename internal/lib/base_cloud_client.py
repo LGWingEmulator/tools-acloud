@@ -27,7 +27,6 @@ import six
 # pylint: disable=import-error
 from apiclient import errors as gerrors
 from apiclient.discovery import build
-import apiclient.http
 import httplib2
 from oauth2client import client
 
@@ -246,7 +245,7 @@ class BaseCloudApiClient(object):
         def _CallBack(request_id, response, exception):
             results[request_id] = (response, self._TranslateError(exception))
 
-        batch = apiclient.http.BatchHttpRequest()
+        batch = self._service.new_batch_http_request()
         for request_id, request in six.iteritems(requests):
             batch.add(
                 request=request, callback=_CallBack, request_id=request_id)

@@ -24,8 +24,6 @@ import mock
 import six
 
 # pylint: disable=import-error
-import apiclient.http
-
 from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import driver_test_lib
@@ -405,7 +403,9 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
         mock_batch = mock.MagicMock()
         mock_batch.add = _Add
         mock_batch.execute = _Execute
-        self.Patch(apiclient.http, "BatchHttpRequest", return_value=mock_batch)
+        self.Patch(self.compute_client._service,
+                   "new_batch_http_request",
+                   return_value=mock_batch)
 
     @mock.patch.object(gcompute_client.ComputeClient, "WaitOnOperation")
     def testDeleteImages(self, mock_wait):
