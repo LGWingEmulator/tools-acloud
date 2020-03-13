@@ -70,7 +70,6 @@ _GUEST_ENFORCE_SECURITY_FALSE = "--guest_enforce_security=false"
 _START_WEBRTC = "--start_webrtc"
 _VM_MANAGER = "--vm_manager=crosvm"
 _WEBRTC_ARGS = [_GUEST_ENFORCE_SECURITY_FALSE, _START_WEBRTC, _VM_MANAGER]
-_WEBRTC_PUBLIC_IP = "--webrtc_public_ip=%s"
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -276,7 +275,6 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                 launch_cvd_args.append(
                     "-memory_mb=%s" % avd_spec.hw_property[constants.HW_ALIAS_MEMORY])
             if avd_spec.connect_webrtc:
-                launch_cvd_args.append(_WEBRTC_PUBLIC_IP % self._ip.external)
                 launch_cvd_args.extend(_WEBRTC_ARGS)
         else:
             resolution = self._resolution.split("x")

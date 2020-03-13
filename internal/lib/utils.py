@@ -62,6 +62,20 @@ _SSH_TUNNEL_ARGS = ("-i %(rsa_key_file)s -o UserKnownHostsFile=/dev/null "
                     "-L %(vnc_port)d:127.0.0.1:%(target_vnc_port)d "
                     "-L %(adb_port)d:127.0.0.1:%(target_adb_port)d "
                     "-N -f -l %(ssh_user)s %(ip_addr)s")
+_SSH_TUNNEL_WEBRTC_ARGS = (
+    "-i %(rsa_key_file)s -o UserKnownHostsFile=/dev/null "
+    "-o StrictHostKeyChecking=no "
+    "-L %(webrtc_port)d:127.0.0.1:%(target_webrtc_port)d "
+    "-L %(data_port1)d:127.0.0.1:%(target_data_port1)d "
+    "-L %(data_port2)d:127.0.0.1:%(target_data_port2)d "
+    "-N -f -l %(ssh_user)s %(ip_addr)s")
+_RELEASE_PORT_CMD = "kill $(lsof -t -i :%d)"
+_LOCAL_WEBRTC_PORT = 8443
+_LOCAL_DATA_PORT1 = 15550
+_LOCAL_DATA_PORT2 = 15551
+_TARGET_WEBRTC_PORT = 8443
+_TARGET_DATA_PORT1 = 15550
+_TARGET_DATA_PORT2 = 15551
 _ADB_CONNECT_ARGS = "connect 127.0.0.1:%(adb_port)d"
 # Store the ports that vnc/adb are forwarded to, both are integers.
 ForwardedPorts = collections.namedtuple("ForwardedPorts", [constants.VNC_PORT,
@@ -88,8 +102,8 @@ _DEFAULT_DISPLAY_SCALE = 1.0
 _DIST_DIR = "DIST_DIR"
 
 # For webrtc
-_WEBRTC_URL = "https://"
-_WEBRTC_PORT = "8443"
+_WEBRTC_URL = "https://%(webrtc_ip)s:%(webrtc_port)d/?use_tcp=true"
+_WEBRTC_LOCAL_HOST = "localhost"
 
 _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
                      "install a vnc client (ssvnc). \nWould you like acloud to "
@@ -802,6 +816,57 @@ def _ExecuteCommand(cmd, args):
         subprocess.check_call(command, stderr=dev_null, stdout=dev_null)
 
 
+def ReleasePort(port):
+    """Release local port.
+
+    Args:
+        port: Integer of local port number.
+    """
+    try:
+        with open(os.devnull, "w") as dev_null:
+            subprocess.check_call(_RELEASE_PORT_CMD % port,
+                                  stderr=dev_null, stdout=dev_null, shell=True)
+    except subprocess.CalledProcessError:
+        logger.debug("The port %d is available.", _LOCAL_WEBRTC_PORT)
+
+
+def EstablishWebRTCSshTunnel(ip_addr, rsa_key_file, ssh_user,
+                             extra_args_ssh_tunnel=None):
+    """Create ssh tunnels for webrtc.
+
+    # TODO(151418177): Before fully supporting webrtc feature, we establish one
+    # WebRTC tunnel at a time. so always delete the previous connection before
+    # establishing new one.
+
+    Args:
+        ip_addr: String, use to build the adb & vnc tunnel between local
+                 and remote instance.
+        rsa_key_file: String, Private key file path to use when creating
+                      the ssh tunnels.
+        ssh_user: String of user login into the instance.
+        extra_args_ssh_tunnel: String, extra args for ssh tunnel connection.
+    """
+    ReleasePort(_LOCAL_WEBRTC_PORT)
+    try:
+        ssh_tunnel_args = _SSH_TUNNEL_WEBRTC_ARGS % {
+            "rsa_key_file": rsa_key_file,
+            "webrtc_port": _LOCAL_WEBRTC_PORT,
+            "data_port1": _LOCAL_DATA_PORT1,
+            "data_port2": _LOCAL_DATA_PORT2,
+            "target_webrtc_port": _TARGET_WEBRTC_PORT,
+            "target_data_port1": _TARGET_DATA_PORT1,
+            "target_data_port2": _TARGET_DATA_PORT2,
+            "ssh_user": ssh_user,
+            "ip_addr": ip_addr}
+        ssh_tunnel_args_list = shlex.split(ssh_tunnel_args)
+        if extra_args_ssh_tunnel != None:
+            ssh_tunnel_args_list.extend(shlex.split(extra_args_ssh_tunnel))
+        _ExecuteCommand(constants.SSH_BIN, ssh_tunnel_args_list)
+    except subprocess.CalledProcessError as e:
+        PrintColorString("\n%s\nFailed to create ssh tunnels, retry with '#acloud "
+                         "reconnect'." % e, TextColors.FAIL)
+
+
 # TODO(147337696): create ssh tunnels tear down as adb and vnc.
 # pylint: disable=too-many-locals
 def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
@@ -835,7 +900,7 @@ def AutoConnect(ip_addr, rsa_key_file, target_vnc_port, target_adb_port,
             "ssh_user": ssh_user,
             "ip_addr": ip_addr}
         ssh_tunnel_args_list = shlex.split(ssh_tunnel_args)
-        if extra_args_ssh_tunnel:
+        if extra_args_ssh_tunnel != None:
             ssh_tunnel_args_list.extend(shlex.split(extra_args_ssh_tunnel))
         _ExecuteCommand(constants.SSH_BIN, ssh_tunnel_args_list)
     except subprocess.CalledProcessError as e:
@@ -925,8 +990,9 @@ def LaunchBrowserFromReport(report):
 
     for device in report.data.get("devices", []):
         if device.get("ip"):
-            webrtc_link = "%s%s:%s" % (_WEBRTC_URL, device.get("ip").split(":")[0],
-                                       _WEBRTC_PORT)
+            webrtc_link = _WEBRTC_URL % {
+                "webrtc_ip": _WEBRTC_LOCAL_HOST,
+                "webrtc_port": _LOCAL_WEBRTC_PORT}
             if os.environ.get(_ENV_DISPLAY, None):
                 webbrowser.open_new_tab(webrtc_link)
             else:
