@@ -55,7 +55,8 @@ logger = logging.getLogger(__name__)
 
 _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s -run_adb_connector=%s "
-                        "-system_image_dir %s -instance_dir %s")
+                        "-system_image_dir %s -instance_dir %s "
+                        "-report_anonymous_usage_stats=y")
 _CMD_LAUNCH_CVD_GPU_ARG = " -gpu_mode=drm_virgl"
 _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
                              "-data_policy always_create")
