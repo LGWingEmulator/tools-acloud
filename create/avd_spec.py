@@ -90,7 +90,7 @@ def EscapeAnsi(line):
 
 
 # pylint: disable=too-many-public-methods
-class AVDSpec:
+class AVDSpec(object):
     """Class to store data on the type of AVD to create."""
 
     def __init__(self, args):
@@ -268,7 +268,7 @@ class AVDSpec:
         Args:
             args: Namespace object from argparse.parse_args.
         """
-        self._cfg.OverrideHwPropertyWithFlavor(self._flavor)
+        self._cfg.OverrideHwProperty(self._flavor, self._instance_type)
         self._hw_property = {}
         self._hw_property = self._ParseHWPropertyStr(self._cfg.hw_property)
         logger.debug("Default hw property for [%s] flavor: %s", self._flavor,
