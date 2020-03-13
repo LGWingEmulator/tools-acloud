@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 _DECOMPRESS_KERNEL_ARG = "-decompress_kernel=true"
 _GPU_ARG = "-gpu_mode=drm_virgl"
+_PROMPT_ARG = "-report_anonymous_usage_stats"
 _AGREEMENT_PROMPT_ARG = "-report_anonymous_usage_stats=y"
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
@@ -295,8 +296,25 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if self._gpu:
             launch_cvd_args.append(_GPU_ARG)
 
-        launch_cvd_args.append(_AGREEMENT_PROMPT_ARG)
+        launch_cvd_args.append(self.GetPromptArg())
         return launch_cvd_args
+
+    def GetPromptArg(self):
+        """Get agreement prompt arg.
+
+        Returns:
+            String of prompt arg as '-report_anonymous_usage_stats=y' if
+            launch_cvd supports this arg, otherwise empty string.
+        """
+        try:
+            output = self._ssh.GetCmdOutput("./bin/launch_cvd -help")
+            if _PROMPT_ARG in output:
+                return _AGREEMENT_PROMPT_ARG
+        except subprocess.CalledProcessError as e:
+            logger.debug("Failed to '$launch_cvd -help': %s", e)
+
+        logger.debug("launch_cvd doesn't support '%s'", _PROMPT_ARG)
+        return ""
 
     @staticmethod
     def GetKernelBuild(kernel_build_id, kernel_branch, kernel_build_target):
