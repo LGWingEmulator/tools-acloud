@@ -55,8 +55,9 @@ logger = logging.getLogger(__name__)
 
 _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s -run_adb_connector=%s "
-                        "-system_image_dir %s -instance_dir %s "
-                        "-report_anonymous_usage_stats=y")
+                        "-system_image_dir %s -instance_dir %s")
+_PROMPT_ARG = "-report_anonymous_usage_stats"
+_AGREEMENT_PROMPT_ARG = " -report_anonymous_usage_stats=y"
 _CMD_LAUNCH_CVD_GPU_ARG = " -gpu_mode=drm_virgl"
 _CMD_LAUNCH_CVD_DISK_ARGS = (" -blank_data_image_mb %s "
                              "-data_policy always_create")
@@ -178,8 +179,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return (avd_spec.local_image_dir,
                 self._FindCvdHostBinaries(avd_spec.local_tool_dirs))
 
-    @staticmethod
-    def PrepareLaunchCVDCmd(launch_cvd_path, hw_property, connect_adb,
+    def PrepareLaunchCVDCmd(self, launch_cvd_path, hw_property, connect_adb,
                             system_image_dir, local_instance_id, connect_webrtc,
                             gpu):
         """Prepare launch_cvd command.
@@ -206,6 +206,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             hw_property["dpi"], hw_property["memory"],
             ("true" if connect_adb else "false"), system_image_dir,
             instance_dir)
+        launch_cvd_w_args = launch_cvd_w_args + self.GetPromptArg(launch_cvd_path)
         if constants.HW_ALIAS_DISK in hw_property:
             launch_cvd_w_args = (launch_cvd_w_args + _CMD_LAUNCH_CVD_DISK_ARGS %
                                  hw_property[constants.HW_ALIAS_DISK])
@@ -219,6 +220,31 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                                               constants.LIST_CF_USER_GROUPS)
         logger.debug("launch_cvd cmd:\n %s", launch_cmd)
         return launch_cmd
+
+    @staticmethod
+    def GetPromptArg(launch_cvd_path):
+        """Get agreement prompt arg.
+
+        Args:
+            launch_cvd_path: String of launch_cvd path.
+
+        Returns:
+            String of prompt arg as '-report_anonymous_usage_stats=y' if
+            launch_cvd supports this arg, otherwise empty string.
+        """
+        try:
+            process = subprocess.Popen("%s -help" % launch_cvd_path,
+                                       stdin=None, shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
+            output, _ = process.communicate()
+            if _PROMPT_ARG in output:
+                return _AGREEMENT_PROMPT_ARG
+        except subprocess.CalledProcessError as e:
+            logger.debug("Failed to '$launch_cvd -help': %s", e)
+
+        logger.debug("launch_cvd doesn't support '%s'", _PROMPT_ARG)
+        return ""
 
     def CheckLaunchCVD(self, cmd, host_bins_path, local_instance_id,
                        local_image_path, no_prompts=False,

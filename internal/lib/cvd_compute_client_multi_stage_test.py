@@ -107,6 +107,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
     def testGetLaunchCvdArgs(self, _mock_check_img, _mock_env):
         """test GetLaunchCvdArgs."""
         # test GetLaunchCvdArgs with avd_spec
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "GetPromptArg",
+                   return_value="-report_anonymous_usage_stats=y")
         fake_avd_spec = avd_spec.AVDSpec(self.args)
         expeted_args = ["-x_res=1080", "-y_res=1920", "-dpi=240", "-cpus=2",
                         "-memory_mb=4096", "--setupwizard_mode=REQUIRED",
