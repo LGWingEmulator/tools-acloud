@@ -148,6 +148,8 @@ EOF"""
     @mock.patch.object(utils, "CheckUserInGroups")
     def testPrepareLaunchCVDCmd(self, mock_usergroups, mock_cvd_dir):
         """test PrepareLaunchCVDCmd."""
+        self.Patch(self.local_image_local_instance, "GetPromptArg",
+                   return_value=local_image_local_instance._AGREEMENT_PROMPT_ARG)
         mock_usergroups.return_value = False
         mock_cvd_dir.return_value = "fake_cvd_dir"
         hw_property = {"cpu": "fake", "x_res": "fake", "y_res": "fake",

@@ -240,6 +240,22 @@ class Ssh(object):
 
         raise errors.UnknownType("Don't support the execute bin %s." % execute_bin)
 
+    def GetCmdOutput(self, cmd):
+        """Runs a single SSH command and get its output.
+
+        Args:
+            cmd: String, text of command to run on the remote instance.
+
+        Returns:
+            String of the command output.
+        """
+        ssh_cmd = "exec " + self.GetBaseCmd(constants.SSH_BIN) + " " + cmd
+        logger.info("Running command \"%s\"", ssh_cmd)
+        process = subprocess.Popen(ssh_cmd, shell=True, stdin=None,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout, _ = process.communicate()
+        return stdout
+
     def CheckSshConnection(self, timeout):
         """Run remote 'uptime' ssh command to check ssh connection.
 
