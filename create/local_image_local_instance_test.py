@@ -35,22 +35,22 @@ class LocalImageLocalInstanceTest(driver_test_lib.BaseDriverTest):
 
     LAUNCH_CVD_CMD_WITH_DISK = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -report_anonymous_usage_stats=y -blank_data_image_mb fake -data_policy always_create
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -undefok=report_anonymous_usage_stats -report_anonymous_usage_stats=y -blank_data_image_mb fake -data_policy always_create
 EOF"""
 
     LAUNCH_CVD_CMD_NO_DISK = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -report_anonymous_usage_stats=y
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -undefok=report_anonymous_usage_stats -report_anonymous_usage_stats=y
 EOF"""
 
     LAUNCH_CVD_CMD_NO_DISK_WITH_GPU = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -report_anonymous_usage_stats=y -gpu_mode=drm_virgl
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -undefok=report_anonymous_usage_stats -report_anonymous_usage_stats=y -gpu_mode=drm_virgl
 EOF"""
 
     LAUNCH_CVD_CMD_WITH_WEBRTC = """sg group1 <<EOF
 sg group2
-launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -report_anonymous_usage_stats=y -guest_enforce_security=false -vm_manager=crosvm -start_webrtc=true -webrtc_public_ip=127.0.0.1
+launch_cvd -daemon -cpus fake -x_res fake -y_res fake -dpi fake -memory_mb fake -run_adb_connector=true -system_image_dir fake_image_dir -instance_dir fake_cvd_dir -undefok=report_anonymous_usage_stats -report_anonymous_usage_stats=y -guest_enforce_security=false -vm_manager=crosvm -start_webrtc=true -webrtc_public_ip=127.0.0.1
 EOF"""
 
     _EXPECTED_DEVICES_IN_REPORT = [
@@ -148,8 +148,6 @@ EOF"""
     @mock.patch.object(utils, "CheckUserInGroups")
     def testPrepareLaunchCVDCmd(self, mock_usergroups, mock_cvd_dir):
         """test PrepareLaunchCVDCmd."""
-        self.Patch(self.local_image_local_instance, "GetPromptArg",
-                   return_value=local_image_local_instance._AGREEMENT_PROMPT_ARG)
         mock_usergroups.return_value = False
         mock_cvd_dir.return_value = "fake_cvd_dir"
         hw_property = {"cpu": "fake", "x_res": "fake", "y_res": "fake",
