@@ -169,7 +169,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                   report_internal_ip=False, autoconnect=False,
                   serial_log_file=None, client_adb_port=None,
                   boot_timeout_secs=None, unlock_screen=False,
-                  wait_for_boot=True):
+                  wait_for_boot=True, connect_webrtc=False):
     """Create a set of devices using the given factory.
 
     Main jobs in create devices.
@@ -191,6 +191,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
         unlock_screen: Boolean, whether to unlock screen after invoke vnc client.
         wait_for_boot: Boolean, True to check serial log include boot up
                        message.
+        connect_webrtc: Boolean, whether to auto connect webrtc to device.
 
     Raises:
         errors: Create instance fail.
@@ -244,6 +245,12 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                 device_dict[constants.ADB_PORT] = forwarded_ports.adb_port
                 if unlock_screen:
                     AdbTools(forwarded_ports.adb_port).AutoUnlockScreen()
+            if connect_webrtc:
+                utils.EstablishWebRTCSshTunnel(
+                    ip_addr=ip,
+                    rsa_key_file=cfg.ssh_private_key_path,
+                    ssh_user=constants.GCE_USER,
+                    extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
             if device.instance_name in failures:
                 reporter.AddData(key="devices_failing_boot", value=device_dict)
                 reporter.AddError(str(failures[device.instance_name]))

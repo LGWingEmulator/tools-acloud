@@ -440,7 +440,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
                          "ip": "192.168.1.1",},],}
 
         utils.LaunchBrowserFromReport(fake_report)
-        webbrowser.open_new_tab.assert_called_once_with("https://192.168.1.1:8443")
+        webbrowser.open_new_tab.assert_called_once_with("https://localhost:8443/?use_tcp=true")
         webbrowser.open_new_tab.call_count = 0
 
         # test local instance
@@ -448,7 +448,7 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
             "devices": [{"instance_name": "local-instance1",
                          "ip": "127.0.0.1:6250",},],}
         utils.LaunchBrowserFromReport(fake_report)
-        webbrowser.open_new_tab.assert_called_once_with("https://127.0.0.1:8443")
+        webbrowser.open_new_tab.assert_called_once_with("https://localhost:8443/?use_tcp=true")
         webbrowser.open_new_tab.call_count = 0
 
         # verify terminal can't support launch webbrowser.
