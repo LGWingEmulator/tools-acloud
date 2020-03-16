@@ -63,6 +63,7 @@ logger = logging.getLogger(__name__)
 _CONFIG_DATA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data")
 _DEFAULT_CONFIG_FILE = "acloud.config"
+_DEFAULT_HW_PROPERTY = "cpu:2,resolution:720x1280,dpi:320,memory:4g"
 
 # VERSION
 _VERSION_FILE = "VERSION"
@@ -282,17 +283,23 @@ class AcloudConfig(object):
 
             self.launch_args = " ".join(scrubbed_args)
 
-    def OverrideHwPropertyWithFlavor(self, flavor):
-        """Override hw configuration values with flavor name.
+    def OverrideHwProperty(self, flavor, instance_type=None):
+        """Override hw configuration values.
 
-        HwProperty will be overrided according to the change of flavor.
-        If flavor is None, set hw configuration with phone(default flavor).
+        HwProperty will be overrided according to the change of flavor and
+        instance type. The format of key is flavor or instance_type-flavor.
+        e.g: 'phone' or 'local-phone'.
+        If the giving key is not found, set hw configuration with a default
+        phone property.
 
         Args:
-            flavor: string of flavor name.
+            flavor: String of flavor name.
+            instance_type: String of instance type.
         """
+        hw_key = ("%s-%s" % (instance_type, flavor)
+                  if instance_type == constants.INSTANCE_TYPE_LOCAL else flavor)
         self.hw_property = self.common_hw_property_map.get(
-            flavor, constants.FLAVOR_PHONE)
+            hw_key, _DEFAULT_HW_PROPERTY)
 
     def Verify(self):
         """Verify configuration fields."""
