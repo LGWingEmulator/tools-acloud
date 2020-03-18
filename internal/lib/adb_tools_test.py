@@ -16,6 +16,7 @@
 import subprocess
 import unittest
 import mock
+from six import b
 
 from acloud import errors
 from acloud.internal.lib import adb_tools
@@ -25,13 +26,13 @@ from acloud.internal.lib import utils
 
 class AdbToolsTest(driver_test_lib.BaseDriverTest):
     """Test adb functions."""
-    DEVICE_ALIVE = ("List of devices attached\n"
-                    "127.0.0.1:48451 device product:aosp_cf_x86_phone "
-                    "model:Cuttlefish_x86_phone device:vsoc_x86 "
-                    "transport_id:98")
-    DEVICE_OFFLINE = ("List of devices attached\n"
-                      "127.0.0.1:48451 offline")
-    DEVICE_NONE = ("List of devices attached")
+    DEVICE_ALIVE = b("List of devices attached\n"
+                     "127.0.0.1:48451 device product:aosp_cf_x86_phone "
+                     "model:Cuttlefish_x86_phone device:vsoc_x86 "
+                     "transport_id:98")
+    DEVICE_OFFLINE = b("List of devices attached\n"
+                       "127.0.0.1:48451 offline")
+    DEVICE_NONE = b("List of devices attached")
 
     # pylint: disable=no-member
     def testGetAdbConnectionStatus(self):
