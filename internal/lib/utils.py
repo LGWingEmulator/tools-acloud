@@ -421,7 +421,7 @@ def VerifyRsaPubKey(rsa):
 
     key_type, data, _ = elements
     try:
-        binary_data = base64.decodestring(data)
+        binary_data = base64.decodestring(six.b(data))
         # number of bytes of int type
         int_length = 4
         # binary_data is like "7ssh-key..." in a binary format.
@@ -431,7 +431,7 @@ def VerifyRsaPubKey(rsa):
         # We will verify that the rsa conforms to this format.
         # ">I" in the following line means "big-endian unsigned integer".
         type_length = struct.unpack(">I", binary_data[:int_length])[0]
-        if binary_data[int_length:int_length + type_length] != key_type:
+        if binary_data[int_length:int_length + type_length] != six.b(key_type):
             raise errors.DriverError("rsa key is invalid: %s" % rsa)
     except (struct.error, binascii.Error) as e:
         raise errors.DriverError(

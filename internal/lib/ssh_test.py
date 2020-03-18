@@ -40,7 +40,7 @@ class SshTest(driver_test_lib.BaseDriverTest):
         super(SshTest, self).setUp()
         self.created_subprocess = mock.MagicMock()
         self.created_subprocess.stdout = mock.MagicMock()
-        self.created_subprocess.stdout.readline = mock.MagicMock(return_value='')
+        self.created_subprocess.stdout.readline = mock.MagicMock(return_value=b"")
         self.created_subprocess.poll = mock.MagicMock(return_value=0)
         self.created_subprocess.returncode = 0
         self.created_subprocess.communicate = mock.MagicMock(return_value=
