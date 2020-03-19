@@ -167,13 +167,6 @@ def _ParseArgs(args):
     create_cf_parser = subparsers.add_parser(CMD_CREATE_CUTTLEFISH)
     create_cf_parser.required = False
     create_cf_parser.set_defaults(which=CMD_CREATE_CUTTLEFISH)
-    create_cf_parser.add_argument(
-        "--num-avds-per-instance",
-        type=int,
-        dest="num_avds_per_instance",
-        required=False,
-        default=1,
-        help="Number of devices to create on a gce instance.")
     create_args.AddCommonCreateArgs(create_cf_parser)
     subparser_list.append(create_cf_parser)
 

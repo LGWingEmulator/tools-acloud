@@ -58,6 +58,7 @@ _DECOMPRESS_KERNEL_ARG = "-decompress_kernel=true"
 _GPU_ARG = "-gpu_mode=drm_virgl"
 _AGREEMENT_PROMPT_ARGS = ["-undefok=report_anonymous_usage_stats",
                           "-report_anonymous_usage_stats=y"]
+_NUM_AVDS_ARG = "-num_instances=%(num_AVD)s"
 _DEFAULT_BRANCH = "aosp-master"
 _FETCHER_BUILD_TARGET = "aosp_cf_x86_phone-userdebug"
 _FETCHER_NAME = "fetch_cvd"
@@ -278,6 +279,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
                     "-memory_mb=%s" % avd_spec.hw_property[constants.HW_ALIAS_MEMORY])
             if avd_spec.connect_webrtc:
                 launch_cvd_args.extend(_WEBRTC_ARGS)
+            if avd_spec.num_avds_per_instance > 1:
+                launch_cvd_args.append(
+                    _NUM_AVDS_ARG % {"num_AVD": avd_spec.num_avds_per_instance})
         else:
             resolution = self._resolution.split("x")
             launch_cvd_args.append("-x_res=" + resolution[0])
