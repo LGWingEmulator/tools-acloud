@@ -21,7 +21,6 @@ import os
 import shutil
 import tempfile
 
-from acloud import errors
 from acloud.create import create_common
 from acloud.internal import constants
 from acloud.internal.lib import auth
@@ -69,6 +68,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
         super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
         self._ssh = None
 
+    # pylint: disable=broad-except
     def CreateInstance(self):
         """Create a single configured cuttlefish device.
 
@@ -101,7 +101,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
                 self._ProcessArtifacts(self._avd_spec.image_source)
                 self._LaunchCvd(instance=instance,
                                 boot_timeout_secs=self._avd_spec.boot_timeout_secs)
-            except errors.DeviceConnectionError as e:
+            except Exception as e:
                 self._SetFailures(instance, e)
 
         return instance
