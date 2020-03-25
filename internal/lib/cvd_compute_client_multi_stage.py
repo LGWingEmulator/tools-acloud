@@ -200,6 +200,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         if avd_spec and avd_spec.instance_name_to_reuse:
             self._ip = self._ReusingGceInstance(avd_spec)
         else:
+            self._VerifyZoneByQuota()
             self._ip = self._CreateGceInstance(instance, image_name, image_project,
                                                extra_scopes, boot_disk_size_gb,
                                                avd_spec)

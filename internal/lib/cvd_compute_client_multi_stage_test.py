@@ -84,6 +84,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         """Set up the test."""
         super(CvdComputeClientTest, self).setUp()
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "InitResourceHandle")
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "_VerifyZoneByQuota",
+                   return_value=True)
         self.Patch(android_build_client.AndroidBuildClient, "InitResourceHandle")
         self.Patch(android_build_client.AndroidBuildClient, "DownloadArtifact")
         self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
