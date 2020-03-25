@@ -143,6 +143,10 @@ class CheckPathError(CreateError):
     """Path does not exist."""
 
 
+class CheckGCEZonesQuotaError(CreateError):
+    """There is no zone have enough quota."""
+
+
 class UnsupportedInstanceImageType(CreateError):
     """Unsupported create action for given instance/image type."""
 

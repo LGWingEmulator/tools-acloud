@@ -80,6 +80,21 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._instance_name_pattern = acloud_config.instance_name_pattern
         self._AddPerInstanceSshkey()
 
+    # TODO(147047953): New args to contorl zone metrics check.
+    def _VerifyZoneByQuota(self):
+        """Verify the zone must have enough quota to create instance.
+
+        Returns:
+            Boolean, True if zone have enough quota to create instance.
+
+        Raises:
+            errors.CheckGCEZonesQuotaError: the zone doesn't have enough quota.
+        """
+        if self.EnoughMetricsInZone(self._zone):
+            return True
+        raise errors.CheckGCEZonesQuotaError(
+            "There is no enough quota in zone: %s" % self._zone)
+
     def _AddPerInstanceSshkey(self):
         """Add per-instance ssh key.
 
@@ -394,21 +409,3 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         """
         return super(AndroidComputeClient, self).GetSerialPortOutput(
             instance, zone or self._zone, port)
-
-    def GetInstanceNamesByIPs(self, ips, zone=None):
-        """Get Instance names by IPs.
-
-        This function will go through all instances, which
-        could be slow if there are too many instances.  However, currently
-        GCE doesn't support search for instance by IP.
-
-        Args:
-            ips: A set of IPs.
-            zone: String, representing zone name, e.g. "us-central1-f"
-
-        Returns:
-            A dictionary where key is ip and value is instance name or None
-            if instance is not found for the given IP.
-        """
-        return super(AndroidComputeClient, self).GetInstanceNamesByIPs(
-            ips, zone or self._zone)

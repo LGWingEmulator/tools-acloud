@@ -51,6 +51,14 @@ _SSH_KEYS_NAME = "sshKeys"
 _ITEMS = "items"
 _METADATA = "metadata"
 _ZONE_RE = re.compile(r"^zones/(?P<zone>.+)")
+# Quota metrics
+_METRIC_CPUS = "CPUS"
+_METRIC_DISKS_GB = "DISKS_TOTAL_GB"
+_METRICS = [_METRIC_CPUS, _METRIC_DISKS_GB]
+_USAGE = "usage"
+_LIMIT = "limit"
+# The minimum requirement to create an instance.
+_REQUIRE_METRICS = {_METRIC_CPUS: 8, _METRIC_DISKS_GB: 1000}
 
 BASE_DISK_ARGS = {
     "type": "PERSISTENT",
@@ -196,10 +204,74 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         """Get project information.
 
         Returns:
-          A project resource in json.
+            A project resource in json.
         """
         api = self.service.projects().get(project=self._project)
         return self.Execute(api)
+
+    def GetRegionInfo(self):
+        """Get region information that includes all quotas limit.
+
+        The region info example:
+        {"items":
+            [{"status": "UP",
+              "name": "asia-east1",
+              "quotas":
+                [{"usage": 92, "metric": "CPUS", "limit": 100},
+                 {"usage": 640, "metric": "DISKS_TOTAL_GB", "limit": 10240},
+              ...]]}
+        }
+
+        Returns:
+            A region resource in json.
+        """
+        api = self.service.regions().list(project=self._project)
+        return self.Execute(api)
+
+    @staticmethod
+    def GetMetricQuota(regions_info, zone, metric):
+        """Get CPU quota limit in specific zone and project.
+
+        Args:
+            regions_info: Dict, regions resource in json.
+            zone: String, name of zone.
+            metric: String, name of metric, e.g. "CPUS".
+
+        Returns:
+            A dict of quota information. Such as
+            {"usage": 100, "metric": "CPUS", "limit": 200}
+        """
+        for region_info in regions_info["items"]:
+            if region_info["name"] in zone:
+                for quota in region_info["quotas"]:
+                    if quota["metric"] == metric:
+                        return quota
+        logger.info("Can't get %s quota info from zone(%s)", metric, zone)
+        return None
+
+    def EnoughMetricsInZone(self, zone):
+        """Check the zone have enough metrics to create instance.
+
+        The metrics include CPUS and DISKS.
+
+        Args:
+            zone: String, name of zone.
+
+        Returns:
+            Boolean. True if zone have enough quota.
+        """
+        regions_info = self.GetRegionInfo()
+        for metric in _METRICS:
+            quota = self.GetMetricQuota(regions_info, zone, metric)
+            if not quota:
+                logger.debug(
+                    "Can't query the metric(%s) in zone(%s)", metric, zone)
+                return False
+            if quota[_LIMIT] - quota[_USAGE] < _REQUIRE_METRICS[metric]:
+                logger.debug(
+                    "The metric(%s) is over limit in zone(%s)", metric, zone)
+                return False
+        return True
 
     def GetDisk(self, disk_name, zone):
         """Get disk information.
