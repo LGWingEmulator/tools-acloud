@@ -1021,7 +1021,9 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
         os.environ[_ENV_DISPLAY]
     except KeyError:
         PrintColorString("Remote terminal can't support VNC. "
-                         "Skipping VNC startup.", TextColors.FAIL)
+                         "Skipping VNC startup. "
+                         "VNC server is listening at 127.0.0.1:{}.".format(port),
+                         TextColors.FAIL)
         return
 
     if IsSupportedPlatform() and not FindExecutable(_VNC_BIN):
