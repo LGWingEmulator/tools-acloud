@@ -171,7 +171,7 @@ def GetAllLogFilePaths(ssh):
     ssh_cmd = [ssh.GetBaseCmd(constants.SSH_BIN), _FIND_LOG_FILE_CMD]
     log_files = []
     try:
-        files_output = subprocess.check_output(" ".join(ssh_cmd), shell=True)
+        files_output = utils.CheckOutput(" ".join(ssh_cmd), shell=True)
         log_files = FilterLogfiles(files_output.splitlines())
     except subprocess.CalledProcessError:
         logger.debug("The folder(%s) that running launch_cvd doesn't exist.",

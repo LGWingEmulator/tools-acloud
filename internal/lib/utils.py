@@ -360,7 +360,7 @@ def CreateSshKeyPairIfNotExist(private_key_path, public_key_path):
         if private_key_exist:
             cmd = SSH_KEYGEN_PUB_CMD + ["-f", private_key_path]
             with open(public_key_path, 'w') as outfile:
-                stream_content = subprocess.check_output(cmd)
+                stream_content = CheckOutput(cmd)
                 outfile.write(
                     stream_content.rstrip('\n') + " " + getpass.getuser())
             logger.info(
@@ -1031,7 +1031,7 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
             try:
                 PrintColorString("Installing ssvnc vnc client... ", end="")
                 sys.stdout.flush()
-                subprocess.check_output(_CMD_INSTALL_SSVNC, shell=True)
+                CheckOutput(_CMD_INSTALL_SSVNC, shell=True)
                 PrintColorString("Done", TextColors.OKGREEN)
             except subprocess.CalledProcessError as cpe:
                 PrintColorString("Failed to install ssvnc: %s" %
@@ -1236,7 +1236,7 @@ def GetDistDir():
     dist_cmd = GET_BUILD_VAR_CMD[:]
     dist_cmd.append(_DIST_DIR)
     try:
-        dist_dir = subprocess.check_output(dist_cmd, cwd=android_build_top)
+        dist_dir = CheckOutput(dist_cmd, cwd=android_build_top)
     except subprocess.CalledProcessError:
         return None
     return os.path.join(android_build_top, dist_dir.strip())
@@ -1342,3 +1342,19 @@ def CleanupSSVncviewer(vnc_port):
     """
     ssvnc_viewer_pattern = _SSVNC_VIEWER_PATTERN % {"vnc_port":vnc_port}
     CleanupProcess(ssvnc_viewer_pattern)
+
+
+def CheckOutput(cmd, **kwargs):
+    """Call subprocess.check_output to get output.
+
+    The subprocess.check_output return type is "bytes" in python 3, we have
+    to convert bytes as string with .decode() in advance.
+
+    Args:
+        cmd: String of command.
+        **kwargs: dictionary of keyword based args to pass to func.
+
+    Return:
+        String to command output.
+    """
+    return subprocess.check_output(cmd, **kwargs).decode()
