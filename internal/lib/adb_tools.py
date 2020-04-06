@@ -145,7 +145,7 @@ class AdbTools(object):
                                    "transport_id":None}
         """
         adb_cmd = [self._adb_command, _ADB_DEVICE, _ADB_STATUS_DEVICE_ARGS]
-        device_info = subprocess.check_output(adb_cmd)
+        device_info = utils.CheckOutput(adb_cmd)
         self._device_information = {
             attribute: None for attribute in _DEVICE_ATTRIBUTES}
 

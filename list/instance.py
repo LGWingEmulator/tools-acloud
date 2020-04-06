@@ -708,7 +708,7 @@ class RemoteInstance(Instance):
                                  _RE_GROUP_ADB, default_adb_port, ip))
         adb_port = None
         vnc_port = None
-        process_output = subprocess.check_output(constants.COMMAND_PS)
+        process_output = utils.CheckOutput(constants.COMMAND_PS)
         for line in process_output.splitlines():
             match = re_pattern.match(line)
             if match:

@@ -547,8 +547,8 @@ class AVDSpec(object):
             )
 
         acloud_project = os.path.join(android_build_top, "tools", "acloud")
-        return EscapeAnsi(subprocess.check_output(_COMMAND_GIT_REMOTE,
-                                                  cwd=acloud_project).strip())
+        return EscapeAnsi(utils.CheckOutput(_COMMAND_GIT_REMOTE,
+                                            cwd=acloud_project).strip())
 
     def _GetBuildBranch(self, build_id, build_target):
         """Infer build branch if user didn't specify branch name.
