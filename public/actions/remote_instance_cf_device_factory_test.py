@@ -226,13 +226,13 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             fake_host_package_name)
         expected_build_info = {
             "build_id": "123",
-            "build_branch": "fake_branch",
+            "branch": "fake_branch",
             "build_target": "fake_target",
             "system_build_id": "234",
-            "system_build_branch": "sys_branch",
+            "system_branch": "sys_branch",
             "system_build_target": "sys_target",
             "kernel_build_id": "345",
-            "kernel_build_branch": "kernel_branch",
+            "kernel_branch": "kernel_branch",
             "kernel_build_target": "kernel_target"
         }
         self.assertEqual(factory.GetBuildInfoDict(), expected_build_info)
