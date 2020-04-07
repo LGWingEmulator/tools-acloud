@@ -102,6 +102,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.args.flavor = "phone"
         self.args.adb_port = None
         self.args.hw_property = "cpu:2,resolution:1080x1920,dpi:240,memory:4g"
+        self.args.num_avds_per_instance = 2
 
     # pylint: disable=protected-access
     @mock.patch.object(utils, "GetBuildEnvironmentVariable", return_value="fake_env")
@@ -111,7 +112,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         # test GetLaunchCvdArgs with avd_spec
         fake_avd_spec = avd_spec.AVDSpec(self.args)
         expeted_args = ["-x_res=1080", "-y_res=1920", "-dpi=240", "-cpus=2",
-                        "-memory_mb=4096", "--setupwizard_mode=REQUIRED",
+                        "-memory_mb=4096", "-num_instances=2", "--setupwizard_mode=REQUIRED",
                         "-gpu_mode=drm_virgl", "-undefok=report_anonymous_usage_stats",
                         "-report_anonymous_usage_stats=y"]
         launch_cvd_args = self.cvd_compute_client_multi_stage._GetLaunchCvdArgs(fake_avd_spec)

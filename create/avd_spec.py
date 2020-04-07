@@ -116,6 +116,7 @@ class AVDSpec(object):
         self._local_tool_dirs = None
         self._image_download_dir = None
         self._num_of_instances = None
+        self._num_avds_per_instance = None
         self._no_pull_log = None
         self._remote_image = None
         self._system_build_info = None
@@ -302,6 +303,7 @@ class AVDSpec(object):
         self._local_instance_id = args.local_instance
         self._local_tool_dirs = args.local_tool
         self._num_of_instances = args.num
+        self._num_avds_per_instance = args.num_avds_per_instance
         self._no_pull_log = args.no_pull_log
         self._serial_log_file = args.serial_log_file
         self._emulator_build_id = args.emulator_build_id
@@ -712,6 +714,11 @@ class AVDSpec(object):
     def num(self):
         """Return num of instances."""
         return self._num_of_instances
+
+    @property
+    def num_avds_per_instance(self):
+        """Return num_avds_per_instance."""
+        return self._num_avds_per_instance
 
     @property
     def report_internal_ip(self):
