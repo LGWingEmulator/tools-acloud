@@ -214,6 +214,14 @@ def AddCommonCreateArgs(parser):
         help="GPU accelerator to use if any. e.g. nvidia-tesla-k80. For local "
              "instances, this arg without assigning any value is to enable "
              "local gpu support.")
+    # Hide this arg for users, it is only used in infra.
+    parser.add_argument(
+        "--num-avds-per-instance",
+        type=int,
+        dest="num_avds_per_instance",
+        required=False,
+        default=1,
+        help=argparse.SUPPRESS)
 
     # TODO(b/118439885): Old arg formats to support transition, delete when
     # transistion is done.
