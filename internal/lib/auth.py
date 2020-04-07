@@ -173,7 +173,7 @@ def _CreateOauthUserCreds(creds_cache_file, client_id, client_secret,
         scope=scopes)
     credentials = storage.get()
     if credentials is not None:
-        if not credentials.access_token_invalid and not credentials.invalid:
+        if not credentials.access_token_expired and not credentials.invalid:
             return credentials
         try:
             credentials.refresh(httplib2.Http())
