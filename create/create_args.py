@@ -460,6 +460,15 @@ def GetCreateArgParser(subparser):
         required=False,
         default=None,
         help="'cheeps only' password to log in to Chrome OS with.")
+    create_parser.add_argument(
+        "--betty-image",
+        type=str,
+        dest="cheeps_betty_image",
+        required=False,
+        default=None,
+        help=("'cheeps only' The L1 betty version to use. Only makes sense "
+              "when launching a controller image with "
+              "stable-cheeps-host-image"))
 
     AddCommonCreateArgs(create_parser)
     return create_parser
@@ -584,13 +593,15 @@ def VerifyArgs(args):
                 "[%s] is an invalid hw property, supported values are:%s. "
                 % (key, constants.HW_PROPERTIES))
 
-    if args.avd_type != constants.TYPE_CHEEPS and (
-            args.stable_cheeps_host_image_name or
-            args.stable_cheeps_host_image_project or
-            args.username or args.password):
+    cheeps_only_flags = [args.stable_cheeps_host_image_name,
+                         args.stable_cheeps_host_image_project,
+                         args.username,
+                         args.password,
+                         args.cheeps_betty_image]
+    if args.avd_type != constants.TYPE_CHEEPS and any(cheeps_only_flags):
         raise errors.UnsupportedCreateArgs(
-            "--stable-cheeps-*, --username and --password are only valid with "
-            "avd_type == %s" % constants.TYPE_CHEEPS)
+            "--stable-cheeps-*, --betty-image, --username and --password are "
+            "only valid with avd_type == %s" % constants.TYPE_CHEEPS)
     if (args.username or args.password) and not (args.username and args.password):
         raise ValueError("--username and --password must both be set")
     if not args.autoconnect and args.unlock_screen:

@@ -201,6 +201,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         args.flavor = "phone"
         args.local_image = "fake_local_image"
         args.adb_port = None
+        args.cheeps_betty_image = None
         avd_spec_local_image = avd_spec.AVDSpec(args)
         factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(
             avd_spec_local_image,
