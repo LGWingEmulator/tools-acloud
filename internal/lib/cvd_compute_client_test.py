@@ -82,7 +82,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         self.cvd_compute_client = cvd_compute_client.CvdComputeClient(
             self._GetFakeConfig(), mock.MagicMock())
 
-    @mock.patch.object(utils, "GetBuildEnvironmentVariable", return_value="fake_env")
+    @mock.patch.object(utils, "GetBuildEnvironmentVariable", return_value="fake_cf_x86")
     @mock.patch.object(glob, "glob", return_value=["fake.img"])
     @mock.patch.object(gcompute_client.ComputeClient, "CompareMachineSize",
                        return_value=1)
@@ -152,6 +152,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         args.avd_type = constants.TYPE_CF
         args.flavor = "phone"
         args.adb_port = None
+        args.remote_host = False
         fake_avd_spec = avd_spec.AVDSpec(args)
         fake_avd_spec.hw_property[constants.HW_X_RES] = str(self.X_RES)
         fake_avd_spec.hw_property[constants.HW_Y_RES] = str(self.Y_RES)

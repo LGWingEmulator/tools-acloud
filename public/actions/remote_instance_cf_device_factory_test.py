@@ -47,7 +47,7 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         self.Patch(list_instances, "GetInstancesFromInstanceNames", return_value=mock.MagicMock())
         self.Patch(list_instances, "ChooseOneRemoteInstance", return_value=mock.MagicMock())
         self.Patch(utils, "GetBuildEnvironmentVariable",
-                   return_value="test_environ")
+                   return_value="test_env_cf_arm")
         self.Patch(glob, "glob", return_vale=["fake.img"])
 
     # pylint: disable=protected-access
