@@ -451,8 +451,12 @@ class AVDSpec(object):
 
         """
         flavor_from_build_string = None
-        local_image_path = local_image_arg or utils.GetBuildEnvironmentVariable(
+        if not local_image_arg:
+            self._CheckCFBuildTarget(self._instance_type)
+            local_image_path = utils.GetBuildEnvironmentVariable(
             _ENV_ANDROID_PRODUCT_OUT)
+        else:
+            local_image_path = local_image_arg
 
         if os.path.isfile(local_image_path):
             self._local_image_artifact = local_image_arg
@@ -528,6 +532,26 @@ class AVDSpec(object):
         self._kernel_build_info = {constants.BUILD_ID: args.kernel_build_id,
                                    constants.BUILD_BRANCH: args.kernel_branch,
                                    constants.BUILD_TARGET: args.kernel_build_target}
+
+    @staticmethod
+    def _CheckCFBuildTarget(instance_type):
+        """Check build target for the given instance type
+
+        Args:
+            instance_type: String of instance type
+
+        Raises:
+            errors.GetLocalImageError if the pattern is not match with
+                current build target.
+        """
+        build_target = utils.GetBuildEnvironmentVariable(
+            constants.ENV_BUILD_TARGET)
+        pattern = constants.CF_AVD_BUILD_TARGET_PATTERN_MAPPING[instance_type]
+        if pattern not in build_target:
+            utils.PrintColorString(
+                "%s is not a %s target (Try lunching a proper cuttlefish "
+                "target and running 'm')" % (build_target, pattern),
+                utils.TextColors.WARNING)
 
     @staticmethod
     def _GetGitRemote():
