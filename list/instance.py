@@ -50,6 +50,7 @@ _ACLOUD_CVD_TEMP = os.path.join(tempfile.gettempdir(), "acloud_cvd_temp")
 _CVD_RUNTIME_FOLDER_NAME = "cuttlefish_runtime"
 _CVD_STATUS_BIN = "cvd_status"
 _MSG_UNABLE_TO_CALCULATE = "Unable to calculate"
+_NO_ANDROID_ENV = "android source not available"
 _RE_GROUP_ADB = "local_adb_port"
 _RE_GROUP_VNC = "local_vnc_port"
 _RE_SSH_TUNNEL_PATTERN = (r"((.*\s*-L\s)(?P<%s>\d+):127.0.0.1:%s)"
@@ -376,12 +377,13 @@ class LocalInstance(Instance):
             #  found exception.
             if not os.path.exists(cvd_status_cmd):
                 logger.warning("Cvd tools path doesn't exist:%s", cvd_status_cmd)
-                if os.environ.get(constants.ENV_ANDROID_HOST_OUT) in cvd_status_cmd:
-                    utils.PrintColorString(
+                if os.environ.get(constants.ENV_ANDROID_HOST_OUT,
+                                  _NO_ANDROID_ENV) in cvd_status_cmd:
+                    logger.warning(
                         "Can't find the cvd_status tool (Try lunching a "
                         "cuttlefish target like aosp_cf_x86_phone-userdebug "
                         "and running 'make hosttar' before list/delete local "
-                        "instances)", utils.TextColors.WARNING)
+                        "instances)")
                 return False
             logger.debug("Running cmd[%s] to check cvd status.", cvd_status_cmd)
             process = subprocess.Popen(cvd_status_cmd,
