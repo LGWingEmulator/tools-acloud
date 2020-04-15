@@ -185,3 +185,6 @@ WEBRTC_LOCAL_HOST = "localhost"
 
 # Remote Log
 REMOTE_LOG_FOLDER = "/home/%s/cuttlefish_runtime" % GCE_USER
+
+# Cheeps specific stuff.
+CHEEPS_BETTY_IMAGE = "betty_image"

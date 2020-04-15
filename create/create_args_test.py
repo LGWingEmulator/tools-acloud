@@ -33,6 +33,7 @@ def _CreateArgs():
         stable_cheeps_host_image_project=None,
         username=None,
         password=None,
+        cheeps_betty_image=None,
         local_image="",
         local_system_image="",
         system_branch=None,

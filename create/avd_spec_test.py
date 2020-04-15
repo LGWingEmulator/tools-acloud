@@ -325,6 +325,12 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.AvdSpec._ProcessRemoteBuildArgs(self.args)
         self.assertTrue(self.AvdSpec.avd_type == "cuttlefish")
 
+        self.args.cheeps_betty_image = 'abcdefg'
+        self.AvdSpec._ProcessRemoteBuildArgs(self.args)
+        self.assertEqual(
+            self.AvdSpec.remote_image[constants.CHEEPS_BETTY_IMAGE],
+            self.args.cheeps_betty_image)
+
     def testEscapeAnsi(self):
         """Test EscapeAnsi."""
         test_string = "\033[1;32;40m Manifest branch:"
