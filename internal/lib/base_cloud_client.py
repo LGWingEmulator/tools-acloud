@@ -17,17 +17,17 @@
 
 BasicCloudApiCliend does basic setup for a cloud API.
 """
-import httplib
 import logging
 import socket
 import ssl
 
 import six
+from six.moves import http_client
 
 # pylint: disable=import-error
+import httplib2
 from apiclient import errors as gerrors
 from apiclient.discovery import build
-import httplib2
 from oauth2client import client
 
 from acloud import errors
@@ -57,7 +57,7 @@ class BaseCloudApiClient(object):
         502,  # Bad Gateway
         503,  # Service Unavailable
     ]
-    RETRIABLE_ERRORS = (httplib.HTTPException, httplib2.HttpLib2Error,
+    RETRIABLE_ERRORS = (http_client.HTTPException, httplib2.HttpLib2Error,
                         socket.error, ssl.SSLError)
     RETRIABLE_AUTH_ERRORS = (client.AccessTokenRefreshError, )
 
