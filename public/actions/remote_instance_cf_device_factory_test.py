@@ -109,6 +109,8 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         fake_uuid = mock.MagicMock(hex="1234")
         self.Patch(uuid, "uuid4", return_value=fake_uuid)
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "CreateInstance")
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient,
+                   "GetHostImageName", return_value="fake_image")
         fake_host_package_name = "/fake/host_package.tar.gz"
         fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
 
@@ -182,6 +184,8 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
         fake_uuid = mock.MagicMock(hex="1234")
         self.Patch(uuid, "uuid4", return_value=fake_uuid)
         self.Patch(cvd_compute_client_multi_stage.CvdComputeClient, "CreateInstance")
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient,
+                   "GetHostImageName", return_value="fake_image")
         fake_host_package_name = "/fake/host_package.tar.gz"
         fake_image_name = "/fake/aosp_cf_x86_phone-img-eng.username.zip"
         factory = remote_instance_cf_device_factory.RemoteInstanceDeviceFactory(

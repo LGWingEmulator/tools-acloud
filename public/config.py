@@ -201,6 +201,7 @@ class AcloudConfig(object):
         self.orientation = usr_cfg.orientation
         self.resolution = usr_cfg.resolution
 
+        self.stable_host_image_family = usr_cfg.stable_host_image_family
         self.stable_host_image_name = (
             usr_cfg.stable_host_image_name or
             internal_cfg.default_usr_cfg.stable_host_image_name)

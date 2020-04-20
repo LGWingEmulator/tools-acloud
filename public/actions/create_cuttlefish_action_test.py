@@ -106,6 +106,7 @@ class CreateCuttlefishActionTest(driver_test_lib.BaseDriverTest):
         self.compute_client.GetInstanceIP.return_value = self.IP
         self.compute_client.GenerateImageName.return_value = self.IMAGE
         self.compute_client.GenerateInstanceName.return_value = self.INSTANCE
+        self.compute_client.GetHostImageName.return_value = self.STABLE_HOST_IMAGE_NAME
 
         # Mock build client method
         self.build_client.GetBuildInfo.side_effect = [

@@ -542,6 +542,21 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             project=image_project or self._project, image=image_name)
         return self.Execute(api)
 
+    def GetImageFromFamily(self, image_family, image_project=None):
+        """Get image information from image_family.
+
+        Args:
+            image_family: String of image family.
+            image_project: String of image project.
+
+        Returns:
+            An image resource in json.
+            https://cloud.google.com/compute/docs/reference/latest/images#resource
+        """
+        api = self.service.images().getFromFamily(
+            project=image_project or self._project, family=image_family)
+        return self.Execute(api)
+
     def DeleteImage(self, image_name):
         """Delete an image.
 
