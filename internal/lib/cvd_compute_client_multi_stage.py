@@ -251,7 +251,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             String, args of launch_cvd.
         """
         launch_cvd_args = []
-        if blank_data_disk_size_gb > 0:
+        if blank_data_disk_size_gb and blank_data_disk_size_gb > 0:
             # Policy 'create_if_missing' would create a blank userdata disk if
             # missing. If already exist, reuse the disk.
             launch_cvd_args.append(

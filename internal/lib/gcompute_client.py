@@ -1032,7 +1032,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
         # Initialize return values
         failed = []
         error_msgs = []
-        for resource_name, (_, error) in results.iteritems():
+        for resource_name, (_, error) in six.iteritems(results):
             if error is not None:
                 failed.append(resource_name)
                 error_msgs.append(str(error))
@@ -1273,7 +1273,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
             metadata_list = [{
                 _METADATA_KEY: key,
                 _METADATA_KEY_VALUE: val
-            } for key, val in metadata.iteritems()]
+            } for key, val in six.iteritems(metadata)]
             body[_METADATA] = {_ITEMS: metadata_list}
         logger.info("Creating instance: project %s, zone %s, body:%s",
                     self._project, zone, body)
