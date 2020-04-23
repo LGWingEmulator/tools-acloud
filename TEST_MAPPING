@@ -3,6 +3,10 @@
     {
       "name" : "acloud_test",
       "host" : true
+    },
+    {
+      "name" : "acloud_test_py3",
+      "host" : true
     }
   ]
 }
