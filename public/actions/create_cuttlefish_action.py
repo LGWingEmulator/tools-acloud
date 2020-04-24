@@ -161,10 +161,14 @@ class CuttlefishDeviceFactory(base_device_factory.BaseDeviceFactory):
             remote_system_build_id = self._GetGcsBucketBuildId(
                 self.system_build_info.build_id, self.system_build_info.release_build_id)
 
+        host_image_name = self._compute_client.GetHostImageName(
+            self._cfg.stable_host_image_name,
+            self._cfg.stable_host_image_family,
+            self._cfg.stable_host_image_project)
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
-            image_name=self._cfg.stable_host_image_name,
+            image_name=host_image_name,
             image_project=self._cfg.stable_host_image_project,
             build_target=self.build_info.build_target,
             branch=self.build_info.branch,

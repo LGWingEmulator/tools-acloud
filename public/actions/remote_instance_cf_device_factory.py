@@ -272,10 +272,15 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             instance = self._compute_client.GenerateInstanceName(
                 build_target=build_target, build_id=build_id)
 
+        host_image_name = self._compute_client.GetHostImageName(
+            self._cfg.stable_host_image_name,
+            self._cfg.stable_host_image_family,
+            self._cfg.stable_host_image_project)
+
         # Create an instance from Stable Host Image
         self._compute_client.CreateInstance(
             instance=instance,
-            image_name=self._cfg.stable_host_image_name,
+            image_name=host_image_name,
             image_project=self._cfg.stable_host_image_project,
             blank_data_disk_size_gb=self._cfg.extra_data_disk_size_gb,
             avd_spec=self._avd_spec)
