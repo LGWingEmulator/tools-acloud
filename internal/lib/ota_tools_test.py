@@ -55,7 +55,7 @@ def _GetImage(name):
     return "/path/to/" + name + ".img"
 
 
-class CapturedFile(object):
+class CapturedFile:
     """Capture intermediate files created by OtaTools."""
 
     def __init__(self):
@@ -204,7 +204,9 @@ class OtaToolsTest(unittest.TestCase):
 
         mock_popen.return_value = self._MockPopen(return_value=0)
 
-        self._ota.MakeDisabledVbmetaImage("/unit/test")
+        with mock.patch.dict("acloud.internal.lib.ota_tools.os.environ",
+                             {"PYTHONPATH": "/unit/test"}, clear=True):
+            self._ota.MakeDisabledVbmetaImage("/unit/test")
 
         expected_cmd = (
             avbtool, "make_vbmeta_image",
@@ -215,6 +217,7 @@ class OtaToolsTest(unittest.TestCase):
 
         mock_popen.assert_called_once()
         self.assertEqual(mock_popen.call_args[0][0], expected_cmd)
+        self.assertFalse(mock_popen.call_args[1]["env"])
 
     # pylint: disable=broad-except
     def _TestMkCombinedImg(self, mock_popen, mock_popen_object,
