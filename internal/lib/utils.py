@@ -1097,7 +1097,13 @@ def CalculateVNCScreenRatio(avd_width, avd_height):
         import Tkinter
     # Some python interpreters may not be configured for Tk, just return default scale ratio.
     except ImportError:
-        return _DEFAULT_DISPLAY_SCALE
+        try:
+            import tkinter as Tkinter
+        except ImportError:
+            PrintColorString(
+                "no module named tkinter, vnc display scale were not be fit."
+                "please run 'sudo apt-get install python3-tk' to install it.")
+            return _DEFAULT_DISPLAY_SCALE
     root = Tkinter.Tk()
     margin = 100 # leave some space on user's monitor.
     screen_height = root.winfo_screenheight() - margin
