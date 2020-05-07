@@ -76,6 +76,9 @@ _CREATOR_CLASS_DICT = {
         goldfish_remote_image_remote_instance.GoldfishRemoteImageRemoteInstance,
     (constants.TYPE_GF, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_LOCAL):
         goldfish_local_image_local_instance.GoldfishLocalImageLocalInstance,
+    # FVP types
+    (constants.TYPE_FVP, constants.IMAGE_SRC_LOCAL, constants.INSTANCE_TYPE_REMOTE):
+        local_image_remote_instance.LocalImageRemoteInstance,
 }
 
 
