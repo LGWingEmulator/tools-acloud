@@ -116,7 +116,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         try:
             self.CheckLaunchCVD(
                 cmd, host_bins_path, avd_spec.local_instance_id,
-                local_image_path, no_prompts,
+                local_image_path, avd_spec.connect_webrtc, no_prompts,
                 avd_spec.boot_timeout_secs or constants.DEFAULT_CF_BOOT_TIMEOUT)
         except errors.LaunchCVDFail as launch_error:
             result_report.SetStatus(report.Status.BOOT_FAIL)
@@ -223,7 +223,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         return launch_cmd
 
     def CheckLaunchCVD(self, cmd, host_bins_path, local_instance_id,
-                       local_image_path, no_prompts=False,
+                       local_image_path, connect_webrtc=False, no_prompts=False,
                        timeout_secs=constants.DEFAULT_CF_BOOT_TIMEOUT):
         """Execute launch_cvd command and wait for boot up completed.
 
@@ -236,6 +236,7 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             host_bins_path: String of host package directory.
             local_instance_id: Integer of instance id.
             local_image_path: String of local image directory.
+            connect_webrtc: Boolean, whether to auto connect webrtc to device.
             no_prompts: Boolean, True to skip all prompts.
             timeout_secs: Integer, the number of seconds to wait for the AVD to boot up.
         """
@@ -262,7 +263,8 @@ class LocalImageLocalInstance(base_avd_create.BaseAVDCreate):
                     "instance." % (local_image_path, occupied_ins_id),
                     utils.TextColors.FAIL)
                 sys.exit(constants.EXIT_BY_USER)
-
+        if connect_webrtc:
+            utils.ReleasePort(constants.WEBRTC_LOCAL_PORT)
         self._LaunchCvd(cmd, local_instance_id, timeout=timeout_secs)
 
     @staticmethod

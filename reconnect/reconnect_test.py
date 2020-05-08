@@ -51,7 +51,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         self.Patch(AdbTools, "IsAdbConnected", return_value=False)
         self.Patch(AdbTools, "IsAdbConnectionAlive", return_value=False)
         self.Patch(utils, "IsCommandRunning", return_value=False)
-        self.Patch(reconnect, "IsWebrtcEnable", return_value=False)
+        self.Patch(reconnect, "_IsWebrtcEnable", return_value=False)
         fake_device_dict = {
             constants.IP: "1.1.1.1",
             constants.INSTANCE_NAME: "fake_name",
@@ -165,7 +165,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         self.Patch(AdbTools, "IsAdbConnected", return_value=False)
         self.Patch(AdbTools, "IsAdbConnectionAlive", return_value=False)
         self.Patch(utils, "IsCommandRunning", return_value=False)
-        self.Patch(reconnect, "IsWebrtcEnable", return_value=True)
+        self.Patch(reconnect, "_IsWebrtcEnable", return_value=True)
 
         # test ssh tunnel not reconnect to the remote instance.
         instance_object.vnc_port = 6666
@@ -192,7 +192,7 @@ class ReconnectTest(driver_test_lib.BaseDriverTest):
         instance_object.ssh_tunnel_is_connected = False
         self.Patch(utils, "AutoConnect")
         self.Patch(reconnect, "StartVnc")
-        self.Patch(reconnect, "IsWebrtcEnable", return_value=False)
+        self.Patch(reconnect, "_IsWebrtcEnable", return_value=False)
         #test reconnect remote instance when avd_type as gce.
         instance_object.avd_type = "gce"
         reconnect.ReconnectInstance(ssh_private_key_path, instance_object, fake_report)
