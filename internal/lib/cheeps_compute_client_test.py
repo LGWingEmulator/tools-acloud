@@ -128,5 +128,52 @@ class CheepsComputeClientTest(driver_test_lib.BaseDriverTest):
             network=self.NETWORK,
             zone=self.ZONE)
 
+    def testCreateInstanceMissingParams(self):
+        """Test CreateInstance with optional avd_spec parameters missing."""
+        expected_metadata = {
+            'android_build_id': self.ANDROID_BUILD_ID,
+            'android_build_target': self.ANDROID_BUILD_TARGET,
+            'avd_type': "cheeps",
+            'betty_image': None,
+            'cvd_01_dpi': str(self.DPI),
+            'cvd_01_x_res': str(self.X_RES),
+            'cvd_01_y_res': str(self.Y_RES),
+            'display': "%sx%s (%s)"%(
+                str(self.X_RES),
+                str(self.Y_RES),
+                str(self.DPI)),
+        }
+        expected_metadata.update(self.METADATA)
+
+
+        avd_spec = mock.MagicMock()
+        avd_spec.hw_property = {constants.HW_X_RES: str(self.X_RES),
+                                constants.HW_Y_RES: str(self.Y_RES),
+                                constants.HW_ALIAS_DPI: str(self.DPI)}
+        avd_spec.username = None
+        avd_spec.password = None
+        avd_spec.remote_image = {
+            constants.BUILD_ID: self.ANDROID_BUILD_ID,
+            constants.BUILD_TARGET: self.ANDROID_BUILD_TARGET,
+            constants.CHEEPS_BETTY_IMAGE: None,
+        }
+
+        self.cheeps_compute_client.CreateInstance(
+            self.INSTANCE,
+            self.IMAGE,
+            self.IMAGE_PROJECT,
+            avd_spec)
+        # pylint: disable=no-member
+        gcompute_client.ComputeClient.CreateInstance.assert_called_with(
+            self.cheeps_compute_client,
+            instance=self.INSTANCE,
+            image_name=self.IMAGE,
+            image_project=self.IMAGE_PROJECT,
+            disk_args=None,
+            metadata=expected_metadata,
+            machine_type=self.MACHINE_TYPE,
+            network=self.NETWORK,
+            zone=self.ZONE)
+
 if __name__ == "__main__":
     unittest.main()

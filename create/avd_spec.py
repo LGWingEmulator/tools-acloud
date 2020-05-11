@@ -138,7 +138,6 @@ class AVDSpec():
         self._stable_cheeps_host_image_project = None
         self._username = None
         self._password = None
-        self._cheeps_betty_image = None
 
         # The maximum time in seconds used to wait for the AVD to boot.
         self._boot_timeout_secs = None
@@ -314,7 +313,6 @@ class AVDSpec():
         self._stable_cheeps_host_image_project = args.stable_cheeps_host_image_project
         self._username = args.username
         self._password = args.password
-        self._cheeps_betty_image = args.cheeps_betty_image
 
         self._boot_timeout_secs = args.boot_timeout_secs
         self._ins_timeout_secs = args.ins_timeout_secs
@@ -527,9 +525,8 @@ class AVDSpec():
                 self._remote_image[constants.BUILD_TARGET],
                 self._remote_image[constants.BUILD_BRANCH])
 
-        if args.cheeps_betty_image:
-            self._remote_image[constants.CHEEPS_BETTY_IMAGE] = (
-                args.cheeps_betty_image)
+        self._remote_image[constants.CHEEPS_BETTY_IMAGE] = (
+            args.cheeps_betty_image)
 
         # Process system image and kernel image.
         self._system_build_info = {constants.BUILD_ID: args.system_build_id,
@@ -821,11 +818,6 @@ class AVDSpec():
     def password(self):
         """Return password."""
         return self._password
-
-    @property
-    def cheeps_betty_image(self):
-        """Return the Cheeps host image name."""
-        return self._cheeps_betty_image
 
     @property
     def boot_timeout_secs(self):

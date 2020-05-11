@@ -88,14 +88,9 @@ class CheepsComputeClient(android_compute_client.AndroidComputeClient):
                 metadata["user"] = avd_spec.username
                 metadata["password"] = avd_spec.password
 
-            if avd_spec.remote_image[constants.BUILD_ID]:
-                metadata["android_build_id"] = avd_spec.remote_image[constants.BUILD_ID]
-
-            if avd_spec.remote_image[constants.BUILD_TARGET]:
-                metadata["android_build_target"] = avd_spec.remote_image[constants.BUILD_TARGET]
-
-            if avd_spec.remote_image[constants.CHEEPS_BETTY_IMAGE]:
-                metadata["betty_image"] = avd_spec.remote_image[constants.CHEEPS_BETTY_IMAGE]
+            metadata["android_build_id"] = avd_spec.remote_image[constants.BUILD_ID]
+            metadata["android_build_target"] = avd_spec.remote_image[constants.BUILD_TARGET]
+            metadata["betty_image"] = avd_spec.remote_image[constants.CHEEPS_BETTY_IMAGE]
 
         gcompute_client.ComputeClient.CreateInstance(
             self,
