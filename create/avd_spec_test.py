@@ -330,6 +330,12 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(
             self.AvdSpec.remote_image[constants.CHEEPS_BETTY_IMAGE],
             self.args.cheeps_betty_image)
+        self.args.cheeps_betty_image = None
+        self.AvdSpec._ProcessRemoteBuildArgs(self.args)
+        self.assertEqual(
+            self.AvdSpec.remote_image[constants.CHEEPS_BETTY_IMAGE],
+            self.args.cheeps_betty_image)
+
 
     def testEscapeAnsi(self):
         """Test EscapeAnsi."""
