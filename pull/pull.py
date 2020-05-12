@@ -34,7 +34,7 @@ from acloud.public import report
 
 logger = logging.getLogger(__name__)
 
-_FIND_LOG_FILE_CMD = "find %s -type f" % constants.REMOTE_LOG_FOLDER
+_FIND_LOG_FILE_CMD = "find -L %s -type f" % constants.REMOTE_LOG_FOLDER
 # Black list for log files.
 _KERNEL = "kernel"
 _IMG_FILE_EXTENSION = ".img"
