@@ -16,6 +16,7 @@
 import glob
 import os
 import shutil
+import six
 import tempfile
 import unittest
 import uuid
@@ -281,6 +282,21 @@ class RemoteInstanceDeviceFactoryTest(driver_test_lib.BaseDriverTest):
             "%s -- tar -xf - --lzop -S" %
             (fake_local_image_dir, factory._ssh.GetBaseCmd(constants.SSH_BIN)))
         mock_shell.assert_called_once_with(expected_cmd)
+
+        mock_shell.reset_mock()
+        m = mock.mock_open(read_data = (
+            "boot.img\n"
+            "cache.img\n"
+            "super.img\n"
+            "userdata.img\n"
+            "vendor_boot.img\n"))
+        with mock.patch.object(six.moves.builtins, "open", m):
+            factory._UploadArtifacts(fake_image, fake_host_package, fake_local_image_dir)
+            expected_cmd = (
+                "tar -cf - --lzop -S -C %s boot.img cache.img super.img userdata.img vendor_boot.img | "
+                "%s -- tar -xf - --lzop -S" %
+                (fake_local_image_dir, factory._ssh.GetBaseCmd(constants.SSH_BIN)))
+            mock_shell.assert_called_once_with(expected_cmd)
 
     @mock.patch.object(remote_instance_cf_device_factory.RemoteInstanceDeviceFactory,
                        "_InitRemotehost")

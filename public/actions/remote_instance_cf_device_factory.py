@@ -317,8 +317,15 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             self._ssh.Run(remote_cmd)
         else:
             # Compress image files for faster upload.
-            artifact_files = [os.path.basename(image) for image in glob.glob(
-                os.path.join(images_dir, "*.img"))]
+            try:
+                images_path = os.path.join(images_dir, "required_images")
+                with open(images_path, "r") as images:
+                    artifact_files = images.read().splitlines()
+            except IOError:
+                # Older builds may not have a required_images file. In this case
+                # we fall back to *.img.
+                artifact_files = [os.path.basename(image) for image in
+                    glob.glob(os.path.join(images_dir, "*.img"))]
             cmd = ("tar -cf - --lzop -S -C {images_dir} {artifact_files} | "
                    "{ssh_cmd} -- tar -xf - --lzop -S".format(
                        images_dir=images_dir,
