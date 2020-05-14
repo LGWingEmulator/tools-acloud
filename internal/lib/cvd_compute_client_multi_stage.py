@@ -37,6 +37,7 @@ Android build, and start Android within the host instance.
 
 import logging
 import os
+import ssl
 import stat
 import subprocess
 import tempfile
@@ -72,6 +73,8 @@ _START_WEBRTC = "--start_webrtc"
 _VM_MANAGER = "--vm_manager=crosvm"
 _WEBRTC_ARGS = [_GUEST_ENFORCE_SECURITY_FALSE, _START_WEBRTC, _VM_MANAGER]
 _NO_RETRY = 0
+_MAX_RETRY = 3
+_RETRY_SLEEP_SECS = 3
 
 
 def _ProcessBuild(build_id=None, branch=None, build_target=None):
@@ -490,7 +493,12 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         # stronger automated testing on it.
         download_dir = tempfile.mkdtemp()
         download_target = os.path.join(download_dir, _FETCHER_NAME)
-        self._build_api.DownloadArtifact(
+        utils.RetryExceptionType(
+            exception_types=ssl.SSLError,
+            max_retries=_MAX_RETRY,
+            functor=self._build_api.DownloadArtifact,
+            sleep_multiplier=_RETRY_SLEEP_SECS,
+            retry_backoff_factor=utils.DEFAULT_RETRY_BACKOFF_FACTOR,
             build_target=_FETCHER_BUILD_TARGET,
             build_id=self._fetch_cvd_version,
             resource_id=_FETCHER_NAME,
