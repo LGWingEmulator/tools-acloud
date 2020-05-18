@@ -47,6 +47,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
     IMAGE = "fake-image"
     IMAGE_URL = "http://fake-image-url"
     IMAGE_OTHER = "fake-image-other"
+    DISK = "fake-disk"
     MACHINE_TYPE = "fake-machine-type"
     MACHINE_TYPE_URL = "http://fake-machine-type-url"
     METADATA = ("metadata_key", "metadata_value")
@@ -1460,6 +1461,62 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
             gcompute_client.ComputeClient, "Execute",
             side_effect=error)
         self.assertFalse(self.compute_client.CheckAccess())
+
+    def testEnoughMetricsInZone(self):
+        """Test EnoughMetricsInZone."""
+        region_info_enough_quota = {
+            "items": [{
+                "name": "asia-east1",
+                "quotas": [{
+                    "usage": 50,
+                    "metric": "CPUS",
+                    "limit": 100
+                }, {
+                    "usage": 640,
+                    "metric": "DISKS_TOTAL_GB",
+                    "limit": 10240
+                }]
+            }]
+        }
+        self.Patch(
+            gcompute_client.ComputeClient, "GetRegionInfo",
+            return_value=region_info_enough_quota)
+        self.assertTrue(self.compute_client.EnoughMetricsInZone("asia-east1-b"))
+        self.assertFalse(self.compute_client.EnoughMetricsInZone("fake_zone"))
+
+        region_info_not_enough_quota = {
+            "items": [{
+                "name": "asia-east1",
+                "quotas": [{
+                    "usage": 100,
+                    "metric": "CPUS",
+                    "limit": 100
+                }, {
+                    "usage": 640,
+                    "metric": "DISKS_TOTAL_GB",
+                    "limit": 10240
+                }]
+            }]
+        }
+        self.Patch(
+            gcompute_client.ComputeClient, "GetRegionInfo",
+            return_value=region_info_not_enough_quota)
+        self.assertFalse(self.compute_client.EnoughMetricsInZone("asia-east1-b"))
+
+    def testGetDisk(self):
+        """Test GetDisk."""
+        resource_mock = mock.MagicMock()
+        mock_api = mock.MagicMock()
+        self.compute_client._service.disks = mock.MagicMock(
+            return_value=resource_mock)
+        resource_mock.get = mock.MagicMock(return_value=mock_api)
+        mock_api.execute = mock.MagicMock(return_value={"name": self.DISK})
+        result = self.compute_client.GetDisk(self.DISK, self.ZONE)
+        self.assertEqual(result, {"name": self.DISK})
+        resource_mock.get.assert_called_with(project=PROJECT,
+                                             zone=self.ZONE,
+                                             disk=self.DISK)
+        self.assertTrue(self.compute_client.CheckDiskExists(self.DISK, self.ZONE))
 
 
 if __name__ == "__main__":
