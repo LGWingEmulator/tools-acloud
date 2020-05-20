@@ -405,7 +405,8 @@ def main(argv=None):
             serial_log_file=args.serial_log_file,
             autoconnect=args.autoconnect,
             tags=args.tags,
-            report_internal_ip=args.report_internal_ip)
+            report_internal_ip=args.report_internal_ip,
+            boot_timeout_secs=args.boot_timeout_secs)
     elif args.which == delete_args.CMD_DELETE:
         report = delete.Run(args)
     elif args.which == list_args.CMD_LIST:
