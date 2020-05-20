@@ -60,5 +60,14 @@ def GetSetupArgParser(subparser):
         dest="force",
         required=False,
         help="Force the setup steps even if it's not required.")
+    # TODO(157532869): Validate the field name.
+    setup_parser.add_argument(
+        "--update-config",
+        nargs=2,
+        dest="update_config",
+        required=False,
+        help="Update the acloud user config. The first arg is field name in "
+        "config, and the second arg is the value of the field. Command would "
+        "like: 'acloud setup --config stable_host_image_family acloud-release'")
 
     return setup_parser
