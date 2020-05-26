@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 _CMD_LAUNCH_CVD_ARGS = (" -daemon -cpus %s -x_res %s -y_res %s -dpi %s "
                         "-memory_mb %s -run_adb_connector=%s "
                         "-system_image_dir %s -instance_dir %s "
-                        "-undefok=report_anonymous_usage_stats "
+                        "-undefok=report_anonymous_usage_stats,enable_sandbox "
                         "-report_anonymous_usage_stats=y "
                         "-enable_sandbox=false")
 _CMD_LAUNCH_CVD_GPU_ARG = " -gpu_mode=drm_virgl"
