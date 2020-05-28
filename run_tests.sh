@@ -78,8 +78,12 @@ function run_unittests() {
 }
 
 function check_env() {
-    if [ -z "$ANDROID_BUILD_TOP" ]; then
-        echo "Missing ANDROID_BUILD_TOP env variable. Run 'lunch' first."
+    if [ -z "$ANDROID_HOST_OUT" ]; then
+        echo "Missing ANDROID_HOST_OUT env variable. Run 'lunch' first."
+        exit 1
+    fi
+    if [ ! -f "$ANDROID_HOST_OUT/bin/aprotoc" ]; then
+        echo "Missing aprotoc. Run 'm aprotoc' first."
         exit 1
     fi
 
@@ -98,7 +102,7 @@ function check_env() {
 
 function gen_proto_py() {
     # Use aprotoc to generate python proto files.
-    local protoc_cmd=$ANDROID_BUILD_TOP/prebuilts/misc/linux-x86/protobuf/aprotoc
+    local protoc_cmd=$ANDROID_HOST_OUT/bin/aprotoc
     pushd $ACLOUD_DIR &> /dev/null
     $protoc_cmd internal/proto/*.proto --python_out=./
     touch internal/proto/__init__.py
