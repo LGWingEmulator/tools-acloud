@@ -166,6 +166,7 @@ def _CheckForSetup(args):
     args.host = False
     args.host_base = False
     args.force = False
+    args.update_config = None
     # Remote image/instance requires the GCP config setup.
     if not args.local_instance or args.local_image == "":
         gcp_setup = gcp_setup_runner.GcpTaskRunner(args.config_file)
