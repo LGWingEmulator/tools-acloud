@@ -153,7 +153,15 @@ class CvdRuntimeConfig(object):
             errors.ConfigError: if file not found or config load failed.
         """
         if raw_data:
-            return json.loads(raw_data)
+            # if remote instance couldn't fetch the config will return message such as
+            # 'cat: .../cuttlefish_config.json: No such file or directory'.
+            # Add this condition to prevent from JSONDecodeError.
+            try:
+                return json.loads(raw_data)
+            except ValueError as e:
+                raise errors.ConfigError(
+                    "An exception happened when loading the raw_data of the "
+                    "cvd runtime config:\n%s" % str(e))
         if not os.path.exists(runtime_cf_config_path):
             raise errors.ConfigError(
                 "file does not exist: %s" % runtime_cf_config_path)
