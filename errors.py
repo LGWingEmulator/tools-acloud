@@ -131,6 +131,10 @@ class NotSupportedPlatformError(SetupError):
     """Error related to user using a not supported os."""
 
 
+class NotSupportedFieldName(SetupError):
+    """Unsupported field name for user config."""
+
+
 class CreateError(Exception):
     """Base Create cmd exception."""
 
