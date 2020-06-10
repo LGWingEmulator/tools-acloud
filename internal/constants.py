@@ -38,6 +38,7 @@ TYPE_CHEEPS = "cheeps"
 TYPE_CF = "cuttlefish"
 TYPE_GCE = "gce"
 TYPE_GF = "goldfish"
+TYPE_FVP = "fvp"
 
 # Image types
 IMAGE_SRC_REMOTE = "remote_image"
@@ -120,6 +121,8 @@ GCE_VNC_PORT = 6444
 # For goldfish remote instances
 GF_ADB_PORT = 5555
 GF_VNC_PORT = 6444
+# For FVP remote instances (no VNC support)
+FVP_ADB_PORT = 5555
 
 COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"

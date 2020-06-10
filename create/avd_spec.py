@@ -360,6 +360,8 @@ class AVDSpec():
         """
         if self._avd_type == constants.TYPE_CF:
             self._ProcessCFLocalImageArgs(args.local_image, args.flavor)
+        elif self._avd_type == constants.TYPE_FVP:
+            self._ProcessFVPLocalImageArgs(args.local_image)
         elif self._avd_type == constants.TYPE_GF:
             self._local_image_dir = self._ProcessGFLocalImageArgs(
                 args.local_image)
@@ -485,6 +487,30 @@ class AVDSpec():
 
         if flavor_from_build_string and not flavor_arg:
             self._flavor = flavor_from_build_string
+
+    def _ProcessFVPLocalImageArgs(self, local_image_arg):
+        """Get local built image path for FVP-type AVD.
+
+        Args:
+            local_image_arg: String of local image args.
+        """
+        build_target = utils.GetBuildEnvironmentVariable(
+            constants.ENV_BUILD_TARGET)
+        if build_target != "fvp":
+            utils.PrintColorString(
+                "%s is not an fvp target (Try lunching fvp-eng "
+                "and running 'm')" % build_target,
+                utils.TextColors.WARNING)
+        self._local_image_dir = utils.GetBuildEnvironmentVariable(
+            _ENV_ANDROID_PRODUCT_OUT)
+
+        # Since dir is provided, so checking that any images exist to ensure
+        # user didn't forget to 'make' before launch AVD.
+        image_list = glob.glob(os.path.join(self.local_image_dir, "*.img"))
+        if not image_list:
+            raise errors.GetLocalImageError(
+                "No image found(Did you choose a lunch target and run `m`?)"
+                ": %s.\n " % self._local_image_dir)
 
     def _ProcessRemoteBuildArgs(self, args):
         """Get the remote build args.

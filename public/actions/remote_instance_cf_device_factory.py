@@ -27,15 +27,12 @@ from acloud.internal.lib import auth
 from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import utils
 from acloud.internal.lib import ssh
-from acloud.public.actions import base_device_factory
+from acloud.public.actions import gce_device_factory
 
 
 logger = logging.getLogger(__name__)
 
-_USER_BUILD = "userbuild"
-
-
-class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
+class RemoteInstanceDeviceFactory(gce_device_factory.GCEDeviceFactory):
     """A class that can produce a cuttlefish device.
 
     Attributes:
@@ -51,22 +48,8 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
     """
     def __init__(self, avd_spec, local_image_artifact=None,
                  cvd_host_package_artifact=None):
-        """Constructs a new remote instance device factory."""
-        self._avd_spec = avd_spec
-        self._cfg = avd_spec.cfg
-        self._local_image_artifact = local_image_artifact
+        super(RemoteInstanceDeviceFactory, self).__init__(avd_spec, local_image_artifact)
         self._cvd_host_package_artifact = cvd_host_package_artifact
-        self._report_internal_ip = avd_spec.report_internal_ip
-        self.credentials = auth.CreateCredentials(avd_spec.cfg)
-        # Control compute_client with enable_multi_stage
-        compute_client = cvd_compute_client_multi_stage.CvdComputeClient(
-            acloud_config=avd_spec.cfg,
-            oauth2_credentials=self.credentials,
-            ins_timeout_secs=avd_spec.ins_timeout_secs,
-            report_internal_ip=avd_spec.report_internal_ip,
-            gpu=avd_spec.gpu)
-        super(RemoteInstanceDeviceFactory, self).__init__(compute_client)
-        self._ssh = None
 
     # pylint: disable=broad-except
     def CreateInstance(self):
@@ -125,7 +108,7 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             self._local_image_artifact) if self._local_image_artifact else ""
         build_target = (os.environ.get(constants.ENV_BUILD_TARGET) if "-" not
                         in image_name else image_name.split("-")[0])
-        build_id = _USER_BUILD
+        build_id = self._USER_BUILD
         if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
             build_id = self._avd_spec.remote_image[constants.BUILD_ID]
 
@@ -245,53 +228,6 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             system_branch, system_build_target, kernel_build_id,
             kernel_branch, kernel_build_target)
 
-    def _CreateGceInstance(self):
-        """Create a single configured cuttlefish device.
-
-        Override method from parent class.
-        build_target: The format is like "aosp_cf_x86_phone". We only get info
-                      from the user build image file name. If the file name is
-                      not custom format (no "-"), we will use $TARGET_PRODUCT
-                      from environment variable as build_target.
-
-        Returns:
-            A string, representing instance name.
-        """
-        image_name = os.path.basename(
-            self._local_image_artifact) if self._local_image_artifact else ""
-        build_target = (os.environ.get(constants.ENV_BUILD_TARGET) if "-" not
-                        in image_name else image_name.split("-")[0])
-        build_id = _USER_BUILD
-        if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
-            build_id = self._avd_spec.remote_image[constants.BUILD_ID]
-            build_target = self._avd_spec.remote_image[constants.BUILD_TARGET]
-
-        if self._avd_spec.instance_name_to_reuse:
-            instance = self._avd_spec.instance_name_to_reuse
-        else:
-            instance = self._compute_client.GenerateInstanceName(
-                build_target=build_target, build_id=build_id)
-
-        host_image_name = self._compute_client.GetHostImageName(
-            self._cfg.stable_host_image_name,
-            self._cfg.stable_host_image_family,
-            self._cfg.stable_host_image_project)
-
-        # Create an instance from Stable Host Image
-        self._compute_client.CreateInstance(
-            instance=instance,
-            image_name=host_image_name,
-            image_project=self._cfg.stable_host_image_project,
-            blank_data_disk_size_gb=self._cfg.extra_data_disk_size_gb,
-            avd_spec=self._avd_spec)
-        ip = self._compute_client.GetInstanceIP(instance)
-        self._ssh = ssh.Ssh(ip=ip,
-                            user=constants.GCE_USER,
-                            ssh_private_key_path=self._cfg.ssh_private_key_path,
-                            extra_args_ssh_tunnel=self._cfg.extra_args_ssh_tunnel,
-                            report_internal_ip=self._report_internal_ip)
-        return instance
-
     @utils.TimeExecute(function_description="Processing and uploading local images")
     def _UploadArtifacts(self,
                          local_image_zip,
@@ -362,27 +298,6 @@ class RemoteInstanceDeviceFactory(base_device_factory.BaseDeviceFactory):
             kernel_build,
             decompress_kernel,
             boot_timeout_secs)
-
-    def GetFailures(self):
-        """Get failures from all devices.
-
-        Returns:
-            A dictionary that contains all the failures.
-            The key is the name of the instance that fails to boot,
-            and the value is an errors.DeviceBootError object.
-        """
-        return self._compute_client.all_failures
-
-    def _SetFailures(self, instance, error_msg):
-        """Set failures from this device.
-
-        Record the failures for any steps in AVD creation.
-
-        Args:
-            instance: String of instance name.
-            error_msg: String of error message.
-        """
-        self._compute_client.all_failures[instance] = error_msg
 
     def GetBuildInfoDict(self):
         """Get build info dictionary.
