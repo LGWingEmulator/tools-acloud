@@ -404,8 +404,8 @@ class UtilsTest(driver_test_lib.BaseDriverTest):
         args_list = ["-i", "/tmp/rsa_file",
                      "-o", "UserKnownHostsFile=/dev/null",
                      "-o", "StrictHostKeyChecking=no",
-                     "-L", "12345:127.0.0.1:8888",
                      "-L", "12345:127.0.0.1:9999",
+                     "-L", "12345:127.0.0.1:8888",
                      "-N", "-f", "-l", "fake_user", "1.1.1.1",
                      "-o", "command=shell %s %h",
                      "-o", "command1=ls -la"]
