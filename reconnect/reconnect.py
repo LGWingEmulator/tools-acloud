@@ -19,6 +19,7 @@ Reconnect will:
  - restart vnc for remote/local instances
 """
 
+import logging
 import os
 import re
 
@@ -35,6 +36,8 @@ from acloud.public import config
 from acloud.public import report
 
 
+logger = logging.getLogger(__name__)
+
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
 
@@ -49,6 +52,9 @@ def IsWebrtcEnable(ip_addr, host_user, host_ssh_private_key_path,
         host_ssh_private_key_path: String of host key for logging in to the
                                    host.
         extra_args_ssh_tunnel: String, extra args for ssh tunnel connection.
+
+    Returns:
+        Boolean: True if cf_runtime_cfg.enable_webrtc is True.
     """
     ssh = ssh_object.Ssh(ip=ssh_object.IP(ip=ip_addr), user=host_user,
                          ssh_private_key_path=host_ssh_private_key_path,
@@ -56,9 +62,14 @@ def IsWebrtcEnable(ip_addr, host_user, host_ssh_private_key_path,
     remote_cuttlefish_config = os.path.join(constants.REMOTE_LOG_FOLDER,
                                             constants.CUTTLEFISH_CONFIG_FILE)
     raw_data = ssh.GetCmdOutput("cat " + remote_cuttlefish_config)
-    cf_runtime_cfg = cvd_runtime_config.CvdRuntimeConfig(
-        raw_data=raw_data.strip())
-    return cf_runtime_cfg.enable_webrtc
+    try:
+        cf_runtime_cfg = cvd_runtime_config.CvdRuntimeConfig(
+            raw_data=raw_data.strip())
+        return cf_runtime_cfg.enable_webrtc
+    except errors.ConfigError:
+        logger.debug("No cuttlefish config[%s] found!",
+                     remote_cuttlefish_config)
+    return False
 
 
 def StartVnc(vnc_port, display):

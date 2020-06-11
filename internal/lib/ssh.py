@@ -259,7 +259,7 @@ class Ssh(object):
         process = subprocess.Popen(ssh_cmd, shell=True, stdin=None,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = process.communicate()
-        return stdout
+        return stdout.decode()
 
     def CheckSshConnection(self, timeout):
         """Run remote 'uptime' ssh command to check ssh connection.
