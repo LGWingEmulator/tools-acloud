@@ -19,7 +19,6 @@ import unittest
 import os
 import mock
 import six
-from six import b
 
 # pylint: disable=no-name-in-module,import-error,no-member
 from acloud import errors
@@ -28,7 +27,7 @@ from acloud.internal.proto import user_config_pb2
 from acloud.public import config
 from acloud.setup import gcp_setup_runner
 
-_GCP_USER_CONFIG = b("""
+_GCP_USER_CONFIG = """
 [compute]
 region = new_region
 zone = new_zone
@@ -36,8 +35,7 @@ zone = new_zone
 account = new@google.com
 disable_usage_reporting = False
 project = new_project
-""")
-
+"""
 
 def _CreateCfgFile():
     """A helper method that creates a mock configuration object."""
@@ -147,7 +145,7 @@ class AcloudGCPSetupTest(unittest.TestCase):
     @mock.patch.object(gcp_setup_runner, "GoogleSDKBins")
     def testSetupGcloudInfo(self, mock_sdk, mock_set, mock_run, mock_create):
         """test setup gcloud info"""
-        with mock.patch("google_sdk.GoogleSDK"):
+        with mock.patch("acloud.setup.google_sdk.GoogleSDK"):
             self.gcp_env_runner._SetupGcloudInfo()
             mock_sdk.assert_called_once()
             mock_set.assert_called_once()

@@ -14,8 +14,6 @@ function get_python_path() {
         "dateutil"
         "google-api-python-client"
         "oauth2client"
-        "uritemplates"
-        "rsa"
     )
     for lib in ${third_party_libs[*]};
     do
@@ -29,8 +27,8 @@ function print_summary() {
     local test_results=$1
     local tmp_dir=$(mktemp -d)
     local rc_file=${ACLOUD_DIR}/.coveragerc
-    PYTHONPATH=$(get_python_path) python3 -m coverage report -m
-    PYTHONPATH=$(get_python_path) python3 -m coverage html -d $tmp_dir --rcfile=$rc_file
+    PYTHONPATH=$(get_python_path) python -m coverage report -m
+    PYTHONPATH=$(get_python_path) python -m coverage html -d $tmp_dir --rcfile=$rc_file
     echo "coverage report available at file://${tmp_dir}/index.html"
 
     if [[ $test_results -eq 0 ]]; then
@@ -43,10 +41,10 @@ function print_summary() {
 function run_unittests() {
     local specified_tests=$@
     local rc=0
-    local run_cmd="python3 -m coverage run --append"
+    local run_cmd="python -m coverage run --append"
 
     # clear previously collected coverage data.
-    PYTHONPATH=$(get_python_path) python3 -m coverage erase
+    PYTHONPATH=$(get_python_path) python -m coverage erase
 
     # Get all unit tests under tools/acloud.
     local all_tests=$(find $ACLOUD_DIR -type f -name "*_test.py" ! -name "acloud_test.py");
@@ -92,8 +90,8 @@ function check_env() {
     local missing_py_packages=false
     for py_lib in {coverage,mock};
     do
-        if ! python3 -m pip list | grep $py_lib &> /dev/null; then
-            echo "Missing required python package: $py_lib (python3 -m pip install $py_lib)"
+        if ! python -m pip list | grep $py_lib &> /dev/null; then
+            echo "Missing required python package: $py_lib (python -m pip install $py_lib)"
             missing_py_packages=true
         fi
     done
