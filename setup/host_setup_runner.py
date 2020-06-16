@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # Packages "devscripts" and "equivs" are required for "mk-build-deps".
 _AVD_REQUIRED_PKGS = [
     "devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system"]
-_BASE_REQUIRED_PKGS = ["ssvnc", "lzop"]
+_BASE_REQUIRED_PKGS = ["ssvnc", "lzop", "python3-tk"]
 _CUTTLEFISH_COMMOM_PKG = "cuttlefish-common"
 _CF_COMMOM_FOLDER = "cf-common"
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
