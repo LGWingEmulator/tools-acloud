@@ -78,6 +78,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._ssh_public_key_path = acloud_config.ssh_public_key_path
         self._launch_args = acloud_config.launch_args
         self._instance_name_pattern = acloud_config.instance_name_pattern
+        # Store error log folder to pass to the end.
+        self._error_log_folder = None
         self._AddPerInstanceSshkey()
 
     # TODO(147047953): New args to contorl zone metrics check.
@@ -409,3 +411,8 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         """
         return super(AndroidComputeClient, self).GetSerialPortOutput(
             instance, zone or self._zone, port)
+
+    @property
+    def error_log_folder(self):
+        """Return error log folder"""
+        return self._error_log_folder
