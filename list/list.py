@@ -49,6 +49,20 @@ def _ProcessInstances(instance_list):
     return [instance.RemoteInstance(gce_instance) for gce_instance in instance_list]
 
 
+def _SortInstancesForDisplay(instances):
+    """Sort the instances by connected first and then by age.
+
+    Args:
+        instances: List of instance.Instance()
+
+    Returns:
+        List of instance.Instance() after sorted.
+    """
+    instances.sort(key=lambda ins: ins.createtime, reverse=True)
+    instances.sort(key=lambda ins: ins.AdbConnected(), reverse=True)
+    return instances
+
+
 def PrintInstancesDetails(instance_list, verbose=False):
     """Display instances information.
 
@@ -110,7 +124,7 @@ def GetRemoteInstances(cfg):
     logger.debug("Instance list from: (filter: %s\n%s):",
                  filter_item, all_instances)
 
-    return _ProcessInstances(all_instances)
+    return _SortInstancesForDisplay(_ProcessInstances(all_instances))
 
 
 def _GetLocalCuttlefishInstances():

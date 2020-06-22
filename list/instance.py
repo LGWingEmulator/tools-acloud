@@ -245,6 +245,16 @@ class Instance(object):
 
         return "\n".join(representation)
 
+    def AdbConnected(self):
+        """Check AVD adb connected.
+
+        Returns:
+            Boolean, True when adb status of AVD is connected.
+        """
+        if self._adb_port and self._device_information:
+            return True
+        return False
+
     @property
     def name(self):
         """Return the instance name."""
