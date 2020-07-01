@@ -40,14 +40,18 @@ logger = logging.getLogger(__name__)
 
 _RE_DISPLAY = re.compile(r"([\d]+)x([\d]+)\s.*")
 _VNC_STARTED_PATTERN = "ssvnc vnc://127.0.0.1:%(vnc_port)d"
+_WEBRTC_PORTS_SEARCH = "".join(
+    [utils.PORT_MAPPING % {"local_port":port["local"],
+                           "target_port":port["target"]}
+     for port in utils.WEBRTC_PORTS_MAPPING])
 
 
-def IsWebrtcEnable(ip_addr, host_user, host_ssh_private_key_path,
-                   extra_args_ssh_tunnel):
-    """Check remote instance webRTC is enable.
+def _IsWebrtcEnable(instance, host_user, host_ssh_private_key_path,
+                    extra_args_ssh_tunnel):
+    """Check local/remote instance webRTC is enable.
 
     Args:
-        ip_addr: String, use to connect to webrtc AVD on the instance.
+        instance: Local/Remote Instance object.
         host_user: String of user login into the instance.
         host_ssh_private_key_path: String of host key for logging in to the
                                    host.
@@ -56,7 +60,9 @@ def IsWebrtcEnable(ip_addr, host_user, host_ssh_private_key_path,
     Returns:
         Boolean: True if cf_runtime_cfg.enable_webrtc is True.
     """
-    ssh = ssh_object.Ssh(ip=ssh_object.IP(ip=ip_addr), user=host_user,
+    if instance.islocal:
+        return instance.cf_runtime_cfg.enable_webrtc
+    ssh = ssh_object.Ssh(ip=ssh_object.IP(ip=instance.ip), user=host_user,
                          ssh_private_key_path=host_ssh_private_key_path,
                          extra_args_ssh_tunnel=extra_args_ssh_tunnel)
     remote_cuttlefish_config = os.path.join(constants.REMOTE_LOG_FOLDER,
@@ -69,6 +75,24 @@ def IsWebrtcEnable(ip_addr, host_user, host_ssh_private_key_path,
     except errors.ConfigError:
         logger.debug("No cuttlefish config[%s] found!",
                      remote_cuttlefish_config)
+    return False
+
+
+def _WebrtcPortOccupied():
+    """To decide whether need to release port.
+
+    Remote webrtc instance will create a ssh tunnel which may conflict with
+    local webrtc instance default port. Searching process cmd in the pattern
+    of _WEBRTC_PORTS_SEARCH to decide whether to release port.
+
+    Return:
+        True if need to release port.
+    """
+    process_output = utils.CheckOutput(constants.COMMAND_PS)
+    for line in process_output.splitlines():
+        match = re.search(_WEBRTC_PORTS_SEARCH, line)
+        if match:
+            return True
     return False
 
 
@@ -164,16 +188,26 @@ def ReconnectInstance(ssh_private_key_path,
             extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         vnc_port = forwarded_ports.vnc_port
         adb_port = forwarded_ports.adb_port
-
-    if IsWebrtcEnable(instance.ip,
-                      constants.GCE_USER,
-                      ssh_private_key_path,
-                      extra_args_ssh_tunnel):
-        utils.EstablishWebRTCSshTunnel(
-            ip_addr=instance.ip,
-            rsa_key_file=ssh_private_key_path,
-            ssh_user=constants.GCE_USER,
-            extra_args_ssh_tunnel=extra_args_ssh_tunnel)
+    if _IsWebrtcEnable(instance,
+                       constants.GCE_USER,
+                       ssh_private_key_path,
+                       extra_args_ssh_tunnel):
+        if instance.islocal:
+            if _WebrtcPortOccupied():
+                raise errors.PortOccupied("\nReconnect to a local webrtc instance "
+                                          "is not work because remote webrtc "
+                                          "instance has established ssh tunnel "
+                                          "which occupied local webrtc instance "
+                                          "port. If you want to connect to a "
+                                          "local-instance of webrtc. please run "
+                                          "'acloud create --local-instance "
+                                          "--autoconnect webrtc' directly.")
+        else:
+            utils.EstablishWebRTCSshTunnel(
+                ip_addr=instance.ip,
+                rsa_key_file=ssh_private_key_path,
+                ssh_user=constants.GCE_USER,
+                extra_args_ssh_tunnel=extra_args_ssh_tunnel)
         utils.LaunchBrowser(constants.WEBRTC_LOCAL_HOST,
                             constants.WEBRTC_LOCAL_PORT)
     elif(vnc_port and connect_vnc):
