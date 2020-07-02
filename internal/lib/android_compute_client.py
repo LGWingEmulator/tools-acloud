@@ -370,7 +370,7 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
                     instance, boot_timeout_secs)
         timeout_exception = errors.DeviceBootTimeoutError(
             "Device %s did not finish on boot within timeout (%s secs)" %
-            (instance, boot_timeout_secs)),
+            (instance, boot_timeout_secs))
         utils.PollAndWait(
             func=self.CheckBoot,
             expected_return=True,
