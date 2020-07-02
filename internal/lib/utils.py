@@ -1207,6 +1207,9 @@ def CheckUserInGroups(group_name_list):
 def IsSupportedPlatform(print_warning=False):
     """Check if user's os is the supported platform.
 
+    platform.version() return such as '#1 SMP Debian 5.6.14-1rodete2...'
+    and use to judge supported or not.
+
     Args:
         print_warning: Boolean, print the unsupported warning
                        if True.
@@ -1214,17 +1217,19 @@ def IsSupportedPlatform(print_warning=False):
         Boolean, True if user is using supported platform.
     """
     system = platform.system()
-    # TODO(b/143197659): linux_distribution() deprecated in python 3. To fix it
-    # try to use another package "import distro".
-    dist = platform.linux_distribution()[0]
-    platform_supported = (system in _SUPPORTED_SYSTEMS_AND_DISTS and
-                          dist in _SUPPORTED_SYSTEMS_AND_DISTS[system])
+    # TODO(b/161085678): After python3 fully migrated, then use distro to fix.
+    platform_supported = False
+    if system in _SUPPORTED_SYSTEMS_AND_DISTS:
+        for dist in _SUPPORTED_SYSTEMS_AND_DISTS[system]:
+            if dist in platform.version():
+                platform_supported = True
+                break
 
     logger.info("Updated supported system and dists: %s",
                 _SUPPORTED_SYSTEMS_AND_DISTS)
     platform_supported_msg = ("%s[%s] %s supported platform" %
                               (system,
-                               dist,
+                               platform.version(),
                                "is a" if platform_supported else "is not a"))
     if print_warning and not platform_supported:
         PrintColorString(platform_supported_msg, TextColors.WARNING)
