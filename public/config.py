@@ -247,6 +247,7 @@ class AcloudConfig(object):
         # Verify validity of configurations.
         self.Verify()
 
+    # pylint: disable=too-many-branches
     def OverrideWithArgs(self, parsed_args):
         """Override configuration values with args passed in from cmd line.
 
@@ -275,6 +276,9 @@ class AcloudConfig(object):
                 self.network = parsed_args.network
             if parsed_args.multi_stage_launch is not None:
                 self.enable_multi_stage = parsed_args.multi_stage_launch
+        if parsed_args.which in [create_args.CMD_CREATE, "create_cf", "create_gf"]:
+            if parsed_args.zone:
+                self.zone = parsed_args.zone
         if (parsed_args.which == "create_cf" and
                 parsed_args.num_avds_per_instance > 1):
             scrubbed_args = [arg for arg in self.launch_args.split()

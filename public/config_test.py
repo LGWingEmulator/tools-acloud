@@ -288,6 +288,15 @@ common_hw_property_map {
         cfg.OverrideWithArgs(args)
         self.assertEqual(cfg.hw_property, "")
 
+        # test override zone.
+        cfg.zone = "us-central1-f"
+        args = mock.MagicMock()
+        args.which = "create"
+        args.flavor = "phone"
+        args.zone = "us-central1-b"
+        cfg.OverrideWithArgs(args)
+        self.assertEqual(cfg.zone, "us-central1-b")
+
 
 if __name__ == "__main__":
     unittest.main()
