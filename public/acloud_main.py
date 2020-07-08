@@ -143,6 +143,12 @@ PROG = "acloud"
 CMD_CREATE_CUTTLEFISH = "create_cf"
 CMD_CREATE_GOLDFISH = "create_gf"
 
+# show contact info to user.
+_CONTACT_INFO = ("If you have any question or need acloud team support, "
+                 "please feel free to contact us by email at "
+                 "buganizer-system+419709@google.com")
+_LOG_INFO = " and attach those log files from %s"
+
 
 # pylint: disable=too-many-statements
 def _ParseArgs(args):
@@ -427,7 +433,11 @@ def main(argv=None):
         report.Dump(args.report_file)
     if report and report.errors:
         error_msg = "\n".join(report.errors)
-        sys.stderr.write("Encountered the following errors:\n%s\n" % error_msg)
+        help_msg = _CONTACT_INFO
+        if report.data.get("error_log_folder"):
+            help_msg += _LOG_INFO % report.data.get("error_log_folder")
+        sys.stderr.write("Encountered the following errors:\n%s\n\n%s.\n" %
+                         (error_msg, help_msg))
         return constants.EXIT_BY_FAIL_REPORT, error_msg
     return constants.EXIT_SUCCESS, NO_ERROR_MESSAGE
 

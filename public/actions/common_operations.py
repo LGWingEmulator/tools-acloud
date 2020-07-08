@@ -126,6 +126,16 @@ class DevicePool(object):
                 failures[device.instance_name] = e
         return failures
 
+    def SetErrorLogFolder(self, reporter):
+        """Set error log folder.
+
+        Args:
+            reporter: Report object.
+        """
+        if self._compute_client.error_log_folder:
+            reporter.AddData(key="error_log_folder",
+                             value=self._compute_client.error_log_folder)
+
     def CollectSerialPortLogs(self, output_file,
                               port=constants.DEFAULT_SERIAL_PORT):
         """Tar the instance serial logs into specified output_file.
@@ -211,6 +221,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
             failures = device_factory.GetFailures()
 
         if failures:
+            device_pool.SetErrorLogFolder(reporter)
             reporter.SetStatus(report.Status.BOOT_FAIL)
         else:
             reporter.SetStatus(report.Status.SUCCESS)
