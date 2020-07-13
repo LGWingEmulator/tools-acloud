@@ -191,3 +191,6 @@ REMOTE_LOG_FOLDER = "/home/%s/cuttlefish_runtime" % GCE_USER
 
 # Cheeps specific stuff.
 CHEEPS_BETTY_IMAGE = "betty_image"
+
+# Key name in report
+ERROR_LOG_FOLDER = "error_log_folder"

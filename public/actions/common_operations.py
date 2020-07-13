@@ -126,15 +126,14 @@ class DevicePool(object):
                 failures[device.instance_name] = e
         return failures
 
-    def SetErrorLogFolder(self, reporter):
-        """Set error log folder.
+    def UpdateReport(self, reporter):
+        """Update report from compute client.
 
         Args:
             reporter: Report object.
         """
-        if self._compute_client.error_log_folder:
-            reporter.AddData(key="error_log_folder",
-                             value=self._compute_client.error_log_folder)
+        for key, value in self._compute_client.dict_report.items():
+            reporter.AddData(key=key, value=value)
 
     def CollectSerialPortLogs(self, output_file,
                               port=constants.DEFAULT_SERIAL_PORT):
@@ -221,7 +220,6 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
             failures = device_factory.GetFailures()
 
         if failures:
-            device_pool.SetErrorLogFolder(reporter)
             reporter.SetStatus(report.Status.BOOT_FAIL)
         else:
             reporter.SetStatus(report.Status.SUCCESS)
@@ -231,6 +229,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
             device_pool.CollectSerialPortLogs(
                 serial_log_file, port=constants.DEFAULT_SERIAL_PORT)
 
+        device_pool.UpdateReport(reporter)
         # Write result to report.
         for device in device_pool.devices:
             ip = (device.ip.internal if report_internal_ip
