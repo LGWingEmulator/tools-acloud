@@ -136,6 +136,13 @@ def DeleteLocalCuttlefishInstance(instance, delete_report):
     Returns:
         delete_report.
     """
+    lock = instance.GetLock()
+    if not lock.Lock():
+        delete_report.AddError("%s is locked by another process." %
+                               instance.name)
+        delete_report.SetStatus(report.Status.FAIL)
+        return delete_report
+
     try:
         instance.Delete()
         delete_report.SetStatus(report.Status.SUCCESS)
@@ -146,6 +153,9 @@ def DeleteLocalCuttlefishInstance(instance, delete_report):
     except subprocess.CalledProcessError as e:
         delete_report.AddError(str(e))
         delete_report.SetStatus(report.Status.FAIL)
+    finally:
+        lock.SetInUse(False)
+        lock.Unlock()
 
     return delete_report
 
