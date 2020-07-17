@@ -46,7 +46,6 @@ import sys
 from acloud import errors
 from acloud.create import base_avd_create
 from acloud.internal import constants
-from acloud.internal.lib import adb_tools
 from acloud.internal.lib import ota_tools
 from acloud.internal.lib import utils
 from acloud.list import instance
@@ -84,6 +83,10 @@ _MISSING_EMULATOR_MSG = ("Emulator binary is not found. Check "
                          "ANDROID_EMULATOR_PREBUILTS in build environment, "
                          "or set --local-tool to an unzipped SDK emulator "
                          "repository.")
+
+_INSTANCES_IN_USE_MSG = ("All instances are in use. Try resetting an instance "
+                         "by specifying --local-instance and an id between 1 "
+                         "and %(max_id)d.")
 
 
 def _GetImageForLogicalPartition(partition_name, system_image_path, image_dir):
@@ -155,19 +158,83 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         Returns:
             A Report instance.
-
-        Raises:
-            errors.GetSdkRepoPackageError if emulator binary is not found.
-            errors.GetLocalImageError if the local image directory does not
-            contain required files.
-            errors.CreateError if an instance exists and cannot be deleted.
-            errors.CheckPathError if OTA tools are not found.
         """
         if not utils.IsSupportedPlatform(print_warning=True):
             result_report = report.Report(command="create")
             result_report.SetStatus(report.Status.FAIL)
             return result_report
 
+        try:
+            ins_id, ins_lock = self._LockInstance(avd_spec)
+        except errors.CreateError as e:
+            result_report = report.Report(command="create")
+            result_report.AddError(str(e))
+            result_report.SetStatus(report.Status.FAIL)
+            return result_report
+
+        try:
+            ins = instance.LocalGoldfishInstance(ins_id,
+                                                 avd_flavor=avd_spec.flavor)
+            if not self._CheckRunningEmulator(ins.adb, no_prompts):
+                # Mark as in-use so that it won't be auto-selected again.
+                ins_lock.SetInUse(True)
+                sys.exit(constants.EXIT_BY_USER)
+
+            result_report = self._CreateAVDForInstance(ins, avd_spec)
+            # The infrastructure is able to delete the instance only if the
+            # instance name is reported. This method changes the state to
+            # in-use after creating the report.
+            ins_lock.SetInUse(True)
+            return result_report
+        finally:
+            ins_lock.Unlock()
+
+    @staticmethod
+    def _LockInstance(avd_spec):
+        """Select an id and lock the instance.
+
+        Args:
+            avd_spec: AVDSpec for the device.
+
+        Returns:
+            The instance id and the LocalInstanceLock that is locked by this
+            process.
+
+        Raises:
+            errors.CreateError if fails to select or lock the instance.
+        """
+        if avd_spec.local_instance_id:
+            ins_id = avd_spec.local_instance_id
+            ins_lock = instance.LocalGoldfishInstance.GetLockById(ins_id)
+            if ins_lock.Lock():
+                return ins_id, ins_lock
+            raise errors.CreateError("Instance %d is locked by another "
+                                     "process." % ins_id)
+
+        max_id = instance.LocalGoldfishInstance.GetMaxNumberOfInstances()
+        for ins_id in range(1, max_id + 1):
+            ins_lock = instance.LocalGoldfishInstance.GetLockById(ins_id)
+            if ins_lock.LockIfNotInUse(timeout_secs=0):
+                logger.info("Selected instance id: %d", ins_id)
+                return ins_id, ins_lock
+        raise errors.CreateError(_INSTANCES_IN_USE_MSG % {"max_id": max_id})
+
+    def _CreateAVDForInstance(self, ins, avd_spec):
+        """Create an emulator process for the goldfish instance.
+
+        Args:
+            ins: LocalGoldfishInstance to be initialized.
+            avd_spec: AVDSpec for the device.
+
+        Returns:
+            A Report instance.
+
+        Raises:
+            errors.GetSdkRepoPackageError if emulator binary is not found.
+            errors.GetLocalImageError if the local image directory does not
+            contain required files.
+            errors.CheckPathError if OTA tools are not found.
+        """
         emulator_path = self._FindEmulatorBinary(avd_spec.local_tool_dirs)
         emulator_path = os.path.abspath(emulator_path)
 
@@ -186,15 +253,7 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
         # image_dir/system/build.prop.
         self._CopyBuildProp(image_dir)
 
-        instance_id = avd_spec.local_instance_id
-        inst = instance.LocalGoldfishInstance(instance_id,
-                                              avd_flavor=avd_spec.flavor)
-        adb = adb_tools.AdbTools(adb_port=inst.adb_port,
-                                 device_serial=inst.device_serial)
-
-        self._CheckRunningEmulator(adb, no_prompts)
-
-        instance_dir = inst.instance_dir
+        instance_dir = ins.instance_dir
         shutil.rmtree(instance_dir, ignore_errors=True)
         os.makedirs(instance_dir)
 
@@ -202,26 +261,26 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
 
         logger.info("Instance directory: %s", instance_dir)
         proc = self._StartEmulatorProcess(emulator_path, instance_dir,
-                                          image_dir, inst.console_port,
-                                          inst.adb_port, extra_args)
+                                          image_dir, ins.console_port,
+                                          ins.adb_port, extra_args)
 
         boot_timeout_secs = (avd_spec.boot_timeout_secs or
                              _DEFAULT_EMULATOR_TIMEOUT_SECS)
         result_report = report.Report(command="create")
         try:
-            self._WaitForEmulatorToStart(adb, proc, boot_timeout_secs)
+            self._WaitForEmulatorToStart(ins.adb, proc, boot_timeout_secs)
         except (errors.DeviceBootTimeoutError, errors.SubprocessFail) as e:
             result_report.SetStatus(report.Status.BOOT_FAIL)
-            result_report.AddDeviceBootFailure(inst.name, inst.ip,
-                                               inst.adb_port, vnc_port=None,
+            result_report.AddDeviceBootFailure(ins.name, ins.ip,
+                                               ins.adb_port, vnc_port=None,
                                                error=str(e))
         else:
             result_report.SetStatus(report.Status.SUCCESS)
-            result_report.AddDevice(inst.name, inst.ip, inst.adb_port,
+            result_report.AddDevice(ins.name, ins.ip, ins.adb_port,
                                     vnc_port=None)
 
         if proc.poll() is None:
-            inst.WriteCreationTimestamp()
+            ins.WriteCreationTimestamp()
 
         return result_report
 
@@ -305,18 +364,21 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             adb: adb_tools.AdbTools initialized with the emulator's serial.
             no_prompts: Boolean, True to skip all prompts.
 
+        Returns:
+            Whether the user wants to continue.
+
         Raises:
             errors.CreateError if the emulator isn't deleted.
         """
         if not self._IsEmulatorRunning(adb):
-            return
+            return True
         logger.info("Goldfish AVD is already running.")
         if no_prompts or utils.GetUserAnswerYes(_CONFIRM_RELAUNCH):
             if adb.EmuCommand("kill") != 0:
                 raise errors.CreateError("Cannot kill emulator.")
             self._WaitForEmulatorToStop(adb)
-        else:
-            sys.exit(constants.EXIT_BY_USER)
+            return True
+        return False
 
     @staticmethod
     def _CopyBuildProp(image_dir):

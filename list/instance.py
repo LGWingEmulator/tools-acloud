@@ -494,6 +494,7 @@ class LocalGoldfishInstance(Instance):
     _CREATION_TIMESTAMP_FILE_NAME = "creation_timestamp.txt"
     _INSTANCE_NAME_FORMAT = "local-goldfish-instance-%(id)s"
     _EMULATOR_DEFAULT_CONSOLE_PORT = 5554
+    _DEFAULT_ADB_LOCAL_TRANSPORT_MAX_PORT = 5585
     _GF_ADB_DEVICE_SERIAL = "emulator-%(console_port)s"
 
     def __init__(self, local_instance_id, avd_flavor=None, create_time=None,
@@ -511,6 +512,8 @@ class LocalGoldfishInstance(Instance):
         self._id = local_instance_id
         # By convention, adb port is console port + 1.
         adb_port = self.console_port + 1
+        self._adb = AdbTools(adb_port=adb_port,
+                             device_serial=self.device_serial)
 
         name = self._INSTANCE_NAME_FORMAT % {"id": local_instance_id}
 
@@ -526,9 +529,8 @@ class LocalGoldfishInstance(Instance):
         else:
             display = "unknown"
 
-        adb = AdbTools(adb_port)
-        device_information = (adb.device_information if
-                              adb.device_information else None)
+        device_information = (self._adb.device_information if
+                              self._adb.device_information else None)
 
         super(LocalGoldfishInstance, self).__init__(
             name=name, fullname=fullname, display=display, ip="127.0.0.1",
@@ -543,8 +545,13 @@ class LocalGoldfishInstance(Instance):
         return os.path.join(tempfile.gettempdir(), "acloud_gf_temp")
 
     @property
+    def adb(self):
+        """Return the AdbTools to send emulator commands to this instance."""
+        return self._adb
+
+    @property
     def console_port(self):
-        """Return the console port as an integer"""
+        """Return the console port as an integer."""
         # Emulator requires the console port to be an even number.
         return self._EMULATOR_DEFAULT_CONSOLE_PORT + (self._id - 1) * 2
 
@@ -587,6 +594,18 @@ class LocalGoldfishInstance(Instance):
             logger.warning("Can't delete creation timestamp: %s", e)
 
     @classmethod
+    def GetLockById(cls, instance_id):
+        """Get LocalInstanceLock by id."""
+        lock_path = os.path.join(
+            cls._GetInstanceDirRoot(),
+            (cls._INSTANCE_NAME_FORMAT % {"id": instance_id}) + ".lock")
+        return LocalInstanceLock(lock_path)
+
+    def GetLock(self):
+        """Return the LocalInstanceLock for this object."""
+        return self.GetLockById(self._id)
+
+    @classmethod
     def GetExistingInstances(cls):
         """Get a list of instances that have creation timestamp files."""
         instance_root = cls._GetInstanceDirRoot()
@@ -605,6 +624,20 @@ class LocalGoldfishInstance(Instance):
                 instances.append(LocalGoldfishInstance(instance_id,
                                                        create_time=timestamp))
         return instances
+
+    @classmethod
+    def GetMaxNumberOfInstances(cls):
+        """Get number of emulators that adb can detect."""
+        max_port = os.environ.get("ADB_LOCAL_TRANSPORT_MAX_PORT",
+                                  cls._DEFAULT_ADB_LOCAL_TRANSPORT_MAX_PORT)
+        try:
+            max_port = int(max_port)
+        except ValueError:
+            max_port = cls._DEFAULT_ADB_LOCAL_TRANSPORT_MAX_PORT
+        if (max_port < cls._EMULATOR_DEFAULT_CONSOLE_PORT or
+                max_port > constants.MAX_PORT):
+            max_port = cls._DEFAULT_ADB_LOCAL_TRANSPORT_MAX_PORT
+        return (max_port + 1 - cls._EMULATOR_DEFAULT_CONSOLE_PORT) // 2
 
 
 class RemoteInstance(Instance):
