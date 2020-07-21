@@ -48,6 +48,7 @@ from acloud.setup import host_setup_runner
 
 _MAKE_CMD = "build/soong/soong_ui.bash"
 _MAKE_ARG = "--make-mode"
+_YES = "y"
 
 _CREATOR_CLASS_DICT = {
     # GCE types
@@ -122,7 +123,7 @@ def _CheckForAutoconnect(args):
         return
 
     disable_autoconnect = False
-    answer = utils.InteractWithQuestion(
+    answer = _YES if args.no_prompt else utils.InteractWithQuestion(
         "adb is required for autoconnect, without it autoconnect will be "
         "disabled, would you like acloud to build it[y/N]? ")
     if answer in constants.USER_ANSWER_YES:

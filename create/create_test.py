@@ -57,6 +57,7 @@ class CreateTest(driver_test_lib.BaseDriverTest):
         """Test CheckForAutoconnect."""
         args = mock.MagicMock()
         args.autoconnect = True
+        args.no_prompt = False
 
         self.Patch(utils, "InteractWithQuestion", return_value="Y")
         self.Patch(utils, "FindExecutable", return_value=None)
