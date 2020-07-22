@@ -408,8 +408,9 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             instance: String, instance name.
         """
         log_files = pull.GetAllLogFilePaths(self._ssh)
-        self._error_log_folder = pull.GetDownloadLogFolder(instance)
-        pull.PullLogs(self._ssh, log_files, self._error_log_folder)
+        error_log_folder = pull.GetDownloadLogFolder(instance)
+        pull.PullLogs(self._ssh, log_files, error_log_folder)
+        self.ExtendReportData(constants.ERROR_LOG_FOLDER, error_log_folder)
 
     @utils.TimeExecute(function_description="Reusing GCE instance")
     def _ReusingGceInstance(self, avd_spec):

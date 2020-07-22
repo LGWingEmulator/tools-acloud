@@ -41,9 +41,12 @@ from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import gcompute_client
 from acloud.internal.lib import utils
+from acloud.public import config
 
 
 logger = logging.getLogger(__name__)
+_ZONE = "zone"
+_VERSION = "version"
 
 
 class AndroidComputeClient(gcompute_client.ComputeClient):
@@ -78,9 +81,9 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         self._ssh_public_key_path = acloud_config.ssh_public_key_path
         self._launch_args = acloud_config.launch_args
         self._instance_name_pattern = acloud_config.instance_name_pattern
-        # Store error log folder to pass to the end.
-        self._error_log_folder = None
         self._AddPerInstanceSshkey()
+        self._dict_report = {_ZONE: self._zone,
+                             _VERSION: config.GetVersion()}
 
     # TODO(147047953): New args to contorl zone metrics check.
     def _VerifyZoneByQuota(self):
@@ -412,7 +415,16 @@ class AndroidComputeClient(gcompute_client.ComputeClient):
         return super(AndroidComputeClient, self).GetSerialPortOutput(
             instance, zone or self._zone, port)
 
+    def ExtendReportData(self, key, value):
+        """Extend the report data.
+
+        Args:
+            key: string of key name.
+            value: string of data value.
+        """
+        self._dict_report.update({key: value})
+
     @property
-    def error_log_folder(self):
-        """Return error log folder"""
-        return self._error_log_folder
+    def dict_report(self):
+        """Return dict_report"""
+        return self._dict_report
