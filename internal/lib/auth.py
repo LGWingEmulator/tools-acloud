@@ -32,7 +32,7 @@ service account*               | oauth2 + private key
   non-google-owned service account can not access Android Build API.
   Only local build artifact can be used.
 
-* Google-owned service account, if used, needs to be whitelisted by
+* Google-owned service account, if used, needs to be allowed by
   Android Build team so that acloud can access build api.
 """
 
@@ -111,7 +111,7 @@ def _CreateOauthServiceAccountCredsWithJsonKey(json_private_key_path, scopes):
             "Could not authenticate using json private key file (%s) "
             " error message: %s" % (json_private_key_path, str(e)))
 
-
+# pylint: disable=old-style-class
 class RunFlowFlags():
     """Flags for oauth2client.tools.run_flow."""
 
