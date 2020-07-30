@@ -51,6 +51,7 @@ python_binary_host {
         "acloud_internal",
         "acloud_list",
         "acloud_pull",
+        "acloud_powerwash",
         "acloud_metrics",
         "acloud_proto",
         "acloud_public",
@@ -187,6 +188,14 @@ python_library_host{
     defaults: ["acloud_default"],
     srcs: [
          "pull/*.py",
+    ],
+}
+
+python_library_host{
+    name: "acloud_powerwash",
+    defaults: ["acloud_default"],
+    srcs: [
+         "powerwash/*.py",
     ],
 }
 
