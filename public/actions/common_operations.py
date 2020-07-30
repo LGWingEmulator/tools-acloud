@@ -132,8 +132,7 @@ class DevicePool(object):
         Args:
             reporter: Report object.
         """
-        for key, value in self._compute_client.dict_report.items():
-            reporter.AddData(key=key, value=value)
+        reporter.UpdateData(self._compute_client.dict_report)
 
     def CollectSerialPortLogs(self, output_file,
                               port=constants.DEFAULT_SERIAL_PORT):
