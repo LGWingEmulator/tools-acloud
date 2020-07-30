@@ -315,7 +315,7 @@ class GcpTaskRunner(base_task_runner.BaseTaskRunner):
 
     def _CreateStableHostImage(self):
         """Create the stable host image."""
-        # Write default stable_host_image_name with dummy value.
+        # Write default stable_host_image_name with unused value.
         # TODO(113091773): An additional step to create the host image.
         if not self.stable_host_image_name:
             UpdateConfigFile(self.config_path, "stable_host_image_name", "")
