@@ -120,6 +120,14 @@ class Report(object):
         """
         self.data.setdefault(key, []).append(value)
 
+    def UpdateData(self, dict_data):
+        """Update a dict data to the report.
+
+        Args:
+            dict_data: A dict of report data.
+        """
+        self.data.update(dict_data)
+
     def AddError(self, error):
         """Add error message.
 
