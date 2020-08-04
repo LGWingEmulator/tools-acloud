@@ -384,7 +384,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_REMOTE)
 
         self.args.remote_host = None
-        self.args.local_instance = True
+        self.args.local_instance = 0
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_LOCAL)
 
@@ -394,7 +394,7 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_HOST)
 
         self.args.remote_host = "1.1.1.1"
-        self.args.local_instance = True
+        self.args.local_instance = 1
         self.AvdSpec._ProcessMiscArgs(self.args)
         self.assertEqual(self.AvdSpec._instance_type, constants.INSTANCE_TYPE_HOST)
 

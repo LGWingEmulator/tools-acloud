@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests for delete."""
 
+import subprocess
 import unittest
 import mock
 
@@ -26,13 +27,14 @@ from acloud.public import report
 class DeleteTest(driver_test_lib.BaseDriverTest):
     """Test delete functions."""
 
-    @mock.patch("subprocess.check_call")
-    def testDeleteLocalCuttlefishInstance(self, mock_subprocess):
+    def testDeleteLocalCuttlefishInstanceSuccess(self):
         """Test DeleteLocalCuttlefishInstance."""
-        mock_subprocess.return_value = True
         instance_object = mock.MagicMock()
-        instance_object.instance_dir = "fake_instance_dir"
         instance_object.name = "local-instance"
+        mock_lock = mock.Mock()
+        mock_lock.Lock.return_value = True
+        instance_object.GetLock.return_value = mock_lock
+
         delete_report = report.Report(command="delete")
         delete.DeleteLocalCuttlefishInstance(instance_object, delete_report)
         self.assertEqual(delete_report.data, {
@@ -44,6 +46,25 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
             ],
         })
         self.assertEqual(delete_report.status, "SUCCESS")
+        mock_lock.SetInUse.assert_called_once_with(False)
+        mock_lock.Unlock.assert_called_once()
+
+    def testDeleteLocalCuttlefishInstanceFailure(self):
+        """Test DeleteLocalCuttlefishInstance with command failure."""
+        instance_object = mock.MagicMock()
+        instance_object.name = "local-instance"
+        instance_object.Delete.side_effect = subprocess.CalledProcessError(
+            1, "cmd")
+        mock_lock = mock.Mock()
+        mock_lock.Lock.return_value = True
+        instance_object.GetLock.return_value = mock_lock
+
+        delete_report = report.Report(command="delete")
+        delete.DeleteLocalCuttlefishInstance(instance_object, delete_report)
+
+        self.assertEqual(delete_report.status, "FAIL")
+        mock_lock.SetInUse.assert_called_once_with(False)
+        mock_lock.Unlock.assert_called_once()
 
     @mock.patch("acloud.delete.delete.adb_tools.AdbTools")
     def testDeleteLocalGoldfishInstanceSuccess(self, mock_adb_tools):
