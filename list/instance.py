@@ -42,6 +42,7 @@ from acloud.internal import constants
 from acloud.internal.lib import cvd_runtime_config
 from acloud.internal.lib import utils
 from acloud.internal.lib.adb_tools import AdbTools
+from acloud.internal.lib.local_instance_lock import LocalInstanceLock
 
 
 logger = logging.getLogger(__name__)
@@ -145,6 +146,20 @@ def GetLocalInstanceHomeDir(local_instance_id):
                         GetLocalInstanceName(local_instance_id))
 
 
+def GetLocalInstanceLock(local_instance_id):
+    """Get local instance lock.
+
+    Args:
+        local_instance_id: Integer of instance id.
+
+    Returns:
+        LocalInstanceLock object.
+    """
+    file_path = os.path.join(_ACLOUD_CVD_TEMP,
+                             GetLocalInstanceName(local_instance_id) + ".lock")
+    return LocalInstanceLock(file_path)
+
+
 def GetLocalInstanceRuntimeDir(local_instance_id):
     """Get instance runtime dir
 
@@ -187,6 +202,7 @@ def _GetElapsedTime(start_time):
         return _MSG_UNABLE_TO_CALCULATE
 
 
+# pylint: disable=useless-object-inheritance
 class Instance(object):
     """Class to store data of instance."""
 
@@ -444,6 +460,10 @@ class LocalInstance(Instance):
         # When relaunch a local instance, we need to pass in retry=True to make
         # sure adb device is completely gone since it will use the same adb port
         adb_cmd.DisconnectAdb(retry=True)
+
+    def GetLock(self):
+        """Return the LocalInstanceLock for this object."""
+        return GetLocalInstanceLock(self._local_instance_id)
 
     @property
     def instance_dir(self):
