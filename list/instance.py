@@ -487,15 +487,23 @@ class LocalInstance(Instance):
 
 
 class LocalGoldfishInstance(Instance):
-    """Class to store data of local goldfish instance."""
+    """Class to store data of local goldfish instance.
+
+    A goldfish instance binds to a console port and an adb port. The console
+    port is for `adb emu` to send emulator-specific commands. The adb port is
+    for `adb connect` to start a TCP connection. By convention, the console
+    port is an even number, and the adb port is the console port + 1. The first
+    instance uses port 5554 and 5555, the second instance uses 5556 and 5557,
+    and so on.
+    """
 
     _INSTANCE_NAME_PATTERN = re.compile(
         r"^local-goldfish-instance-(?P<id>\d+)$")
-    _CREATION_TIMESTAMP_FILE_NAME = "creation_timestamp.txt"
     _INSTANCE_NAME_FORMAT = "local-goldfish-instance-%(id)s"
     _EMULATOR_DEFAULT_CONSOLE_PORT = 5554
     _DEFAULT_ADB_LOCAL_TRANSPORT_MAX_PORT = 5585
-    _GF_ADB_DEVICE_SERIAL = "emulator-%(console_port)s"
+    _DEVICE_SERIAL_FORMAT = "emulator-%(console_port)s"
+    _DEVICE_SERIAL_PATTERN = re.compile(r"^emulator-(?P<console_port>\d+)$")
 
     def __init__(self, local_instance_id, avd_flavor=None, create_time=None,
                  x_res=None, y_res=None, dpi=None):
@@ -510,7 +518,6 @@ class LocalGoldfishInstance(Instance):
             dpi: Integer of dpi.
         """
         self._id = local_instance_id
-        # By convention, adb port is console port + 1.
         adb_port = self.console_port + 1
         self._adb = AdbTools(adb_port=adb_port,
                              device_serial=self.device_serial)
@@ -558,40 +565,13 @@ class LocalGoldfishInstance(Instance):
     @property
     def device_serial(self):
         """Return the serial number that contains the console port."""
-        return self._GF_ADB_DEVICE_SERIAL % {"console_port": self.console_port}
+        return self._DEVICE_SERIAL_FORMAT % {"console_port": self.console_port}
 
     @property
     def instance_dir(self):
         """Return the path to instance directory."""
         return os.path.join(self._GetInstanceDirRoot(),
                             self._INSTANCE_NAME_FORMAT % {"id": self._id})
-
-    @property
-    def creation_timestamp_path(self):
-        """Return the file path containing the creation timestamp."""
-        return os.path.join(self.instance_dir,
-                            self._CREATION_TIMESTAMP_FILE_NAME)
-
-    def WriteCreationTimestamp(self):
-        """Write creation timestamp to file."""
-        with open(self.creation_timestamp_path, "w") as timestamp_file:
-            timestamp_file.write(str(_GetCurrentLocalTime()))
-
-    def DeleteCreationTimestamp(self, ignore_errors):
-        """Delete the creation timestamp file.
-
-        Args:
-            ignore_errors: Boolean, whether to ignore the errors.
-
-        Raises:
-            OSError if fails to delete the file.
-        """
-        try:
-            os.remove(self.creation_timestamp_path)
-        except OSError as e:
-            if not ignore_errors:
-                raise
-            logger.warning("Can't delete creation timestamp: %s", e)
 
     @classmethod
     def GetLockById(cls, instance_id):
@@ -607,22 +587,15 @@ class LocalGoldfishInstance(Instance):
 
     @classmethod
     def GetExistingInstances(cls):
-        """Get a list of instances that have creation timestamp files."""
-        instance_root = cls._GetInstanceDirRoot()
-        if not os.path.isdir(instance_root):
-            return []
-
+        """Get the list of instances that adb can send emu commands to."""
         instances = []
-        for name in os.listdir(instance_root):
-            match = cls._INSTANCE_NAME_PATTERN.match(name)
-            timestamp_path = os.path.join(instance_root, name,
-                                          cls._CREATION_TIMESTAMP_FILE_NAME)
-            if match and os.path.isfile(timestamp_path):
-                instance_id = int(match.group("id"))
-                with open(timestamp_path, "r") as timestamp_file:
-                    timestamp = timestamp_file.read().strip()
-                instances.append(LocalGoldfishInstance(instance_id,
-                                                       create_time=timestamp))
+        for serial in AdbTools.GetDeviceSerials():
+            match = cls._DEVICE_SERIAL_PATTERN.match(serial)
+            if not match:
+                continue
+            port = int(match.group("console_port"))
+            instance_id = (port - cls._EMULATOR_DEFAULT_CONSOLE_PORT) // 2 + 1
+            instances.append(LocalGoldfishInstance(instance_id))
         return instances
 
     @classmethod

@@ -15,13 +15,12 @@
 
 import subprocess
 import unittest
-import mock
 from six import b
+import mock
 
 from acloud import errors
 from acloud.internal.lib import adb_tools
 from acloud.internal.lib import driver_test_lib
-from acloud.internal.lib import utils
 
 
 class AdbToolsTest(driver_test_lib.BaseDriverTest):
@@ -32,7 +31,15 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
                      "transport_id:98")
     DEVICE_OFFLINE = b("List of devices attached\n"
                        "127.0.0.1:48451 offline")
+    DEVICE_STATE_ONLY = b("List of devices attached\n"
+                          "127.0.0.1:48451\toffline\n"
+                          "emulator-5554\tdevice\n")
     DEVICE_NONE = b("List of devices attached")
+
+    def setUp(self):
+        """Patch the path to adb."""
+        super(AdbToolsTest, self).setUp()
+        self.Patch(adb_tools.AdbTools, "_adb_command", "path/adb")
 
     # pylint: disable=no-member
     def testGetAdbConnectionStatus(self):
@@ -89,6 +96,13 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
         adb_cmd = adb_tools.AdbTools(fake_adb_port)
         self.assertEqual(adb_cmd.device_information, dict_none)
+
+    def testGetDeviceSerials(self):
+        """Test parsing the output of adb devices."""
+        self.Patch(subprocess, "check_output",
+                   return_value=self.DEVICE_STATE_ONLY)
+        serials = adb_tools.AdbTools.GetDeviceSerials()
+        self.assertEqual(serials, ["127.0.0.1:48451", "emulator-5554"])
 
     # pylint: disable=no-member,protected-access
     def testConnectAdb(self):
@@ -153,7 +167,6 @@ class AdbToolsTest(driver_test_lib.BaseDriverTest):
         """Test emu command."""
         fake_adb_port = "48451"
         fake_device_serial = "fake_device_serial"
-        self.Patch(utils, "FindExecutable", return_value="path/adb")
         self.Patch(subprocess, "check_output", return_value=self.DEVICE_NONE)
 
         mock_popen_obj = mock.Mock(returncode=1)
