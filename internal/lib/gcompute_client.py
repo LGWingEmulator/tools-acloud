@@ -1272,6 +1272,7 @@ class ComputeClient(base_cloud_client.BaseCloudApiClient):
                 "email": "default",
                 "scopes": scopes,
             }],
+            "enableVtpm": True,
         }
 
         if tags:
