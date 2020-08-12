@@ -602,6 +602,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                            "value": self.METADATA[1]}],
             },
             "labels":{constants.LABEL_CREATE_BY: "fake_user"},
+            "enableVtpm": True,
         }
 
         self.compute_client.CreateInstance(
@@ -679,6 +680,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                            "value": self.METADATA[1]}],
             },
             "labels":{'created_by': "fake_user"},
+            "enableVtpm": True,
         }
 
         self.compute_client.CreateInstance(
@@ -753,6 +755,7 @@ class ComputeClientTest(driver_test_lib.BaseDriverTest):
                 }],
             },
             "labels":{'created_by': "fake_user"},
+            "enableVtpm": True,
         }
 
         self.compute_client.CreateInstance(
