@@ -66,23 +66,24 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         mock_lock.SetInUse.assert_called_once_with(False)
         mock_lock.Unlock.assert_called_once()
 
-    @mock.patch("acloud.delete.delete.adb_tools.AdbTools")
-    def testDeleteLocalGoldfishInstanceSuccess(self, mock_adb_tools):
+    def testDeleteLocalGoldfishInstanceSuccess(self):
         """Test DeleteLocalGoldfishInstance."""
-        mock_instance = mock.Mock(adb_port=5555,
+        mock_adb_tools = mock.Mock()
+        mock_adb_tools.EmuCommand.return_value = 0
+        mock_instance = mock.Mock(adb=mock_adb_tools,
+                                  adb_port=5555,
                                   device_serial="serial",
                                   instance_dir="/unit/test")
         # name is a positional argument of Mock().
         mock_instance.name = "unittest"
-
-        mock_adb_tools_obj = mock.Mock()
-        mock_adb_tools.return_value = mock_adb_tools_obj
-        mock_adb_tools_obj.EmuCommand.return_value = 0
+        mock_lock = mock.Mock()
+        mock_lock.Lock.return_value = True
+        mock_instance.GetLock.return_value = mock_lock
 
         delete_report = report.Report(command="delete")
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
-        mock_adb_tools_obj.EmuCommand.assert_called_with("kill")
+        mock_adb_tools.EmuCommand.assert_called_with("kill")
         mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertEqual(delete_report.data, {
             "deleted": [
@@ -93,27 +94,32 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
             ],
         })
         self.assertEqual(delete_report.status, "SUCCESS")
+        mock_lock.SetInUse.assert_called_once_with(False)
+        mock_lock.Unlock.assert_called_once()
 
-    @mock.patch("acloud.delete.delete.adb_tools.AdbTools")
-    def testDeleteLocalGoldfishInstanceFailure(self, mock_adb_tools):
+    def testDeleteLocalGoldfishInstanceFailure(self):
         """Test DeleteLocalGoldfishInstance with adb command failure."""
-        mock_instance = mock.Mock(adb_port=5555,
+        mock_adb_tools = mock.Mock()
+        mock_adb_tools.EmuCommand.return_value = 1
+        mock_instance = mock.Mock(adb=mock_adb_tools,
+                                  adb_port=5555,
                                   device_serial="serial",
                                   instance_dir="/unit/test")
         # name is a positional argument of Mock().
         mock_instance.name = "unittest"
-
-        mock_adb_tools_obj = mock.Mock()
-        mock_adb_tools.return_value = mock_adb_tools_obj
-        mock_adb_tools_obj.EmuCommand.return_value = 1
+        mock_lock = mock.Mock()
+        mock_lock.Lock.return_value = True
+        mock_instance.GetLock.return_value = mock_lock
 
         delete_report = report.Report(command="delete")
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
-        mock_adb_tools_obj.EmuCommand.assert_called_with("kill")
+        mock_adb_tools.EmuCommand.assert_called_with("kill")
         mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertTrue(len(delete_report.errors) > 0)
         self.assertEqual(delete_report.status, "FAIL")
+        mock_lock.SetInUse.assert_called_once_with(False)
+        mock_lock.Unlock.assert_called_once()
 
     @mock.patch.object(delete, "DeleteInstances", return_value="")
     @mock.patch.object(delete, "DeleteRemoteInstances", return_value="")

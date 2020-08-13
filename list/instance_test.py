@@ -20,12 +20,12 @@ import datetime
 import subprocess
 
 import unittest
-import mock
 from six import b
 
 # pylint: disable=import-error
 import dateutil.parser
 import dateutil.tz
+import mock
 
 from acloud.internal import constants
 from acloud.internal.lib import cvd_runtime_config
@@ -158,6 +158,20 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                          "device serial: emulator-5558 "
                          "(local-goldfish-instance-3) "
                          "elapsed time: 10:00:00")
+
+    def testGetMaxNumberOfGoldfishInstances(self):
+        """Test LocalGoldfishInstance.GetMaxNumberOfInstances."""
+        mock_environ = {}
+        with mock.patch.dict("acloud.list.instance.os.environ",
+                             mock_environ, clear=True):
+            num = instance.LocalGoldfishInstance.GetMaxNumberOfInstances()
+        self.assertEqual(num, 16)
+
+        mock_environ["ADB_LOCAL_TRANSPORT_MAX_PORT"] = "5565"
+        with mock.patch.dict("acloud.list.instance.os.environ",
+                             mock_environ, clear=True):
+            num = instance.LocalGoldfishInstance.GetMaxNumberOfInstances()
+        self.assertEqual(num, 6)
 
     def testGetElapsedTime(self):
         """Test _GetElapsedTime"""

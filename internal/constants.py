@@ -123,6 +123,8 @@ GF_ADB_PORT = 5555
 GF_VNC_PORT = 6444
 # For FVP remote instances (no VNC support)
 FVP_ADB_PORT = 5555
+# Maximum port number
+MAX_PORT = 65535
 
 COMMAND_PS = ["ps", "aux"]
 CMD_LAUNCH_CVD = "launch_cvd"
