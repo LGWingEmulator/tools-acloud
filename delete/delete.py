@@ -192,7 +192,6 @@ def DeleteLocalGoldfishInstance(instance, delete_report):
         lock.SetInUse(False)
         lock.Unlock()
 
-    instance.DeleteCreationTimestamp(ignore_errors=True)
     return delete_report
 
 

@@ -84,7 +84,6 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
         mock_adb_tools.EmuCommand.assert_called_with("kill")
-        mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertEqual(delete_report.data, {
             "deleted": [
                 {
@@ -115,7 +114,6 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         delete.DeleteLocalGoldfishInstance(mock_instance, delete_report)
 
         mock_adb_tools.EmuCommand.assert_called_with("kill")
-        mock_instance.DeleteCreationTimestamp.assert_called()
         self.assertTrue(len(delete_report.errors) > 0)
         self.assertEqual(delete_report.status, "FAIL")
         mock_lock.SetInUse.assert_called_once_with(False)

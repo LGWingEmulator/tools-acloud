@@ -279,9 +279,6 @@ class GoldfishLocalImageLocalInstance(base_avd_create.BaseAVDCreate):
             result_report.AddDevice(ins.name, ins.ip, ins.adb_port,
                                     vnc_port=None)
 
-        if proc.poll() is None:
-            ins.WriteCreationTimestamp()
-
         return result_report
 
     @staticmethod
