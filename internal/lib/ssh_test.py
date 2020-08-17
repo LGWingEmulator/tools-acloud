@@ -91,7 +91,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     def testSshRunCmdwithExtraArgs(self):
         """test ssh rum command with extra command."""
@@ -109,7 +110,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     def testScpPullFileCmd(self):
         """Test scp pull file command."""
@@ -122,7 +124,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     def testScpPullFileCmdwithExtraArgs(self):
         """Test scp pull file command."""
@@ -140,7 +143,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     def testScpPushFileCmd(self):
         """Test scp push file command."""
@@ -153,7 +157,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     def testScpPushFileCmdwithExtraArgs(self):
         """Test scp pull file command."""
@@ -171,7 +176,8 @@ class SshTest(driver_test_lib.BaseDriverTest):
                                             shell=True,
                                             stderr=-2,
                                             stdin=None,
-                                            stdout=-1)
+                                            stdout=-1,
+                                            universal_newlines=True)
 
     # pylint: disable=protected-access
     def testIPAddress(self):
