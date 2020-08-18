@@ -123,6 +123,8 @@ from acloud.reconnect import reconnect_args
 from acloud.list import list as list_instances
 from acloud.list import list_args
 from acloud.metrics import metrics
+from acloud.powerwash import powerwash
+from acloud.powerwash import powerwash_args
 from acloud.public import acloud_common
 from acloud.public import config
 from acloud.public.actions import create_cuttlefish_action
@@ -240,6 +242,9 @@ def _ParseArgs(args):
 
     # Command "reconnect"
     subparser_list.append(reconnect_args.GetReconnectArgParser(subparsers))
+
+    # Command "powerwash"
+    subparser_list.append(powerwash_args.GetPowerwashArgParser(subparsers))
 
     # Command "pull"
     subparser_list.append(pull_args.GetPullArgParser(subparsers))
@@ -421,6 +426,8 @@ def main(argv=None):
         list_instances.Run(args)
     elif args.which == reconnect_args.CMD_RECONNECT:
         reconnect.Run(args)
+    elif args.which == powerwash_args.CMD_POWERWASH:
+        report = powerwash.Run(args)
     elif args.which == pull_args.CMD_PULL:
         report = pull.Run(args)
     elif args.which == setup_args.CMD_SETUP:
