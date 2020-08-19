@@ -32,6 +32,13 @@ from acloud.internal.lib.adb_tools import AdbTools
 
 
 logger = logging.getLogger(__name__)
+_ERROR_TYPE = "error_type"
+_DICT_ERROR_TYPE = {
+    constants.STAGE_INIT: "INITIALIZE_ERROR",
+    constants.STAGE_GCE: "CREATE_GCE_ERROR",
+    constants.STAGE_ARTIFECT: "DOWNLOAD_ARTIFECT_ERROR",
+    constants.STAGE_BOOT_UP: "BOOT_UP_ERROR",
+}
 
 
 def CreateSshKeyPairIfNecessary(cfg):
@@ -100,9 +107,11 @@ class DevicePool(object):
             ip = self._compute_client.GetInstanceIP(instance)
             time_info = self._compute_client.execution_time if hasattr(
                 self._compute_client, "execution_time") else {}
+            stage = self._compute_client.stage if hasattr(
+                self._compute_client, "stage") else 0
             self.devices.append(
                 avd.AndroidVirtualDevice(ip=ip, instance_name=instance,
-                                         time_info=time_info))
+                                         time_info=time_info, stage=stage))
 
     @utils.TimeExecute(function_description="Waiting for AVD(s) to boot up",
                        result_evaluator=utils.BootEvaluator)
@@ -261,6 +270,7 @@ def CreateDevices(command, cfg, device_factory, num, avd_type,
                     ssh_user=constants.GCE_USER,
                     extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
             if device.instance_name in failures:
+                device_dict[_ERROR_TYPE] = _DICT_ERROR_TYPE[device.stage]
                 reporter.AddData(key="devices_failing_boot", value=device_dict)
                 reporter.AddError(str(failures[device.instance_name]))
             else:

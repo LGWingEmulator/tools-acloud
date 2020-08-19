@@ -138,6 +138,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
         self._ssh = None
         self._ip = None
         self._user = constants.GCE_USER
+        self._stage = constants.STAGE_INIT
         self._execution_time = {_FETCH_ARTIFACT: 0, _GCE_CREATE: 0, _LAUNCH_CVD: 0}
 
     def InitRemoteHost(self, ssh, ip, user):
@@ -586,6 +587,14 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             "Please specify 'stable_host_image_name' or 'stable_host_image_family'"
             " in config.")
 
+    def SetStage(self, stage):
+        """Set stage to know the create progress.
+
+        Args:
+            stage: Integer, the stage would like STAGE_INIT, STAGE_GCE.
+        """
+        self._stage = stage
+
     @property
     def all_failures(self):
         """Return all_failures"""
@@ -595,3 +604,8 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
     def execution_time(self):
         """Return execution_time"""
         return self._execution_time
+
+    @property
+    def stage(self):
+        """Return stage"""
+        return self._stage
