@@ -61,6 +61,7 @@ class GCEDeviceFactory(base_device_factory.BaseDeviceFactory):
         Returns:
             A string, representing instance name.
         """
+        self._compute_client.SetStage(constants.STAGE_GCE)
         image_name = os.path.basename(
             self._local_image_artifact) if self._local_image_artifact else ""
         build_target = (os.environ.get(constants.ENV_BUILD_TARGET) if "-" not

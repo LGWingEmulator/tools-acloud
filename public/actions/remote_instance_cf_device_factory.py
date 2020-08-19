@@ -23,8 +23,6 @@ import tempfile
 
 from acloud.create import create_common
 from acloud.internal import constants
-from acloud.internal.lib import auth
-from acloud.internal.lib import cvd_compute_client_multi_stage
 from acloud.internal.lib import utils
 from acloud.internal.lib import ssh
 from acloud.public.actions import gce_device_factory
@@ -188,6 +186,7 @@ class RemoteInstanceDeviceFactory(gce_device_factory.GCEDeviceFactory):
         Args:
             image_source: String, the type of image source is remote or local.
         """
+        self._compute_client.SetStage(constants.STAGE_ARTIFECT)
         if image_source == constants.IMAGE_SRC_LOCAL:
             self._UploadArtifacts(self._local_image_artifact,
                                   self._cvd_host_package_artifact,
@@ -260,7 +259,8 @@ class RemoteInstanceDeviceFactory(gce_device_factory.GCEDeviceFactory):
             except IOError:
                 # Older builds may not have a required_images file. In this case
                 # we fall back to *.img.
-                artifact_files = [os.path.basename(image) for image in
+                artifact_files = [
+                    os.path.basename(image) for image in
                     glob.glob(os.path.join(images_dir, "*.img"))]
             cmd = ("tar -cf - --lzop -S -C {images_dir} {artifact_files} | "
                    "{ssh_cmd} -- tar -xf - --lzop -S".format(
@@ -284,6 +284,7 @@ class RemoteInstanceDeviceFactory(gce_device_factory.GCEDeviceFactory):
             boot_timeout_secs: Integer, the maximum time to wait for the
                                command to respond.
         """
+        self._compute_client.SetStage(constants.STAGE_BOOT_UP)
         kernel_build = None
         # TODO(b/140076771) Support kernel image for local image mode.
         if self._avd_spec.image_source == constants.IMAGE_SRC_REMOTE:

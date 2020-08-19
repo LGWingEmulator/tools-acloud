@@ -196,3 +196,9 @@ CHEEPS_BETTY_IMAGE = "betty_image"
 
 # Key name in report
 ERROR_LOG_FOLDER = "error_log_folder"
+
+# Stages for create progress
+STAGE_INIT = 0
+STAGE_GCE = 1
+STAGE_ARTIFECT = 2
+STAGE_BOOT_UP = 3
