@@ -641,13 +641,14 @@ class AVDSpec():
         # TODO(154173071): Migrate acloud to py3, then apply Popen to append with encoding
         process = subprocess.Popen(_COMMAND_REPO_INFO, shell=True, stdin=None,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, env=env)
+                                   stderr=subprocess.STDOUT, env=env,
+                                   universal_newlines=True)
         timer = threading.Timer(_REPO_TIMEOUT, process.kill)
         timer.start()
         stdout, _ = process.communicate()
         if stdout:
             for line in stdout.splitlines():
-                match = _BRANCH_RE.match(EscapeAnsi(line.decode()))
+                match = _BRANCH_RE.match(EscapeAnsi(line))
                 if match:
                     branch_prefix = _BRANCH_PREFIX.get(self._GetGitRemote(),
                                                        _DEFAULT_BRANCH_PREFIX)
