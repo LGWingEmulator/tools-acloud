@@ -34,10 +34,10 @@ from acloud.internal.lib.adb_tools import AdbTools
 logger = logging.getLogger(__name__)
 _ERROR_TYPE = "error_type"
 _DICT_ERROR_TYPE = {
-    constants.STAGE_INIT: "INITIALIZE_ERROR",
-    constants.STAGE_GCE: "CREATE_GCE_ERROR",
-    constants.STAGE_ARTIFECT: "DOWNLOAD_ARTIFECT_ERROR",
-    constants.STAGE_BOOT_UP: "BOOT_UP_ERROR",
+    constants.STAGE_INIT: "ACLOUD_INIT_ERROR",
+    constants.STAGE_GCE: "ACLOUD_CREATE_GCE_ERROR",
+    constants.STAGE_ARTIFECT: "ACLOUD_DOWNLOAD_ARTIFACT_ERROR",
+    constants.STAGE_BOOT_UP: "ACLOUD_BOOT_UP_ERROR",
 }
 
 
