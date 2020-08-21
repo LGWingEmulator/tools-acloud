@@ -186,7 +186,7 @@ class RemoteInstanceDeviceFactory(gce_device_factory.GCEDeviceFactory):
         Args:
             image_source: String, the type of image source is remote or local.
         """
-        self._compute_client.SetStage(constants.STAGE_ARTIFECT)
+        self._compute_client.SetStage(constants.STAGE_ARTIFACT)
         if image_source == constants.IMAGE_SRC_LOCAL:
             self._UploadArtifacts(self._local_image_artifact,
                                   self._cvd_host_package_artifact,

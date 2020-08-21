@@ -138,22 +138,22 @@ class AvdSpecTest(driver_test_lib.BaseDriverTest):
         fake_subprocess.stdout.readline = mock.MagicMock(return_value='')
         fake_subprocess.poll = mock.MagicMock(return_value=0)
         fake_subprocess.returncode = 0
-        return_value = b"Manifest branch: master"
+        return_value = "Manifest branch: fake_branch"
         fake_subprocess.communicate = mock.MagicMock(return_value=(return_value, ''))
         self.Patch(subprocess, "Popen", return_value=fake_subprocess)
 
         mock_gitremote.return_value = "aosp"
-        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "aosp-master")
+        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "aosp-fake_branch")
 
         # Check default repo gets default branch prefix.
         mock_gitremote.return_value = ""
-        return_value = b"Manifest branch: master"
+        return_value = "Manifest branch: fake_branch"
         fake_subprocess.communicate = mock.MagicMock(return_value=(return_value, ''))
         self.Patch(subprocess, "Popen", return_value=fake_subprocess)
-        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "git_master")
+        self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "git_fake_branch")
 
         # Can't get branch from repo info, set it as default branch.
-        return_value = b"Manifest branch:"
+        return_value = "Manifest branch:"
         fake_subprocess.communicate = mock.MagicMock(return_value=(return_value, ''))
         self.Patch(subprocess, "Popen", return_value=fake_subprocess)
         self.assertEqual(self.AvdSpec._GetBranchFromRepo(), "aosp-master")
