@@ -741,9 +741,11 @@ class RemoteInstance(Instance):
 
         default_vnc_port = utils.AVD_PORT_DICT[avd_type].vnc_port
         default_adb_port = utils.AVD_PORT_DICT[avd_type].adb_port
+        # TODO(165888525): Align the SSH tunnel for the order of adb port and
+        # vnc port.
         re_pattern = re.compile(_RE_SSH_TUNNEL_PATTERN %
-                                (_RE_GROUP_VNC, default_vnc_port,
-                                 _RE_GROUP_ADB, default_adb_port, ip))
+                                (_RE_GROUP_ADB, default_adb_port,
+                                 _RE_GROUP_VNC, default_vnc_port, ip))
         adb_port = None
         vnc_port = None
         process_output = utils.CheckOutput(constants.COMMAND_PS)
