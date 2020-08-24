@@ -40,8 +40,8 @@ class InstanceTest(driver_test_lib.BaseDriverTest):
                       "/fake_ps_2 --fake arg \n"
                       "/usr/bin/ssh -i ~/.ssh/acloud_rsa "
                       "-o UserKnownHostsFile=/dev/null "
-                      "-o StrictHostKeyChecking=no -L 12345:127.0.0.1:6444 "
-                      "-L 54321:127.0.0.1:6520 -N -f -l user 1.1.1.1")
+                      "-o StrictHostKeyChecking=no -L 54321:127.0.0.1:6520 "
+                      "-L 12345:127.0.0.1:6444 -N -f -l user 1.1.1.1")
     PS_LAUNCH_CVD = b("Sat Nov 10 21:55:10 2018 /fake_path/bin/run_cvd ")
     PS_RUNTIME_CF_CONFIG = {"x_res": "1080", "y_res": "1920", "dpi": "480"}
     GCE_INSTANCE = {
