@@ -58,7 +58,7 @@ class CvdRuntimeconfigTest(driver_test_lib.BaseDriverTest):
  },
  "enable_webrtc" : true,
  "vnc_server_binary" : "/home/vsoc-01/bin/vnc_server",
- "adb_connector_binary" : "/home/vsoc-01/bin/adb_connector",
+ "crosvm_binary" : "/home/vsoc-01/bin/crosvm",
  "webrtc_assets_dir" : "/home/vsoc-01/usr/share/webrtc/assets",
  "webrtc_binary" : "/home/vsoc-01/bin/webRTC",
  "webrtc_certs_dir" : "/home/vsoc-01/usr/share/webrtc/certs",
