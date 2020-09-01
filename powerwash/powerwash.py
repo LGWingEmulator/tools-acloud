@@ -16,28 +16,56 @@ r"""Powerwash entry point.
 This command will powerwash the AVD from a remote instance.
 """
 
-from __future__ import print_function
+import logging
+import subprocess
 
 from acloud import errors
+from acloud.internal import constants
+from acloud.internal.lib import utils
+from acloud.internal.lib.ssh import Ssh
+from acloud.internal.lib.ssh import IP
 from acloud.list import list as list_instances
 from acloud.public import config
 from acloud.public import report
 
 
-def PowerwashFromInstance(instance, instance_id):
+logger = logging.getLogger(__name__)
+
+
+def PowerwashFromInstance(cfg, instance, instance_id):
     """Powerwash AVD from remote CF instance.
 
     Args:
+        cfg: AcloudConfig object.
         instance: list.Instance() object.
         instance_id: Integer of the instance id.
 
     Returns:
         A Report instance.
     """
-    # TODO(162382338): rewrite this function to powerwash AVD from the remote instance.
-    print("We will powerwash AVD id (%s) from the instance: %s."
-          % (instance_id, instance.name))
+    ssh = Ssh(ip=IP(ip=instance.ip),
+              user=constants.GCE_USER,
+              ssh_private_key_path=cfg.ssh_private_key_path,
+              extra_args_ssh_tunnel=cfg.extra_args_ssh_tunnel)
+    logger.info("Start to powerwash AVD id (%s) from the instance: %s.",
+                instance_id, instance.name)
+    PowerwashDevice(ssh, instance_id)
     return report.Report(command="powerwash")
+
+
+def PowerwashDevice(ssh, instance_id):
+    """Powerwash AVD with the instance id.
+
+    Args:
+        ssh: Ssh object.
+        instance_id: Integer of the instance id.
+    """
+    ssh_command = "./bin/powerwash_cvd --instance_num=%d" % (instance_id)
+    try:
+        ssh.Run(ssh_command)
+    except (subprocess.CalledProcessError, errors.DeviceConnectionError) as e:
+        logger.debug(str(e))
+        utils.PrintColorString(str(e), utils.TextColors.FAIL)
 
 
 def Run(args):
@@ -50,13 +78,12 @@ def Run(args):
 
     Returns:
         A Report instance.
-
-    Raises:
-        errors.CommandArgError: Lack the instance_name in args.
     """
     cfg = config.GetAcloudConfig(args)
     if args.instance_name:
         instance = list_instances.GetInstancesFromInstanceNames(
             cfg, [args.instance_name])
-        return PowerwashFromInstance(instance[0], args.instance_id)
-    raise errors.CommandArgError("Please assign the '--instance-name' in your command.")
+        return PowerwashFromInstance(cfg, instance[0], args.instance_id)
+    return PowerwashFromInstance(cfg,
+                                 list_instances.ChooseOneRemoteInstance(cfg),
+                                 args.instance_id)
