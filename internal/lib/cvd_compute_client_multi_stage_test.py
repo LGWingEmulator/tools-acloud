@@ -168,6 +168,8 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         created_subprocess.poll = mock.MagicMock(return_value=0)
         created_subprocess.returncode = 0
         created_subprocess.communicate = mock.MagicMock(return_value=('', ''))
+        self.Patch(cvd_compute_client_multi_stage.CvdComputeClient,
+                   "_RecordSystemAndKernelInfo")
         self.Patch(subprocess, "Popen", return_value=created_subprocess)
         self.Patch(subprocess, "check_call")
         self.Patch(os, "chmod")
@@ -226,6 +228,37 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
             extra_scopes=self.EXTRA_SCOPES,
             gpu=self.GPU,
             tags=None)
+
+    def testRecordSystemAndKernelInfo(self):
+        """Test RecordSystemAndKernelInfo"""
+        system_build_id = "system_id"
+        system_build_target = "system_target"
+        kernel_build_id = "kernel_id"
+        kernel_build_target = "kernel_target"
+        fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.system_build_info = {constants.BUILD_ID: system_build_id,
+                                           constants.BUILD_TARGET: system_build_target}
+        fake_avd_spec.kernel_build_info = {constants.BUILD_ID: kernel_build_id,
+                                           constants.BUILD_TARGET: kernel_build_target}
+        expected_metadata = dict()
+        expected_metadata.update(self.METADATA)
+        expected_metadata.update({"system_build_id": system_build_id})
+        expected_metadata.update({"system_build_target": system_build_target})
+        expected_metadata.update({"kernel_build_id": kernel_build_id})
+        expected_metadata.update({"kernel_build_target": kernel_build_target})
+
+        # Test record metadata with avd_spec for acloud create
+        self.cvd_compute_client_multi_stage._RecordSystemAndKernelInfo(
+            fake_avd_spec, system_build_id=None, system_build_target=None,
+            kernel_build_id=None, kernel_build_target=None)
+        self.assertEqual(self.cvd_compute_client_multi_stage._metadata, expected_metadata)
+
+        # Test record metadata with build info of system image and kerenel image for
+        # acloud create_cf
+        self.cvd_compute_client_multi_stage._RecordSystemAndKernelInfo(
+            None, system_build_id, system_build_target,
+            kernel_build_id, kernel_build_target)
+        self.assertEqual(self.cvd_compute_client_multi_stage._metadata, expected_metadata)
 
 
 if __name__ == "__main__":
