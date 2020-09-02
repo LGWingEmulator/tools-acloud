@@ -261,7 +261,7 @@ class CvdComputeClient(android_compute_client.AndroidComputeClient):
             kernel_build_id: Kernel build id, a string, e.g. "223051", "P280427"
             kernel_build_target: String, Kernel build target name.
         """
-        if avd_spec:
+        if avd_spec and avd_spec.image_source == constants.IMAGE_SRC_REMOTE:
             system_build_id = avd_spec.system_build_info.get(constants.BUILD_ID)
             system_build_target = avd_spec.system_build_info.get(constants.BUILD_TARGET)
             kernel_build_id = avd_spec.kernel_build_info.get(constants.BUILD_ID)

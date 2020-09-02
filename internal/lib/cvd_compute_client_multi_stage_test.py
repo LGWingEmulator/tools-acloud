@@ -236,6 +236,7 @@ class CvdComputeClientTest(driver_test_lib.BaseDriverTest):
         kernel_build_id = "kernel_id"
         kernel_build_target = "kernel_target"
         fake_avd_spec = mock.MagicMock()
+        fake_avd_spec.image_source = constants.IMAGE_SRC_REMOTE
         fake_avd_spec.system_build_info = {constants.BUILD_ID: system_build_id,
                                            constants.BUILD_TARGET: system_build_target}
         fake_avd_spec.kernel_build_info = {constants.BUILD_ID: kernel_build_id,
