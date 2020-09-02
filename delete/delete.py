@@ -250,8 +250,8 @@ def DeleteInstanceByNames(cfg, instances):
     remote_instances = list(set(instances) - set(local_instances))
     if local_instances:
         utils.PrintColorString("Deleting local instances")
-        delete_report = DeleteInstances(cfg, list_instances.FilterInstancesByNames(
-            list_instances.GetLocalInstances(), local_instances))
+        delete_report = DeleteInstances(
+            cfg, list_instances.GetLocalInstancesByNames(local_instances))
     if remote_instances:
         delete_report = DeleteRemoteInstances(cfg,
                                               remote_instances,

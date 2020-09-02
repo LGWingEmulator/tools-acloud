@@ -50,6 +50,8 @@ logger = logging.getLogger(__name__)
 _ACLOUD_CVD_TEMP = os.path.join(tempfile.gettempdir(), "acloud_cvd_temp")
 _CVD_RUNTIME_FOLDER_NAME = "cuttlefish_runtime"
 _CVD_STATUS_BIN = "cvd_status"
+_LOCAL_INSTANCE_NAME_FORMAT = "local-instance-%(id)d"
+_LOCAL_INSTANCE_NAME_PATTERN = re.compile(r"^local-instance-(?P<id>\d+)$")
 _MSG_UNABLE_TO_CALCULATE = "Unable to calculate"
 _NO_ANDROID_ENV = "android source not available"
 _RE_GROUP_ADB = "local_adb_port"
@@ -77,8 +79,11 @@ def GetDefaultCuttlefishConfig():
     Return:
         String, path of cf runtime config.
     """
-    return os.path.join(os.path.expanduser("~"), _CVD_RUNTIME_FOLDER_NAME,
-                        constants.CUTTLEFISH_CONFIG_FILE)
+    cfg_path = os.path.join(os.path.expanduser("~"), _CVD_RUNTIME_FOLDER_NAME,
+                            constants.CUTTLEFISH_CONFIG_FILE)
+    if os.path.isfile(cfg_path):
+        return cfg_path
+    return None
 
 
 def GetLocalInstanceName(local_instance_id):
@@ -90,7 +95,23 @@ def GetLocalInstanceName(local_instance_id):
     Return:
         String, the instance name.
     """
-    return "%s-%d" % (constants.LOCAL_INS_NAME, local_instance_id)
+    return _LOCAL_INSTANCE_NAME_FORMAT % {"id": local_instance_id}
+
+
+def GetLocalInstanceIdByName(name):
+    """Get local cuttlefish instance id by name.
+
+    Args:
+        name: String of instance name.
+
+    Return:
+        The instance id as an integer if the name is in valid format.
+        None if the name does not represent a local cuttlefish instance.
+    """
+    match = _LOCAL_INSTANCE_NAME_PATTERN.match(name)
+    if match:
+        return int(match.group("id"))
+    return None
 
 
 def GetLocalInstanceConfig(local_instance_id):
@@ -110,27 +131,27 @@ def GetLocalInstanceConfig(local_instance_id):
 
 
 def GetAllLocalInstanceConfigs():
-    """Get the list of instance config.
+    """Get all cuttlefish runtime configs from the known locations.
 
     Return:
-        List of instance config path.
+        List of tuples. Each tuple consists of an instance id and a config
+        path.
     """
-    cfg_list = []
+    id_cfg_pairs = []
     # Check if any instance config is under home folder.
     cfg_path = GetDefaultCuttlefishConfig()
-    if os.path.isfile(cfg_path):
-        cfg_list.append(cfg_path)
+    if cfg_path:
+        id_cfg_pairs.append((1, cfg_path))
 
     # Check if any instance config is under acloud cvd temp folder.
     if os.path.exists(_ACLOUD_CVD_TEMP):
         for ins_name in os.listdir(_ACLOUD_CVD_TEMP):
-            cfg_path = os.path.join(_ACLOUD_CVD_TEMP,
-                                    ins_name,
-                                    _CVD_RUNTIME_FOLDER_NAME,
-                                    constants.CUTTLEFISH_CONFIG_FILE)
-            if os.path.isfile(cfg_path):
-                cfg_list.append(cfg_path)
-    return cfg_list
+            ins_id = GetLocalInstanceIdByName(ins_name)
+            if ins_id is not None:
+                cfg_path = GetLocalInstanceConfig(ins_id)
+                if os.path.isfile(cfg_path):
+                    id_cfg_pairs.append((ins_id, cfg_path))
+    return id_cfg_pairs
 
 
 def GetLocalInstanceHomeDir(local_instance_id):

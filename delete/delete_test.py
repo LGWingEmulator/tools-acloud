@@ -127,8 +127,7 @@ class DeleteTest(driver_test_lib.BaseDriverTest):
         cfg = mock.Mock()
         # Test delete local instances.
         instances = ["local-instance-1", "local-instance-2"]
-        self.Patch(list_instances, "FilterInstancesByNames", return_value="")
-        self.Patch(list_instances, "GetLocalInstances", return_value=[])
+        self.Patch(list_instances, "GetLocalInstancesByNames", return_value=[])
         delete.DeleteInstanceByNames(cfg, instances)
         mock_delete_local_ins.assert_called()
 
